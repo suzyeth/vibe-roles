@@ -6,6 +6,10 @@
  * stalls. Content is English, UK Gen-Z flavoured (per project: UI/display is
  * English). Tone stays "chaotic but harmless" to match the rest of the app.
  *
+ * Narration is written to read like a continuous story: each outcome is 2
+ * sentences — a vivid beat plus a fresh complication/hook — so the run feels
+ * like a drama, not a list of one-liners.
+ *
  * Shape notes:
  * - `roles` keys should cover the preset members (Mia, Kai, Momo, You). Any
  *   name not listed falls back to a default role in the engine.
@@ -67,9 +71,9 @@ export const TEST_STORIES: TestStory[] = [
     },
     defaultRole: { role: "The Lurker", ability: "Online but never types", detail: "Read every message. Replied to exactly none." },
     prologue: [
-      "Group Chat on Trial. 47 unread messages and a poll about you.",
-      "Someone leaked the screenshot to the whole year group. The replies are bare.",
-      "You are The Accused. Clear your name before the chat folds. Roll to begin.",
+      "📱 3:47am. Forty-seven unread, a poll with your name on it, and a screenshot of the private flat chat now loose in the whole year group.",
+      "Every notification is one more person picking a side. The replies are bare and the typing dots won't stop.",
+      "You are The Accused. You've got until the chat folds to find the leaker and clear your name. Roll to begin.",
     ],
     reactions: [
       "the AUDACITY",
@@ -84,36 +88,36 @@ export const TEST_STORIES: TestStory[] = [
     beats: [
       {
         youOptions: ["Deny everything, calmly", "Post a cryptic Story", "Send one voice note", "Screenshot the screenshot"],
-        good: "You drop one calm voice note and the chat goes dead quiet. Respect, lowkey.",
-        bad: "You typed three paragraphs. They left you on read. Gutted.",
-        crit: "You quote-tweet the drama with one word: 'anyway'. The group folds. Iconic.",
-        flop: "Autocorrect changed 'I swear' to 'I sweat'. Everyone saw. It's over.",
+        good: "You send one calm 9-second voice note and the chat goes dead silent — the kind of silence that means people are screenshotting it to send elsewhere. For the first time tonight you're not the one on the back foot.",
+        bad: "You fire back three paragraphs with a 'to be clear' wedged in the middle. Two grey ticks. Left on read, and the lurkers definitely saw it happen.",
+        crit: "You quote-reply the entire saga with one word — 'anyway' — and lock your replies. The group implodes trying to decode it; somehow you're the calm main character now.",
+        flop: "Autocorrect turns 'I swear I didn't' into 'I sweat I didn't'. Four people have already saved the clip and someone's added a caption. It's so over.",
       },
       {
         youOptions: ["Demand the timestamps", "Accuse the quiet one", "Start a private side-chat", "Go offline dramatically"],
-        good: "You ask for timestamps and someone's story instantly stops adding up. Sus.",
-        bad: "You accused the wrong mate. They've now allied with the enemy. Bad look.",
+        good: "You ask, very politely, for timestamps — and within seconds one person's version of events stops lining up with the times on their own screenshots. The chat notices, and the smell of blood changes direction.",
+        bad: "You point the finger at the quiet one, loudly and wrongly. They post proof they were asleep, then DM the actual leaker to team up against you.",
       },
       {
         youOptions: ["Leak a counter-screenshot", "Call a flat meeting", "Apologise (strategically)", "Blame the group admin"],
-        good: "Your counter-screenshot lands. The narrative flips. You're the victim now, allegedly.",
-        bad: "Your 'apology' had a 'but' in it. The replies are merciless.",
+        good: "You drop a counter-screenshot that reframes the whole night, and just like that the story flips — you're the victim now, allegedly, and the replies start apologising to you.",
+        bad: "Your 'apology' has a 'but' bolted onto the end of it. The room reads it in real time and the paragraph-essays come back twice as long.",
       },
       {
         youOptions: ["Cross-examine Kai's receipts", "Soft-launch the truth", "Rally the lurkers", "Mute and ghost"],
-        good: "You catch a cropped screenshot. Cropping IS lying. The room turns.",
-        bad: "You posted, deleted, reposted. They saw the edit. Delulu behaviour.",
+        good: "You zoom in on a screenshot nobody else checked and catch the crop — and cropping, as everyone now agrees, IS lying. The lurkers finally start typing, and they're on your side.",
+        bad: "You post, delete, then repost a slightly nicer version. The 'edited' tag gives you away instantly, and now even your allies look unsure.",
       },
       {
         youOptions: ["Name the leaker", "Offer a truce", "Post the final receipt", "Threaten to leave"],
-        good: "You drop the final receipt. The leaker types... stops typing... goes offline. Caught.",
-        bad: "You named someone and immediately got proven wrong. The group is feral now.",
-        crit: "The leaker confesses in an all-caps voice note that cracks halfway. Closure.",
+        good: "You post the final receipt with no caption and let it sit. The leaker starts typing… stops… starts again… then goes offline. The whole chat watched it happen. Caught.",
+        bad: "You name a name with total confidence and get proven wrong inside thirty seconds. The group turns feral and now there are two polls about you.",
+        crit: "The leaker cracks and confesses in an all-caps voice note that breaks halfway through. Forty-seven people exhale at once. Closure, finally.",
       },
       {
         youOptions: ["Forgive them on Story", "Start a brand new chat", "Demand a public apology", "Just block everyone"],
-        good: "The leaker owns it. The flat survives. Barely. It's giving redemption arc.",
-        bad: "Nobody admits anything but everyone's still here at 3am. Toxic but loyal.",
+        good: "The leaker owns it publicly, you forgive them with one screenshot-proof line, and the flat chat survives — barely, but it survives. It's giving redemption arc.",
+        bad: "Nobody actually admits anything, but somehow everyone's still here at 3am sending memes. Toxic, unresolved, weirdly loyal.",
       },
     ],
     ending: {
@@ -140,9 +144,9 @@ export const TEST_STORIES: TestStory[] = [
     },
     defaultRole: { role: "The Hater", ability: "First in every comment section", detail: "Comments 'L' before the video even finishes loading." },
     prologue: [
-      "The Ring Light Goes Dark. 200k followers, one very live meltdown.",
-      "Brand deals are pulling out and the comments smell blood.",
-      "You are The Manager. Save the channel, or its dignity. Roll to begin.",
+      "💡 The ring light is on, the brunch is plated, and your flatmate's 200k-follower empire is melting down live in front of all of them.",
+      "Brand deals are quietly pulling out and the comment section can smell blood from a mile off.",
+      "You are The Manager. Save the channel — or at least its dignity — before brunch cancels it for good. Roll to begin.",
     ],
     reactions: [
       "unfollowing rn",
@@ -157,36 +161,36 @@ export const TEST_STORIES: TestStory[] = [
     beats: [
       {
         youOptions: ["Post a Notes-app apology", "Go live and explain", "Delete everything", "Pin a sponsored post anyway"],
-        good: "You go live, own it in 30 seconds, and the comments... actually soften. Witnessed.",
-        bad: "The Notes-app apology had two fonts. Two. The tea pages are feasting.",
-        crit: "You cry one perfect tear and announce a charity stream. Redemption speedrun.",
-        flop: "You typed 'no body is perfect'. No body. The clip is already a sound.",
+        good: "You push her live, she owns the whole thing in thirty unscripted seconds, and — plot twist — the comments actually soften. Someone types 'ok the accountability is kinda fire'.",
+        bad: "The Notes-app apology goes up in two different fonts. TWO. The tea pages screenshot it before you can fix the kerning and start a countdown to the next one.",
+        crit: "She sheds one perfect, professionally-lit tear and pivots into a surprise charity stream. The redemption speedrun is trending before the brunch goes cold.",
+        flop: "The caption reads 'no body is perfect'. No body. It's already a sound, and three creators have used it before you finish reading the comments.",
       },
       {
         youOptions: ["Blame the editor", "Restore the brand deal", "Cry on camera (real)", "Quote the analytics"],
-        good: "You show the analytics. Engagement's up. Chaos is content, baby.",
-        bad: "You threw the editor under the bus on stream. The editor has the raw files. Oops.",
+        good: "You pull the analytics up on stream — engagement's spiking — and reframe the chaos as content. Suddenly the meltdown looks like a strategy nobody can prove wasn't one.",
+        bad: "You throw the editor under the bus on a live mic, forgetting the editor still has every raw file. A folder named 'BTS' starts to feel like a threat.",
       },
       {
         youOptions: ["Drop a docu-style storytime", "Collab with a bigger creator", "Turn comments off", "Sell the merch early"],
-        good: "The storytime hits the For You page for the right reasons. Sympathy spike.",
-        bad: "You turned comments off. Now they're stitching you. It's worse. So much worse.",
+        good: "The moody, well-lit storytime lands on the For You page for the right reasons this time. Sympathy spikes and the diehards start defending her in every reply.",
+        bad: "You turn the comments off and the internet takes it personally — now they're stitching her instead, and the stitches are meaner than the comments ever were.",
       },
       {
         youOptions: ["Expose the real villain", "Soft-launch a comeback", "Refund the brunch", "Beg the sponsor"],
-        good: "Plot twist: the 'leak' was a rival page. You post proof. The tide turns hard.",
-        bad: "Your comeback teaser used the same audio as the meltdown. People noticed.",
+        good: "Twist: the 'leak' traces back to a rival tea page, and you post the proof clean. The narrative whiplashes and the comments start apologising in bulk.",
+        bad: "The comeback teaser accidentally reuses the exact audio from the meltdown. People notice in under a minute and the irony becomes the new story.",
       },
       {
         youOptions: ["Announce the comeback stream", "Hand the brand the cheque back", "Go fully offline", "Do a tell-all"],
-        good: "The comeback stream peaks at 40k live. The brand re-signs. The ring light glows again.",
-        bad: "The tell-all created three new scandals. Lore expanding. Channel shrinking.",
-        crit: "A bigger creator duets you supportively. You're trending. For once it's good.",
+        good: "The comeback stream peaks at 40k live, the brand quietly re-signs the cheque, and the ring light glows back to life like nothing ever happened.",
+        bad: "The tell-all answers one scandal and births three more. The lore expands; the follower count does not.",
+        crit: "A much bigger creator duets her supportively and the whole thing flips into a feel-good moment. She's trending — for once, the good kind.",
       },
       {
         youOptions: ["Thank the haters (genuinely)", "Pivot to a new niche", "Retire at 21", "Start a podcast"],
-        good: "You pivot, the algorithm forgives, and brunch is back on the menu. Survived.",
-        bad: "Followers down 12k but the diehards stayed. Smaller, feral, loyal.",
+        good: "She pivots niche, genuinely thanks the haters by name, and the algorithm forgives everything. Brunch is back on the menu and so is she.",
+        bad: "Followers dip by twelve thousand, but the ones who stayed are unhinged in the best way. Smaller, feral, loyal.",
       },
     ],
     ending: {
@@ -213,9 +217,9 @@ export const TEST_STORIES: TestStory[] = [
     },
     defaultRole: { role: "The One Who Wandered Off", ability: "Always one room ahead", detail: "Never where you left them. Always one room ahead." },
     prologue: [
-      "Locked In at Honeycomb. The clock hit zero. Then it started again.",
-      "Staff aren't answering. The lock just clicked itself shut.",
-      "You are The Sceptic. Find the real exit before the room resets. Roll to begin.",
+      "🔒 The 60-minute escape room hit zero ten minutes ago. Then the timer blinked, reset itself, and started counting up.",
+      "Staff aren't answering the intercom, the door clicked itself locked, and the walls feel a few inches closer than before.",
+      "You are The Sceptic. Find the real way out before the room resets one more time. Roll to begin.",
     ],
     reactions: [
       "nope nope nope",
@@ -230,36 +234,36 @@ export const TEST_STORIES: TestStory[] = [
     beats: [
       {
         youOptions: ["Bang on the exit door", "Search for a hidden latch", "Read the clue on the wall", "Call the front desk again"],
-        good: "You find a draft of cold air behind the bookcase. There's a seam. A way out, maybe.",
-        bad: "The door's solid. Your knock echoes back a beat too late, like something knocked first.",
-        crit: "You spot a maintenance hatch the staff forgot to lock. Genuine exit. Hold that thought.",
-        flop: "You pull the 'exit' lever. The lights die. The countdown speeds up. Brilliant.",
+        good: "Behind the bookcase you feel a thin draft of cold, outside air — and your fingers find a seam in the wall the set designers definitely didn't paint. A way out, maybe.",
+        bad: "Your knock on the exit door echoes back a half-second too late, like something on the other side knocked first. The door doesn't budge.",
+        crit: "You spot a maintenance hatch the staff forgot to lock, tucked behind a fake fire extinguisher. A genuine, boring, beautiful exit. Hold that thought.",
+        flop: "You yank the lever marked EXIT and the lights die instantly. When they flicker back, the countdown is moving faster. Brilliant work.",
       },
       {
         youOptions: ["Follow the cold draft", "Solve the keypad", "Check on the wanderer", "Smash the fake mirror"],
-        good: "The mirror's two-way. Behind it: a corridor and a fire-exit sign. Now we're talking.",
-        bad: "The keypad accepts your code... then changes it. The room is playing back.",
+        good: "The mirror's two-way — behind it runs a service corridor with an actual fire-exit sign glowing at the far end. Now you're getting somewhere.",
+        bad: "The keypad accepts your code, beeps approvingly… then silently changes it. The room is learning your moves and playing them back.",
       },
       {
         youOptions: ["Crawl through the vent", "Reset the puzzle on purpose", "Barricade and wait", "Find the wanderer NOW"],
-        good: "The vent drops you into the staff room. Empty. But the keys are right there.",
-        bad: "You went to wait it out. The countdown hit zero and the lights came back... rearranged.",
+        good: "The vent drops you straight into the empty staff room. No people — but the master keys are sitting right there on the hook, swinging slightly.",
+        bad: "You decide to wait it out. The countdown hits zero, the lights cut, and when they return the furniture has been quietly rearranged.",
       },
       {
         youOptions: ["Grab the staff keys", "Trace the wiring", "Decode the final riddle", "Just run for it"],
-        good: "Keys in hand, the final lock gives. One door left. The cold air is real now.",
-        bad: "The keys melt the same shape into every lock. Wrong keys. Or wrong locks.",
+        good: "Keys in hand, the final lock gives with a satisfying clunk. One door left between you and the street, and the cold air leaking under it is real now.",
+        bad: "Every key melts the same shape into every lock you try. Wrong keys — or, worse, wrong locks. The room hums like it's amused.",
       },
       {
         youOptions: ["Open the last door", "Wait for the others", "Disable the countdown", "Smash through the wall"],
-        good: "You yank the last door. Streetlights. Rain. The normal kind of cold. You made it out.",
-        bad: "The door opens onto the first room again. You've been here before. Keep your nerve.",
-        crit: "The exit opens AND the staff come running, horrified. It wasn't supposed to do that.",
+        good: "You haul the last door open and there it is: streetlights, drizzle, the ordinary kind of cold. You actually made it out of Honeycomb.",
+        bad: "The door swings open onto the very first room again, the candle still lit exactly as you left it. You've been here before. Keep your nerve.",
+        crit: "The exit opens AND the staff come sprinting round the corner, white-faced — because that door was never supposed to open from the inside.",
       },
       {
         youOptions: ["Get everyone out", "Go back for the wanderer", "Tell the staff everything", "Never speak of it"],
-        good: "Headcount's right. Everyone's out, soaked and laughing too loud. Survived Honeycomb.",
-        bad: "You're out. Mostly. Someone keeps glancing at the door like it might count again.",
+        good: "Headcount checks out and everyone spills onto the pavement, soaked and laughing far too loudly. You survived Honeycomb — five stars, would not return.",
+        bad: "You're out — mostly. But someone keeps glancing back at the door like it might start counting again, and nobody's brave enough to say it won't.",
       },
     ],
     ending: {
@@ -286,9 +290,9 @@ export const TEST_STORIES: TestStory[] = [
     },
     defaultRole: { role: "The Witness", ability: "Watching it all unfold, popcorn ready", detail: "Said nothing, saw everything. Popcorn fully ready." },
     prologue: [
-      "Two Texts, One Group Chat. You typed 'I think I like you' in the WRONG chat.",
-      "It's ticked blue. Three people are typing. One of them is your ex.",
-      "You are The Wrong-Chat Texter. Save the friendship and the feelings. Roll to begin.",
+      "💔 You typed 'I think I like you' — and sent it to the wrong chat. The group chat. The one with your ex in it.",
+      "It's ticked blue. Three people are typing. The unsend button is greyed out and laughing at you.",
+      "You are The Wrong-Chat Texter. Save the friendship and the feelings before the night ends. Roll to begin.",
     ],
     reactions: [
       "WHO was that for 👀",
@@ -303,36 +307,36 @@ export const TEST_STORIES: TestStory[] = [
     beats: [
       {
         youOptions: ["Claim it was a typo", "Double down romantically", "Unsend and pray", "'Who's asking?'"],
-        good: "You double down with one smooth line and the situationship sends a real reply. Movement.",
-        bad: "You said 'typo'. Everyone knows. The ex reacted with the laughing emoji. Cold.",
-        crit: "You own it completely and the right person replies 'finally'. The chat GASPS.",
-        flop: "You tried to unsend the wrong message and deleted your own birthday plans. Chaos.",
+        good: "You double down with one smooth, devastating line, and the situationship — who never sends more than 'haha' — sends an actual full sentence back. Movement. Real movement.",
+        bad: "You go with 'typo, ignore that lol' and absolutely nobody believes you. The ex reacts with the laughing emoji, which somehow feels deeply personal.",
+        crit: "You own it completely, name-drop the right person, and they reply 'finally'. The entire chat gasps in unison; even the lurkers come online for this.",
+        flop: "You panic-unsend the wrong message and delete your own birthday plans instead. The 'I think I like you' stays. The confusion only multiplies.",
       },
       {
         youOptions: ["Slide into the DMs", "Make it a group joke", "Ask the best friend for intel", "Go mysteriously quiet"],
-        good: "The best friend confirms the feeling's mutual. Insider trading, but make it romance.",
-        bad: "The ex slid in first. Now there are two situationships and one very tense chat.",
+        good: "The best friend confirms, strictly off the record, that the feeling is very much mutual. Insider trading, but make it romance.",
+        bad: "The ex slides into your DMs first, just to 'check you're okay'. Now there are two situationships and one extremely tense group chat.",
       },
       {
         youOptions: ["Plan a 'casual' hangout", "Confront the ex kindly", "Soft-launch the crush", "Deny under oath"],
-        good: "The casual hangout becomes a not-casual moment. Hand brush. Eye contact. It's giving.",
-        bad: "Your soft-launch was a hard reveal. The ex screenshotted it to THEIR gc. Spiralling.",
+        good: "The 'casual' hangout turns distinctly non-casual — a hand brush, a held glance, a silence that says everything. It's giving.",
+        bad: "Your soft-launch lands as a hard reveal, and the ex screenshots it straight into THEIR group chat. The saga is now multi-platform.",
       },
       {
         youOptions: ["Define the relationship", "Let the ex have closure", "Big romantic gesture", "Run away to your nan's"],
-        good: "You actually have the conversation. Words like 'feelings' are used. Growth, allegedly.",
-        bad: "The grand gesture peaked too early. Now it's awkward AND public. Menty b incoming.",
+        good: "You actually have the conversation — out loud, words like 'feelings' included. Terrifying, mature, and apparently it goes well. Growth, allegedly.",
+        bad: "The grand gesture peaks about three days too early. Now it's awkward AND public, and a menty b is loading at 99%.",
       },
       {
         youOptions: ["Make it official", "Stay friends (real this time)", "Pick neither, pick peace", "Ask the gc to vote"],
-        good: "You and the right person make it official. The gc loses it. Even the ex says 'cute x'.",
-        bad: "You let the chat vote. The poll tied. Democracy has failed your love life.",
-        crit: "Soft launch becomes hard launch. Matching pfps by midnight. The ick never stood a chance.",
+        good: "You and the right person make it official, and the group chat completely loses it. Even the ex types 'cute x' — and means it, mostly.",
+        bad: "You let the chat hold a vote and the poll ties exactly down the middle. Democracy has officially failed your love life.",
+        crit: "Soft launch becomes hard launch becomes matching pfps by midnight. The ick never stood a chance; the gc is already planning the wedding.",
       },
       {
         youOptions: ["Hard launch on Story", "Keep it private (for once)", "Throw a flat party", "Block the drama, keep the love"],
-        good: "Hard launch. 200 likes. The situationship is now a relationship. Friendship intact. Rare W.",
-        bad: "It's complicated but everyone's still in the chat, still typing 'haha'. Could be worse.",
+        good: "Hard launch, 200 likes in an hour, situationship upgraded to relationship — and the friendship somehow survives intact. A genuinely rare W.",
+        bad: "It's complicated, unlabelled and unresolved, but everyone's still in the chat at 2am typing 'haha'. Could honestly be worse.",
       },
     ],
     ending: {

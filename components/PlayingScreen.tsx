@@ -201,30 +201,6 @@ export default function PlayingScreen({ game }: { game: GameHook }) {
         🔗 Invite a friend to twist the story (5 min)
       </button>
 
-      {/* Player cards — each tinted with its owner's accent color */}
-      <div className="px-4 py-3 flex gap-2 overflow-x-auto">
-        {state.players.map((p, i) => {
-          const accent = accentFor(p.name, state.players);
-          const active = activePlayer?.name === p.name;
-          return (
-            <div
-              key={p.name}
-              className="role-card flex-shrink-0 bubble-in"
-              style={{
-                animationDelay: `${i * 60}ms`,
-                background: active ? 'var(--zymix-green-light)' : 'var(--zymix-surface)',
-                opacity: active ? 1 : 0.72,
-                borderLeftColor: accent,
-              }}
-            >
-              <div className="text-xs font-semibold" style={{ color: accent }}>{p.name}</div>
-              <div className="font-bold" style={{ color: 'var(--zymix-text-primary)' }}>{p.role}</div>
-              <div className="text-xs" style={{ color: 'var(--zymix-text-tertiary)' }}>{p.ability}</div>
-            </div>
-          );
-        })}
-      </div>
-
       {/* Fate Cards */}
       {state.fateCards.length > 0 && (
         <div className="px-4 pb-2">
