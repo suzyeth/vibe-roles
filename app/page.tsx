@@ -20,7 +20,7 @@ export default function Home() {
   const [quest, setQuest] = useState<Quest | null>(null);
   const [msgs, setMsgs] = useState<ChatMsg[]>([]);
   const [round, setRound] = useState(0);
-  const [last, setLast] = useState<{ roll: number; label: string } | null>(null);
+  const [last, setLast] = useState<{ roll: number; label: string; advantage?: boolean } | null>(null);
   const [fate, setFate] = useState<FateCard[]>([]);
   const [card, setCard] = useState<QC | null>(null);
   const [showShare, setShowShare] = useState(false);
@@ -29,6 +29,7 @@ export default function Home() {
   const [activePlayer, setActivePlayer] = useState<Player | null>(null);
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
   const [showDice, setShowDice] = useState(false);
+  const [isCustomAction, setIsCustomAction] = useState(false);
   const idRef = useRef(0);
   const questId = useRef<string>("");
   const recent = useRef<string>("");
@@ -42,7 +43,7 @@ export default function Home() {
 
   async function start(theme: string) {
     setPhase("loading"); setMsgs([]); setRound(0); setLast(null); setFate([]); setCard(null); setShowShare(false);
-    setActionOptions([]); setCustomAction(""); setActivePlayer(null); setSelectedAction(null); setShowDice(false);
+    setActionOptions([]); setCustomAction(""); setActivePlayer(null); setSelectedAction(null); setShowDice(false); setIsCustomAction(false);
     questId.current = `q_${idRef.current++}_${theme.length}`;
     const res = await fetch("/api/quest", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ questId: questId.current, members: PRESET_MEMBERS.map((m) => m.name), theme }) });
     const q: Quest = await res.json();
@@ -81,18 +82,19 @@ export default function Home() {
     }
   }
 
-  async function chooseAction(action: string, _isCustom = false) {
+  async function chooseAction(action: string, isCustom = false) {
     if (!activePlayer) return;
     setPhase("rolling");
     setSelectedAction(action);
+    setIsCustomAction(isCustom);
     push(activePlayer.name, action, "action");
     setShowDice(true);
   }
 
-  async function onRoll(n: number) {
+  async function onRoll(n: number, advantage?: boolean) {
     if (!selectedAction || !activePlayer) return;
     setPhase("playing");
-    setActionOptions([]); setCustomAction(""); setSelectedAction(null); setShowDice(false);
+    setActionOptions([]); setCustomAction(""); setSelectedAction(null); setShowDice(false); setIsCustomAction(false);
     // pull any friend interference submitted via the share link before resolving the roll
     try {
       const f = await (await fetch(`/api/fate?questId=${questId.current}`)).json();
@@ -100,7 +102,7 @@ export default function Home() {
     } catch { /* fate fetch is best-effort */ }
     const res = await fetch("/api/roll", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ questId: questId.current, roll: n, recent: recent.current, round, active: { name: activePlayer.name, role: activePlayer.role }, action: selectedAction }) });
     const r = await res.json();
-    setLast({ roll: r.roll, label: r.label });
+    setLast({ roll: r.roll, label: r.label, advantage });
     (r.reactions ?? []).forEach((rc: { member: string; text: string }) => push(rc.member, rc.text, "member"));
     push("Narrator", r.narration, "narration");
     recent.current = r.narration;
@@ -145,7 +147,7 @@ export default function Home() {
         )}
         <FateCardList cards={fate} />
         {msgs.map((m) => <MessageBubble key={m.id} msg={m} />)}
-        {last && phase !== "choosing" && phase !== "rolling" && <RollResultBanner roll={last.roll} label={last.label} />}
+        {last && phase !== "choosing" && phase !== "rolling" && <RollResultBanner roll={last.roll} label={last.label} advantage={last.advantage} />}
         {phase === "ended" && card && <QuestCard card={card} />}
       </div>
       {phase === "choosing" && (
@@ -169,13 +171,13 @@ export default function Home() {
       {showDice && phase === "rolling" && (
         <div className="border-t border-zinc-800 p-3">
           <div className="px-3 pt-2 text-center text-xs text-zinc-400">Rolling the die…</div>
-          <DiceRoller onRoll={onRoll} />
+          <DiceRoller onRoll={onRoll} advantage={isCustomAction} />
         </div>
       )}
       {phase === "playing" && (
         <div className="border-t border-zinc-800">
           <div className="px-3 pt-2 text-center text-xs text-zinc-400">Round {round + 1}/{TOTAL_ROUNDS} · tap the die to continue</div>
-          <DiceRoller onRoll={onRoll} />
+          <DiceRoller onRoll={onRoll} advantage={isCustomAction} />
           {showShare && shareUrl && (
             <div className="px-3 pb-3 text-center">
               <div className="text-xs text-fuchsia-300 mb-1">Let WhatsApp friends interfere with your quest:</div>
