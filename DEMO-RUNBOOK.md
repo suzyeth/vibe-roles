@@ -1,4 +1,4 @@
-# Demo Runbook (3 minutes) · Vibe Roles
+# Demo Runbook (3 minutes) · Roll Call
 
 > Demo follows DESIGN.md §12 (the perfect `GLM_OFFLINE=true` run). Build/demo in Claude Code on GLM so Orbie captures the process (Z.ai×Orbit evidence).
 
@@ -19,7 +19,7 @@
 - **1:15–1:45 first action + dice:** Kai picks "photograph the video" → **D20 = 15 Success** → consequence: Kai has seen this clip for the 72nd time; trust in Kai shifts.
 - **1:45–2:10 external time-limited intervention:** tap **Invite a friend to interfere** → external page with a 5-minute countdown → friend types "Everyone gets a text from their future self" → "This invitation will disappear in 5 minutes."
 - **2:10–2:40 round 2 (intervention hits everyone):** AI weaves it in — each character gets a future text, one is lying; Luna doubts Kai; Jake's text mentions a non-existent exit. Players keep acting + rolling.
-- **2:40–3:00 ending card:** "Quest Completed · Customer #404 · most pivotal roll Kai D20=15 · best intervention Future Self Text · mood: chaotic but alive again · Start your own Vibe Roles on Zymix" → save/share. Closing line: *"Vibe Roles makes one quiet group enough to start a social moment — without reading chat history or forcing a topic."*
+- **2:40–3:00 ending card:** "Quest Completed · Customer #404 · most pivotal roll Kai D20=15 · best intervention Future Self Text · mood: chaotic but alive again · Start your own Roll Call on Zymix" → save/share. Closing line: *"Roll Call makes one quiet group enough to start a social moment — without reading chat history or forcing a topic."*
 
 ## Pre-show checklist
 - [ ] `.env.local` ready (GLM_OFFLINE=true as safety, or a real key with false)

@@ -1,4 +1,4 @@
-# Vibe Dice — 3-Minute Demo Script
+# Roll Call — 3-Minute Demo Script
 
 > VibeHack London 2026 — Track 2 "Vibe with ZYMIX"
 > Target: 3-minute live demo + 30-second Plan B offline version
@@ -98,7 +98,7 @@
 
 **Action:** Tap "Play again" → return to start
 
-**Say:** "One user is enough to start. The story spreads via WhatsApp. External friends join without downloading. The Quest Card pulls them back to ZYMIX. This is Vibe Dice — the Mini App that revives cold chats."
+**Say:** "One user is enough to start. The story spreads via WhatsApp. External friends join without downloading. The Quest Card pulls them back to ZYMIX. This is Roll Call — the Mini App that revives cold chats."
 
 ---
 

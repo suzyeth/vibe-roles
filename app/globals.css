@@ -2,21 +2,254 @@
 @tailwind components;
 @tailwind utilities;
 
+/**
+ * ZYMIX Design System — Roll Call Mini App
+ *
+ * Design Language (extracted from Zymix real screenshots):
+ * - Background: Pure white #FFFFFF, light gray #F5F5F5 for lists
+ * - Brand Green: #1DB954 (buttons, highlights, sent bubbles)
+ * - Typography: System font, high contrast dark text on white
+ * - Radius: Bubbles 18px, Cards 12px, Buttons 24px pill
+ * - Shadows: Ultra-light, iOS-native feel
+ * - NO dark mode, NO neon, NO glassmorphism — clean, light, real
+ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Zymix Brand Colors */
+  --zymix-green: #1DB954;
+  --zymix-green-light: #E8F8EE;
+  --zymix-green-dark: #17a347;
+  --zymix-bubble-sent: #1DB954;
+  --zymix-bubble-received: #FFFFFF;
+
+  /* Fate / interference accent (purple) */
+  --zymix-fate: #7C3AED;
+  --zymix-fate-light: #EDE9FE;
+
+  /* Typography */
+  --zymix-text-primary: #1A1A1A;
+  --zymix-text-secondary: #666666;
+  --zymix-text-tertiary: #999999;
+  --zymix-text-on-green: #FFFFFF;
+
+  /* Surfaces */
+  --zymix-bg: #F5F5F5;
+  --zymix-surface: #FFFFFF;
+  --zymix-divider: #F0F0F0;
+  --zymix-border: #E8E8E8;
+
+  /* Radius */
+  --radius-bubble: 18px;
+  --radius-card: 12px;
+  --radius-pill: 24px;
+
+  /* Shadows */
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-sheet: 0 -4px 20px rgba(0,0,0,0.10);
+  --shadow-button: 0 2px 8px rgba(29,185,84,0.30);
 }
 
-/* Vibe Roles ships a fixed ZYMIX light theme (SPEC §5.4) — no dark-mode override. */
+/* ── Dark theme — reference-inspired dark-green chat (toggled via data-theme) ── */
+html[data-theme="dark"] {
+  --zymix-green-light: #15331F;     /* active row / chip bg */
+  --zymix-bubble-received: #1A231E; /* received bubble surface */
+  --zymix-text-primary: #ECF2EF;
+  --zymix-text-secondary: #A6B2AC;
+  --zymix-text-tertiary: #6E7B75;
+  --zymix-bg: #0F1513;
+  --zymix-surface: #18211C;
+  --zymix-divider: #232C27;
+  --zymix-border: #2A332D;
+  --zymix-fate-light: #2A2350;
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.55), 0 1px 2px rgba(0,0,0,0.45);
+  --shadow-sheet: 0 -4px 20px rgba(0,0,0,0.55);
+}
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--zymix-bg);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  color: var(--zymix-text-primary);
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
+@layer components {
+  /* Top Navigation Bar */
+  .zymix-navbar {
+    display: flex;
+    align-items: center;
+    height: 56px;
+    padding: 0 16px;
+    background: var(--zymix-surface);
+    border-bottom: 1px solid var(--zymix-divider);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  /* Chat Bubble — Sent (right, green) */
+  .bubble-sent {
+    background: linear-gradient(135deg, #1DB954 0%, #17a347 100%);
+    color: white;
+    border-radius: var(--radius-bubble) var(--radius-bubble) 4px var(--radius-bubble);
+    padding: 12px 16px;
+    max-width: 75%;
+    font-size: 15px;
+    line-height: 1.4;
+    word-break: break-word;
+    box-shadow: 0 2px 8px rgba(29,185,84,0.25);
+  }
+
+  /* Chat Bubble — Received (left, white) */
+  .bubble-received {
+    background: var(--zymix-bubble-received);
+    color: var(--zymix-text-primary);
+    border-radius: var(--radius-bubble) var(--radius-bubble) var(--radius-bubble) 4px;
+    padding: 12px 16px;
+    max-width: 75%;
+    font-size: 15px;
+    line-height: 1.4;
+    word-break: break-word;
+    box-shadow: var(--shadow-card);
+  }
+
+  /* Bottom Sheet (Mini App style) */
+  .zymix-sheet {
+    background: var(--zymix-surface);
+    border-radius: 20px 20px 0 0;
+    box-shadow: var(--shadow-sheet);
+    padding: 12px 20px 32px;
+  }
+
+  .zymix-sheet-handle {
+    width: 36px;
+    height: 4px;
+    background: #E0E0E0;
+    border-radius: 2px;
+    margin: 0 auto 16px;
+  }
+
+  /* Green Primary Button */
+  .btn-zymix-primary {
+    background: var(--zymix-green);
+    color: white;
+    border-radius: var(--radius-pill);
+    padding: 14px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    width: 100%;
+    border: none;
+    box-shadow: var(--shadow-button);
+    transition: background 150ms ease, transform 100ms ease;
+    letter-spacing: -0.01em;
+  }
+  .btn-zymix-primary:active {
+    background: var(--zymix-green-dark);
+    transform: scale(0.98);
+  }
+
+  /* Role Card */
+  .role-card {
+    background: var(--zymix-surface);
+    border-radius: var(--radius-card);
+    padding: 14px 16px;
+    box-shadow: var(--shadow-card);
+    border-left: 3px solid var(--zymix-green);
+  }
+
+  /* Narration Box */
+  .narration-box {
+    background: var(--zymix-green-light);
+    border-radius: var(--radius-card);
+    padding: 14px 16px;
+    border-left: 3px solid var(--zymix-green);
+  }
+
+  /* Theme Card */
+  .theme-card {
+    background: var(--zymix-surface);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    border: 2px solid transparent;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+  }
+  .theme-card.selected {
+    border-color: var(--zymix-green);
+    box-shadow: 0 0 0 1px var(--zymix-green), var(--shadow-card);
+  }
+
+  /* Typing cursor */
+  .typing-cursor::after {
+    content: '|';
+    animation: blink 1s step-end infinite;
+    color: var(--zymix-green);
+    font-weight: 300;
+    margin-left: 1px;
+  }
+
+  /* Slide up animation */
+  .animate-slide-up {
+    animation: slideUp 300ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
+  }
+
+  /* Chat bubble entrance — every message springs in */
+  .bubble-in {
+    animation: bubbleIn 0.24s cubic-bezier(0.23, 1, 0.32, 1) both;
+  }
+
+  /* D20 die wobble while rolling */
+  .dice-rolling {
+    animation: diceRoll 0.7s cubic-bezier(0.23, 1, 0.32, 1) infinite;
+  }
+
+  /* Three bouncing dots in the "typing…" bubble */
+  .typing-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 9999px;
+    background: var(--zymix-green);
+    animation: typingBounce 1.2s ease-in-out infinite;
   }
 }
+
+/* KEYFRAMES */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+@keyframes bubbleIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes diceRoll {
+  0%   { transform: rotate(0deg) scale(1); }
+  15%  { transform: rotate(-22deg) scale(1.08); }
+  30%  { transform: rotate(18deg) scale(0.95); }
+  45%  { transform: rotate(-14deg) scale(1.04); }
+  60%  { transform: rotate(10deg) scale(0.98); }
+  75%  { transform: rotate(-6deg) scale(1.02); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+
+@keyframes typingBounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.35; }
+  40%           { transform: translateY(-5px); opacity: 1; }
+}
+
+/* Hide scrollbar */
+::-webkit-scrollbar { width: 0; }
+
+/* Safe area */
+.pb-safe { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+.pt-safe { padding-top: max(0px, env(safe-area-inset-top)); }

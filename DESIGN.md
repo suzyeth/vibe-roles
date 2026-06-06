@@ -1,7 +1,7 @@
-# Vibe Roles — Product Design Doc (DESIGN.md)
+# Roll Call — Product Design Doc (DESIGN.md)
 
 > VibeHack London 2026 · Track 2 "Vibe with ZYMIX" — design source of truth
-> Continuing revision of the earlier "Vibe Roles / Vibe Dice" docs
+> Continuing revision of the earlier "Roll Call / Roll Call" docs
 > Engineering reference: SPEC.md (note: SPEC.md predates this revision — reconcile its naming/dice labels to this doc).
 > Last updated: 2026-06-06
 
@@ -12,7 +12,7 @@
 Differentiation line (say it first in the demo):
 > "We're not another always-on chatbot, and we're not a full DND. We turn a quiet group chat into a lightweight AI adventure, so people don't have to awkwardly find a topic to start talking again."
 
-Short name: **Vibe Roles**
+Short name: **Roll Call**
 Feature mode: **Quest Mode / Roll to Revive**
 
 > Note: when explaining, you may say "a DND-like group adventure", but don't define the product AS DND — DND makes people think it's a complex RPG system. The point isn't rule completeness; it's using roles, actions, dice resolution, and AI narration to bring a dead chat back to life.
@@ -41,7 +41,7 @@ Many Gen Z chats aren't long-term communities; they form around a temporary conn
 
 The problem usually isn't that people don't want to talk — it's that the cost of speaking up again is high. Nobody wants to be the one who suddenly messages out of nowhere, and nobody knows what topic could revive the group.
 
-Vibe Roles's opportunity:
+Roll Call's opportunity:
 
 > **Don't ask the user to find a topic — let the AI give the group a reason to interact again via a lightweight role adventure.**
 
@@ -51,7 +51,7 @@ When a group chat has had no new messages for ~72 hours, a non-intrusive prompt 
 
 It doesn't block normal chatting and it's not a push notification — it's just a persistent, lightweight entry point. The moment any member taps Start, the AI randomly generates a story background and auto-assigns roles. Members can pick actions for their role, or type a custom continuation / intervention in the chat box, and resolve with a die.
 
-Vibe Roles does NOT analyze the group's past messages. It only triggers on the inactivity state, then randomly generates a brand-new story world. This lowers the privacy burden and makes the feature feel like a light mini game, not a chat-monitoring/summarizing AI tool.
+Roll Call does NOT analyze the group's past messages. It only triggers on the inactivity state, then randomly generates a brand-new story world. This lowers the privacy burden and makes the feature feel like a light mini game, not a chat-monitoring/summarizing AI tool.
 
 So restarting the chat is no longer:
 > "I have to awkwardly find a topic."
@@ -71,7 +71,7 @@ It becomes:
 - AI Dungeon: long-form RPG, too heavy, doesn't solve a social app's cold start.
 
 ### 2.2 The white space
-Vibe Roles's white space is neither "always-on AI chat" nor "fixed-script mini game", but this chain:
+Roll Call's white space is neither "always-on AI chat" nor "fixed-script mini game", but this chain:
 
 > **Cold-group prompt → one person starts → AI randomly generates story + roles → players intervene with actions → dice resolution → results persist and shape later story → characters affect each other → external friends interfere (time-limited) → AI integrates everything → shareable ending card.**
 
@@ -289,7 +289,7 @@ At the end:
 > Most pivotal roll: Kai D20 = 15, found the loop evidence
 > Best external intervention: a text from your future self
 > Group's final mood: chaotic but alive again
-> Start your own Vibe Roles on Zymix
+> Start your own Roll Call on Zymix
 
 ---
 
@@ -319,9 +319,9 @@ At the end:
 
 ## 8. ZYMIX-native integration
 
-| ZYMIX feature | How Vibe Roles uses it |
+| ZYMIX feature | How Roll Call uses it |
 |---|---|
-| Mini Apps (one tap) | Vibe Roles / Quest Mode entry |
+| Mini Apps (one tap) | Roll Call / Quest Mode entry |
 | Group spaces | Where a cold group is revived |
 | Social Scene / nearby events | Quests can be framed as "side quests at a real event" |
 | Contacts / external share | Bring WhatsApp friends into the time-limited intervention page |
@@ -330,7 +330,7 @@ At the end:
 | Leaderboards | Optional: most chaotic external intervention / Best Quest Card today |
 
 Key point:
-> Vibe Roles doesn't just consume content inside ZYMIX — it lets ZYMIX users pull external friends into a lightweight interactive entry. That fits an early, low-download state better than a pure in-chat feature.
+> Roll Call doesn't just consume content inside ZYMIX — it lets ZYMIX users pull external friends into a lightweight interactive entry. That fits an early, low-download state better than a pure in-chat feature.
 
 ---
 
@@ -397,7 +397,7 @@ Key point:
     { "source_friend": "Maya", "type": "message", "title": "Future Self Text", "effect": "Every character receives a different message from their future self.", "trigger": "next_round", "expires_after_minutes": 5, "visibility": "disappearing_invitation" }
   ],
   "ending": "The group escapes by discovering which future message was lying.",
-  "share_card": { "title": "Quest Completed", "caption": "Chaotic but alive", "best_interference": "Future Self Text", "cta": "Start your own Vibe Roles on Zymix" }
+  "share_card": { "title": "Quest Completed", "caption": "Chaotic but alive", "best_interference": "Future Self Text", "cta": "Start your own Roll Call on Zymix" }
 }
 ```
 
@@ -484,10 +484,10 @@ Players keep choosing actions and rolling.
 > Most pivotal roll: Kai D20 = 15
 > Best intervention: a text from your future self
 > Group's final mood: chaotic but alive again
-> Start your own Vibe Roles on Zymix
+> Start your own Roll Call on Zymix
 
 Closing line:
-> Vibe Roles makes one quiet group enough to start a social moment, without reading chat history or forcing users to come up with a topic.
+> Roll Call makes one quiet group enough to start a social moment, without reading chat history or forcing users to come up with a topic.
 
 ---
 
@@ -525,8 +525,8 @@ Closing line:
 
 ## 15. Devpost short product brief (draft)
 
-**Vibe Roles is an AI-native mini adventure for ZYMIX group chats. When a group goes quiet for around 72 hours, a small prompt appears inside the chat: "This group has been quiet for a while. Start a mini adventure?" If one person starts it, AI randomly generates a short story world and assigns each member a role. Players choose actions or type their own interventions, then roll a D20 to decide whether their actions succeed. Every result changes the ongoing story state, affects other characters, and shapes the final ending.**
+**Roll Call is an AI-native mini adventure for ZYMIX group chats. When a group goes quiet for around 72 hours, a small prompt appears inside the chat: "This group has been quiet for a while. Start a mini adventure?" If one person starts it, AI randomly generates a short story world and assigns each member a role. Players choose actions or type their own interventions, then roll a D20 to decide whether their actions succeed. Every result changes the ongoing story state, affects other characters, and shapes the final ending.**
 
 **The feature does not read chat history. It only detects that the group has been inactive, then creates a new shared event for the group. Users can also send a 5-minute disappearing invite to external friends, who can add a temporary event, message, character, object, rule or condition to interfere with the story. At the end, AI generates a shareable ending card with the best moment from the adventure.**
 
-**Why it matters:** many Gen Z groups form around temporary connections — classmates, project partners, travel groups, activity friends, food buddies, or casual circles. These groups often go quiet not because people stopped caring, but because nobody wants to restart the conversation. Vibe Roles turns that awkward restart into a light, playable moment.
+**Why it matters:** many Gen Z groups form around temporary connections — classmates, project partners, travel groups, activity friends, food buddies, or casual circles. These groups often go quiet not because people stopped caring, but because nobody wants to restart the conversation. Roll Call turns that awkward restart into a light, playable moment.

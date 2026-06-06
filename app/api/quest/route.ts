@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { isOffline } from "@/lib/env";
-import { buildQuestPrompt } from "@/lib/director";
+import { buildQuestPrompt, padWithNPCs } from "@/lib/director";
 import { glmJSON } from "@/lib/glm";
 import { fallbackQuest, fallbackPrologue } from "@/lib/fallback";
 import { QuestSchema, type Quest } from "@/lib/schema";
@@ -10,7 +10,9 @@ export async function POST(req: NextRequest) {
   let body: { questId?: string; members?: unknown; theme?: string } = {};
   try { body = await req.json(); } catch { /* malformed body → fall through to fallback */ }
   const { questId, members, theme } = body;
-  const names: string[] = Array.isArray(members) ? (members as string[]) : [];
+  let names: string[] = Array.isArray(members) ? (members as string[]) : [];
+  // DESIGN.md §7.1: 填充 NPC 确保至少 3 个角色
+  names = padWithNPCs(names);
   let quest: Quest;
   if (isOffline()) quest = fallbackQuest(names, theme);
   else {

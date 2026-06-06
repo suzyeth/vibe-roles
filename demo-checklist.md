@@ -1,4 +1,4 @@
-# Demo Checklist — Vibe Dice
+# Demo Checklist — Roll Call
 
 ## Offline Demo (GLM_OFFLINE=true)
 - [ ] Start screen shows dead group

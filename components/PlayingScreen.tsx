@@ -289,6 +289,13 @@ export default function PlayingScreen({ game }: { game: GameHook }) {
                     <span className="opacity-90">· {msg.dice.label}</span>
                   </div>
                 )}
+                {/* DM verdict chip — short success/trouble call, like the reference */}
+                {msg.dice && (
+                  <div className="mt-1 flex items-center gap-1 text-xs font-medium" style={{ color: msg.dice.value >= 11 ? 'var(--zymix-green)' : '#F97316' }}>
+                    <span>{msg.dice.value >= 11 ? '✅' : '⚠️'}</span>
+                    <span>{msg.author}{msg.dice.value >= 11 ? "'s move pays off." : ' hits a snag.'}</span>
+                  </div>
+                )}
               </div>
             </div>
           );

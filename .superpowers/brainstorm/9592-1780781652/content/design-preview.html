@@ -1,0 +1,62 @@
+<h2>改进设计预览</h2>
+<p class="subtitle">消息气泡 + 叙事文本的改进对比</p>
+
+<div class="split">
+  <!-- 当前实现 -->
+  <div class="mockup">
+    <div class="mockup-header">当前实现</div>
+    <div class="mockup-body" style="background: #F5F5F5; padding: 12px; gap: 8px; display: flex; flex-direction: column;">
+      <!-- You 的消息（无头像） -->
+      <div style="display: flex; justify-content: flex-end; align-items: flex-end; gap: 8px;">
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; max-width: 72%;">
+          <div style="background: #E8F8EE; color: #1A1A1A; padding: 12px 16px; border-radius: 18px 18px 4px 18px; font-size: 14px;">
+            Search the area
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px; padding: 6px 10px; background: #1DB954; border-radius: 12px; color: white; font-size: 12px; font-weight: bold;">
+            <span>⚔️</span><span>D20 = 15</span><span>·</span><span>Success</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 叙事（无角色名） -->
+      <div style="background: white; padding: 12px; border-radius: 12px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+          <span style="font-size: 18px;">🎬</span>
+          <span style="font-size: 11px; color: #1DB954; font-weight: 600; text-transform: uppercase;">Story</span>
+        </div>
+        <div style="font-size: 14px; color: #1A1A1A; line-height: 1.5;">The story pushes on...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 改进后 -->
+  <div class="mockup">
+    <div class="mockup-header">改进后</div>
+    <div class="mockup-body" style="background: #F5F5F5; padding: 12px; gap: 8px; display: flex; flex-direction: column;">
+      <!-- You 的消息（带头像+名称） -->
+      <div style="display: flex; justify-content: flex-end; align-items: flex-end; gap: 8px;">
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; max-width: 72%;">
+          <span style="font-size: 12px; color: #666666; padding: 0 4px;">You</span>
+          <div style="background: #E8F8EE; color: #1A1A1A; padding: 12px 16px; border-radius: 18px 18px 4px 18px; font-size: 14px;">
+            Search the area
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px; padding: 6px 10px; background: #1DB954; border-radius: 12px; color: white; font-size: 12px; font-weight: bold;">
+            <span>⚔️</span><span>D20 = 15</span><span>·</span><span>Success</span>
+          </div>
+        </div>
+        <div style="width: 32px; height: 32px; border-radius: 50%; background: #E8F8EE; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">
+          🫵
+        </div>
+      </div>
+
+      <!-- 叙事（有角色名） -->
+      <div style="background: white; padding: 12px; border-radius: 12px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+          <span style="font-size: 18px;">🎬</span>
+          <span style="font-size: 11px; color: #1DB954; font-weight: 600; text-transform: uppercase;">Story — You's move caused this:</span>
+        </div>
+        <div style="font-size: 14px; color: #1A1A1A; line-height: 1.5;">The story pushes on...</div>
+      </div>
+    </div>
+  </div>
+</div>

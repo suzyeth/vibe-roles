@@ -1,10 +1,10 @@
-# Vibe Roles — Engineering Spec (SPEC v2.0)
+# Roll Call — Engineering Spec (SPEC v2.0)
 
 > Single implementation reference for engineers. Product rationale & scenarios: DESIGN.md (this spec follows the latest DESIGN). Architecture/status: PLAN.md.
 > Last updated: 2026-06-06
 
 ## 0. Positioning (engineer version)
-**Vibe Roles is a ZYMIX-native cold-group-revival mini game.** A group that's been quiet ~72h shows a light in-chat prompt; one tap starts an AI-generated, DND-like adventure. The AI generates the story & roles **randomly, without reading chat history**, then maintains a persistent **story_state**: every action + D20 roll produces a lasting consequence that affects later beats and the relationships between characters. External friends can add ONE intervention via a **5-minute disappearing invite**. The run ends with a shareable card.
+**Roll Call is a ZYMIX-native cold-group-revival mini game.** A group that's been quiet ~72h shows a light in-chat prompt; one tap starts an AI-generated, DND-like adventure. The AI generates the story & roles **randomly, without reading chat history**, then maintains a persistent **story_state**: every action + D20 roll produces a lasting consequence that affects later beats and the relationships between characters. External friends can add ONE intervention via a **5-minute disappearing invite**. The run ends with a shareable card.
 
 Hard product constraints (must hold in code):
 - **Never read chat history.** Generation inputs: inactivity flag + member count + member names + ~3-min budget only.
@@ -130,7 +130,7 @@ interface ShareCard { title: string; caption: string; best_interference: string;
 
 ### 3.1 Call 1 (opening, no chat history)
 ```
-You are the AI Game Master for Vibe Roles. Randomly generate a 3-minute group adventure. DO NOT use or assume any chat history.
+You are the AI Game Master for Roll Call. Randomly generate a 3-minute group adventure. DO NOT use or assume any chat history.
 INPUT: members = {names}; theme = {theme or "random from safe pool"}; member_count = {n}.
 Output JSON ONLY:
 {"scene":{"theme":"...","setup":"2-3 vivid sentences, a crisis/mystery","tone":"chaotic, playful, safe"},
@@ -164,7 +164,7 @@ Rules: type fits the input; safe, fun, weaveable; filter violence/explicit/hate/
 ```
 Write the ending and the share card. Reference what actually happened (rounds + story_state). Output JSON ONLY:
 {"ending":"3-5 sentence twist ending, resolve the crisis, end on a high note",
- "share_card":{"title":"punchy title","caption":"<=5 words mood","best_interference":"best intervention title or 'pure chaos within'","cta":"Start your own Vibe Roles on Zymix"}}
+ "share_card":{"title":"punchy title","caption":"<=5 words mood","best_interference":"best intervention title or 'pure chaos within'","cta":"Start your own Roll Call on Zymix"}}
 ```
 Every call has a fallback (§6) and Zod validation.
 

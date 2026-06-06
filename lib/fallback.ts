@@ -1,5 +1,6 @@
 import type { Quest, FateCard, RoundResult, QuestCard, ActionOptions } from "@/lib/schema";
 import { rollLabel } from "@/lib/dice";
+import { padWithNPCs } from "@/lib/director";
 
 type FallbackVariant = { setup: string; goal: string; roles: { role: string; ability: string }[] };
 const VARIANTS: Record<string, FallbackVariant> = {
@@ -9,12 +10,19 @@ const VARIANTS: Record<string, FallbackVariant> = {
   "Dorm Kitchen Mystery": { setup: "A mysterious takeaway arrives in the dorm kitchen, addressed to someone who doesn't exist.", goal: "Uncover who placed the order and why.", roles: [{ role: "Flatmate Chef", ability: "Smells a lie a mile off" }, { role: "Hungry Gremlin", ability: "Always near the food" }, { role: "Clean Freak", ability: "Notices anything out of place" }, { role: "Night Snacker", ability: "Roams the kitchen at 3am" }, { role: "Suspicious Landlord", ability: "Has keys to everything" }] },
 };
 export function fallbackQuest(members: string[], theme?: string): Quest {
-  const names = members.length ? members : ["You"];
+  // DESIGN.md §7.1: 填充 NPC 确保至少 3 个角色
+  const names = members.length ? padWithNPCs(members) : ["You", "Ghost", "Shadow"];
+  const originalMembers = members.length ? members : ["You"];
   const t = theme && VARIANTS[theme] ? theme : "The 404 Customer";
   const v = VARIANTS[t];
   return {
     scene: { theme: t, setup: v.setup, tone: "chaotic, playful, safe" },
-    players: names.map((n, i) => ({ name: n, role: v.roles[i % v.roles.length].role, ability: v.roles[i % v.roles.length].ability, status: "active" as const })),
+    players: names.map((n, i) => ({
+      name: n,
+      role: v.roles[i % v.roles.length].role,
+      ability: v.roles[i % v.roles.length].ability,
+      status: originalMembers.includes(n) ? ("active" as const) : ("npc" as const),
+    })),
     goal: v.goal,
   };
 }

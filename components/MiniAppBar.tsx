@@ -8,7 +8,7 @@ export function MiniAppBar() {
           <div className="text-[10px]" style={{ color: "#1DB954" }}>Zymix · Mini App</div>
         </div>
       </div>
-      <span className="rounded-full px-2 py-0.5 text-[10px] font-medium text-white" style={{ backgroundColor: "#1DB954" }}>Vibe Roles</span>
+      <span className="rounded-full px-2 py-0.5 text-[10px] font-medium text-white" style={{ backgroundColor: "#1DB954" }}>Roll Call</span>
     </header>
   );
 }

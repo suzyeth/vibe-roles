@@ -7,7 +7,8 @@ const MODEL = process.env.GLM_MODEL ?? "glm-4.6";
 async function call(messages: Msg[], jsonMode: boolean): Promise<string> {
   // Bound the call so a slow/hung GLM never freezes the route (and the UI) forever.
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), Number(process.env.GLM_TIMEOUT_MS ?? 18000));
+  // Short timeout: try real GLM, but fall back fast so the UI never stalls.
+  const timer = setTimeout(() => controller.abort(), Number(process.env.GLM_TIMEOUT_MS ?? 4000));
   try {
     const res = await fetch(`${BASE}/chat/completions`, {
       method: "POST",

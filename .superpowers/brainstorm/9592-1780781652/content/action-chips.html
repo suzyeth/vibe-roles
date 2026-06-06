@@ -1,0 +1,64 @@
+<h2>选项选择界面改进</h2>
+<p class="subtitle">参考 vibe-dice-demo 的 chip 式设计</p>
+
+<div class="split">
+  <!-- 当前 -->
+  <div class="mockup">
+    <div class="mockup-header">当前：全宽按钮</div>
+    <div class="mockup-body" style="background: white; padding: 16px; gap: 8px; display: flex; flex-direction: column;">
+      <div class="text-xs" style="color: #999999;">Your turn · What do you do?</div>
+      <button style="background: #F5F5F5; padding: 12px 16px; border-radius: 12px; text-align: left; color: #1A1A1A; border: 1px solid #E5E5E0;">
+        Search the area
+      </button>
+      <button style="background: #F5F5F5; padding: 12px 16px; border-radius: 12px; text-align: left; color: #1A1A1A; border: 1px solid #E5E5E0;">
+        Use your ability
+      </button>
+      <button style="background: #F5F5F5; padding: 12px 16px; border-radius: 12px; text-align: left; color: #1A1A1A; border: 1px solid #E5E5E0;">
+        Take a bold move
+      </button>
+      <div style="margin-top: 8px; border-top: 1px solid #E5E5E0; padding-top: 12px;">
+        <button style="width: 100%; background: #1DB954; padding: 14px; border-radius: 12px; color: white; font-weight: bold;">
+          🎲 Roll the die
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 改进后 -->
+  <div class="mockup">
+    <div class="mockup-header">改进后：Chip式选项</div>
+    <div class="mockup-body" style="background: #F5F5F0; padding: 16px; gap: 12px; display: flex; flex-direction: column;">
+      <!-- 底部输入栏 -->
+      <div style="display: flex; align-items: center; gap: 8px; padding: 12px; background: white; border-radius: 12px; border: 1px solid #E5E5E0;">
+        <div style="width: 36px; height: 36px; background: #dcfce7; border: 2px solid #16a34a; border-radius: 50%; display: flex; align-items: center; justify-content: center;">🎲</div>
+        <div style="width: 36px; height: 36px; background: #ede9fe; border: 2px solid #c4b5fd; border-radius: 50%; display: flex; align-items: center; justify-content: center;">🔗</div>
+        <div style="flex: 1; background: #F0F0EB; padding: 10px 16px; border-radius: 20px; color: #999999; font-size: 14px;">
+          选择你的行动...
+        </div>
+        <div style="width: 36px; height: 36px; background: #16a34a; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">→</div>
+      </div>
+
+      <!-- 专属选项（展开区域） -->
+      <div>
+        <div style="font-size: 12px; color: #6b7280; margin-bottom: 8px;">🎭 你的专属选项：</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+          <button style="background: #dcfce7; color: #16a34a; padding: 8px 16px; border-radius: 20px; font-size: 14px; border: 1px solid #86efac;">
+            🔍 Search the area
+          </button>
+          <button style="background: #dcfce7; color: #16a34a; padding: 8px 16px; border-radius: 20px; font-size: 14px; border: 1px solid #86efac;">
+            ⚡ Use your ability
+          </button>
+        </div>
+        <div style="font-size: 12px; color: #9ca3af; margin-bottom: 8px;">通用选项：</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+          <button style="background: #f3f4f6; color: #374151; padding: 8px 16px; border-radius: 20px; font-size: 14px; border: 1px solid #E5E5E0;">
+            💬 Talk to someone
+          </button>
+          <button style="background: #f3f4f6; color: #374151; padding: 8px 16px; border-radius: 20px; font-size: 14px; border: 1px solid #E5E5E0;">
+            🏃 Move carefully
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

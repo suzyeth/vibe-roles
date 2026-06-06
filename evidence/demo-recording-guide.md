@@ -1,4 +1,4 @@
-# Demo Recording Guide — Vibe Dice
+# Demo Recording Guide — Roll Call
 
 > VibeHack London 2026 — 3-minute live demo + 30-second Plan B
 
@@ -52,7 +52,7 @@
 
 ### 2:30–3:00 | Close
 **Action:** Tap "Play again"
-**Say:** "One user is enough to start. The story spreads via WhatsApp. External friends join without downloading. The Quest Card pulls them back to ZYMIX. This is Vibe Dice — the Mini App that revives cold chats."
+**Say:** "One user is enough to start. The story spreads via WhatsApp. External friends join without downloading. The Quest Card pulls them back to ZYMIX. This is Roll Call — the Mini App that revives cold chats."
 
 ---
 

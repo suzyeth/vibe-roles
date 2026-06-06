@@ -1,4 +1,4 @@
-# Vibe Dice — Implementation Plan & Status
+# Roll Call — Implementation Plan & Status
 
 > The prototype is implemented and passing tests, so this is now an architecture + build reference rather than a task-by-task TDD script. Product rules live in [DESIGN.md](./DESIGN.md); the **canonical engineering spec is [SPEC.md](./SPEC.md)** (state machine, schemas, AI calls, routes, UI, fallback, demo data) — if anything here disagrees with SPEC.md, SPEC.md wins; award/GLM setup in [ORBIT-GLM-GUIDE.md](./ORBIT-GLM-GUIDE.md).
 >

@@ -1,6 +1,6 @@
 # Z.ai × Orbit + GLM Operations Guide (follow on event day)
 
-> Vibe Dice · VibeHack London 2026. This file pins down how to win the Z.ai×Orbit award and how to wire GLM, so the team can just follow it on the day.
+> Roll Call · VibeHack London 2026. This file pins down how to win the Z.ai×Orbit award and how to wire GLM, so the team can just follow it on the day.
 
 ## In one line
 Z.ai×Orbit award = **actually build the project with Z.ai/GLM** + let **Orbie** observe/record the whole process → generate a package at the end → upload to **orbit24.uk (NOT Devpost)**. It scores the process evidence, not the result. 4 lenses × £300 = £1,200 total.
@@ -57,7 +57,7 @@ Acknowledge once, then stay silent until I name you ("Orbie, ...") or use // @or
 
 ---
 
-# Method B · Call GLM from inside the Vibe Dice app (→ Best Product Integration)
+# Method B · Call GLM from inside the Roll Call app (→ Best Product Integration)
 
 > Make GLM the product's core engine (quest generation, roll narration, Fate Card structuring, Quest Card copy). Reference code below (Next.js App Router).
 > ⚠️ **Confirm the endpoint and model name against the event resources / Discord.** Z.ai's OpenAI-compatible base is usually `https://api.z.ai/api/paas/v4` (product calls) or `https://api.z.ai/api/coding/paas/v4` (coding). Start with `glm-4.6` and swap once confirmed.

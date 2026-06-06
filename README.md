@@ -1,10 +1,10 @@
-# Vibe Roles
+# Roll Call
 
 A ZYMIX-native cold-group-revival mini game. When a group chat has been quiet for ~72 hours, a light prompt appears: *"This group's been quiet for a while. Start a mini adventure?"* If one person taps Start, the AI **randomly generates** a DND-like story (without reading chat history) and assigns each member a role. Players pick actions or type their own, roll a **D20** to resolve, and every result changes the ongoing story and the relationships between characters. External friends can add one intervention via a **5-minute disappearing invite**. It ends with a shareable ending card.
 
 VibeHack London 2026 · Track 2 "Vibe with ZYMIX". Full design: [DESIGN.md](./DESIGN.md).
 
-> Naming note: the product is **Vibe Roles** (mode: *Quest Mode / Roll to Revive*). Some files/code may still say the earlier name "Vibe Dice" — DESIGN.md is the latest source of truth.
+> Naming note: the product is **Roll Call** (mode: *Quest Mode / Roll to Revive*). Some files/code may still say the earlier name "Roll Call" — DESIGN.md is the latest source of truth.
 
 ## Quick start
 
@@ -44,7 +44,7 @@ npm run dev   # http://localhost:3000
 - Fotor guidance: https://docs.google.com/document/d/1FnOiqmQWjoWLAktPTt81D0cspQYlE8PdJJprY0vURo0/edit
 
 ## Doc map
-- [DESIGN.md](./DESIGN.md) — product design (latest: Vibe Roles, 72h cold prompt, random story, D20, 5-min invite, story_state)
+- [DESIGN.md](./DESIGN.md) — product design (latest: Roll Call, 72h cold prompt, random story, D20, 5-min invite, story_state)
 - [SPEC.md](./SPEC.md) — engineering spec (predates this revision; reconcile naming/dice labels to DESIGN.md)
 - [PLAN.md](./PLAN.md) — architecture & status
 - [ORBIT-GLM-GUIDE.md](./ORBIT-GLM-GUIDE.md) — Z.ai×Orbit + GLM setup

@@ -7,7 +7,7 @@ export function QuestCard({ card }: { card: QC }) {
   async function save() {
     if (!ref.current) return;
     const url = await exportCardPng(ref.current);
-    const a = document.createElement("a"); a.href = url; a.download = "vibe-dice-quest.png"; a.click();
+    const a = document.createElement("a"); a.href = url; a.download = "roll-call-card.png"; a.click();
   }
   return (
     <div className="flex flex-col items-center">
@@ -16,7 +16,7 @@ export function QuestCard({ card }: { card: QC }) {
         <div className="my-2 text-2xl font-extrabold">🎲 {card.final_roll} · {card.caption}</div>
         <div className="text-sm opacity-90">Best Interference: {card.best_interference}</div>
         <div className="mt-3 text-xs opacity-80">{card.cta}</div>
-        <div className="mt-2 text-right text-[10px] opacity-70">Vibe Dice · Zymix</div>
+        <div className="mt-2 text-right text-[10px] opacity-70">Roll Call · Zymix</div>
       </div>
       <button type="button" onClick={save} className="rounded-full bg-white/90 px-4 py-2 font-semibold text-fuchsia-700">⬇️ Save Quest Card</button>
     </div>

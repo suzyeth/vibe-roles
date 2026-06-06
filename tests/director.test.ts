@@ -1,6 +1,31 @@
 import { describe, it, expect } from "vitest";
-import { buildQuestPrompt, buildRollPrompt, buildFateCardPrompt, buildQuestCardPrompt, buildProloguePrompt } from "@/lib/director";
+import { buildQuestPrompt, buildRollPrompt, buildFateCardPrompt, buildQuestCardPrompt, buildProloguePrompt, padWithNPCs } from "@/lib/director";
 import type { Quest } from "@/lib/schema";
+
+describe("padWithNPCs", () => {
+  it("1人填充到3个（添加2个NPC）", () => {
+    const result = padWithNPCs(["Mia"]);
+    expect(result).toHaveLength(3);
+    expect(result[0]).toBe("Mia");
+    expect(result).toContain("Mia");
+  });
+  it("2人填充到3个（添加1个NPC）", () => {
+    const result = padWithNPCs(["Mia", "Kai"]);
+    expect(result).toHaveLength(3);
+    expect(result).toContain("Mia");
+    expect(result).toContain("Kai");
+  });
+  it("3人及以上不填充", () => {
+    const result = padWithNPCs(["Mia", "Kai", "Momo"]);
+    expect(result).toHaveLength(3);
+    const more = padWithNPCs(["Mia", "Kai", "Momo", "Emma"]);
+    expect(more).toHaveLength(4);
+  });
+  it("空数组返回 You", () => {
+    const result = padWithNPCs([]);
+    expect(result.length).toBeGreaterThanOrEqual(1);
+  });
+});
 
 describe("director prompts", () => {
   it("buildQuestPrompt includes members and theme, asks for JSON", () => {

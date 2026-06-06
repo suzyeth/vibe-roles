@@ -10,7 +10,7 @@ describe("buildActionsPrompt", () => {
       "The Unread Beast stole the last topic.",
       { name: "Mia", role: "The Overthinking Wizard" }
     );
-    expect(system).toContain("Vibe Dice Game Master");
+    expect(system).toContain("Roll Call Game Master");
     expect(system).toContain("2-3 concrete action options");
     expect(system).toContain("JSON ONLY");
     expect(user).toContain("Mia the The Overthinking Wizard");

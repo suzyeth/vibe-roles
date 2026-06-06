@@ -1,0 +1,131 @@
+<h2>完整界面改进对比</h2>
+<p class="subtitle">消息流 + 选项选择区域</p>
+
+<div class="split">
+  <!-- 当前 -->
+  <div class="mockup">
+    <div class="mockup-header">当前实现</div>
+    <div class="mockup-body" style="background: #F5F5F5; height: 500px; display: flex; flex-direction: column;">
+      <!-- 消息区域 -->
+      <div style="flex: 1; padding: 12px; overflow: hidden;">
+        <!-- 叙事 -->
+        <div style="background: white; padding: 12px; border-radius: 12px; margin-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+            <span style="font-size: 18px;">🎬</span>
+            <span style="font-size: 11px; color: #1DB954; font-weight: 600; text-transform: uppercase;">Story</span>
+          </div>
+          <div style="font-size: 14px; color: #1A1A1A;">The dark cavern stretches before you...</div>
+        </div>
+
+        <!-- NPC 消息 -->
+        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+          <div style="width: 32px; height: 32px; background: #4ECDC4; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px;">🦌</div>
+          <div>
+            <div style="font-size: 12px; color: #666666;">Mia</div>
+            <div style="background: white; padding: 12px 16px; border-radius: 18px 18px 18px 4px; font-size: 14px; color: #1A1A1A;">
+              Let's stick together.
+            </div>
+          </div>
+        </div>
+
+        <!-- Your 消息（无头像） -->
+        <div style="display: flex; justify-content: flex-end;">
+          <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; max-width: 72%;">
+            <div style="background: #E8F8EE; color: #1A1A1A; padding: 12px 16px; border-radius: 18px 18px 4px 18px; font-size: 14px;">
+              Search the area
+            </div>
+            <div style="display: flex; align-items: center; gap: 4px; padding: 6px 10px; background: #1DB954; border-radius: 12px; color: white; font-size: 12px; font-weight: bold;">
+              <span>⚔️</span><span>D20 = 15</span><span>·</span><span>Success</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 选项区域 -->
+      <div style="background: white; padding: 16px; border-top: 1px solid #E5E5E0;">
+        <div style="text-align: center; font-size: 12px; color: #999999; margin-bottom: 8px;">Your turn · What do you do?</div>
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+          <button style="background: #F5F5F5; padding: 12px 16px; border-radius: 12px; text-align: left; color: #1A1A1A; border: 1px solid #E5E5E0;">
+            Search the area
+          </button>
+          <button style="background: #F5F5F5; padding: 12px 16px; border-radius: 12px; text-align: left; color: #1A1A1A; border: 1px solid #E5E5E0;">
+            Use your ability
+          </button>
+        </div>
+        <button style="width: 100%; background: #1DB954; padding: 14px; border-radius: 12px; color: white; font-weight: bold;">
+          🎲 Roll the die
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 改进后 -->
+  <div class="mockup">
+    <div class="mockup-header">改进后</div>
+    <div class="mockup-body" style="background: #F5F5F0; height: 500px; display: flex; flex-direction: column;">
+      <!-- 消息区域 -->
+      <div style="flex: 1; padding: 12px; overflow: hidden;">
+        <!-- 叙事（带角色名） -->
+        <div style="background: white; padding: 12px; border-radius: 12px; margin-bottom: 12px; border: 1px solid #bbf7d0;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+            <span style="font-size: 18px;">🎬</span>
+            <span style="font-size: 11px; color: #1DB954; font-weight: 600; text-transform: uppercase;">Story — Mia's move caused this:</span>
+          </div>
+          <div style="font-size: 14px; color: #1A1A1A;">The dark cavern stretches before you...</div>
+        </div>
+
+        <!-- NPC 消息 -->
+        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+          <div style="width: 32px; height: 32px; background: #f3f4f6; border: 2px solid #6366f1; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px;">J</div>
+          <div>
+            <div style="font-size: 12px; color: #666666;">Jake</div>
+            <div style="background: white; padding: 12px 16px; border-radius: 18px 18px 18px 4px; font-size: 14px; color: #1A1A1A; border: 1px solid #E5E5E0; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+              Let's stick together.
+            </div>
+          </div>
+        </div>
+
+        <!-- Your 消息（带头像） -->
+        <div style="display: flex; justify-content: flex-end; gap: 8px;">
+          <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; max-width: 72%;">
+            <span style="font-size: 12px; color: #666666; padding: 0 4px;">You</span>
+            <div style="background: #16a34a; color: white; padding: 12px 16px; border-radius: 18px 18px 4px 18px; font-size: 14px;">
+              🔍 Search the area
+            </div>
+            <div style="display: flex; align-items: center; gap: 4px; padding: 6px 10px; background: #f0fdf4; border-radius: 12px; border: 1px solid #dcfce7; align-self: flex-end;">
+              <span style="font-weight: bold; color: #16a34a;">⚔️ D20 = 15</span>
+              <span style="padding: 2px 8px; background: #16a34a; border-radius: 12px; color: white; font-size: 12px; font-weight: bold;">Success</span>
+            </div>
+          </div>
+          <div style="width: 32px; height: 32px; background: #dcfce7; border: 2px solid #16a34a; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px;">🫵</div>
+        </div>
+      </div>
+
+      <!-- 底部输入栏 + 选项 Chips -->
+      <div style="background: white; border-top: 1px solid #E5E5E0; box-shadow: 0 -1px 4px rgba(0,0,0,0.04);">
+        <!-- 专属选项区域 -->
+        <div style="padding: 12px 16px 8px;">
+          <div style="font-size: 12px; color: #6b7280; margin-bottom: 8px;">🎭 你的专属选项：</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+            <button style="background: #dcfce7; color: #16a34a; padding: 8px 16px; border-radius: 20px; font-size: 14px; border: 1px solid #86efac;">
+              🔍 Search the area
+            </button>
+            <button style="background: #dcfce7; color: #16a34a; padding: 8px 16px; border-radius: 20px; font-size: 14px; border: 1px solid #86efac;">
+              ⚡ Use your ability
+            </button>
+          </div>
+        </div>
+
+        <!-- 底部输入栏 -->
+        <div style="display: flex; align-items: center; gap: 8px; padding: 8px 16px 12px;">
+          <div style="width: 36px; height: 36px; background: #dcfce7; border: 2px solid #16a34a; border-radius: 50%; display: flex; align-items: center; justify-content: center;">🎲</div>
+          <div style="width: 36px; height: 36px; background: #ede9fe; border: 2px solid #c4b5fd; border-radius: 50%; display: flex; align-items: center; justify-content: center;">🔗</div>
+          <div style="flex: 1; background: #F0F0EB; padding: 10px 16px; border-radius: 20px; color: #999999; font-size: 14px;">
+            选择你的行动...
+          </div>
+          <div style="width: 36px; height: 36px; background: #16a34a; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">→</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
