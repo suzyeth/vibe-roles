@@ -1,205 +1,140 @@
 "use client";
-import { useRef, useState } from "react";
-import { PRESET_MEMBERS } from "@/data/members";
-import { DEAD_GROUP } from "@/data/deadGroup";
-import { QUEST_THEMES } from "@/data/quest";
-import { MiniAppBar } from "@/components/MiniAppBar";
-import { DeadGroup } from "@/components/DeadGroup";
-import { MessageBubble, type ChatMsg } from "@/components/MessageBubble";
-import { DiceRoller } from "@/components/DiceRoller";
-import { RollResultBanner } from "@/components/RollResultBanner";
-import { FateCardList } from "@/components/FateCardList";
-import { QuestCard } from "@/components/QuestCard";
-import type { Quest, FateCard, QuestCard as QC, Player } from "@/lib/schema";
-
-type Phase = "cold" | "loading" | "choosing" | "rolling" | "playing" | "ended";
-const TOTAL_ROUNDS = PRESET_MEMBERS.length; // everyone (incl. "You") acts once
+import { useState, useEffect } from 'react';
+import { useGameState } from '@/hooks/useGameState';
+import LobbyScreen from '@/components/LobbyScreen';
+import ThemeScreen from '@/components/ThemeScreen';
+import PlayingScreen from '@/components/PlayingScreen';
+import EndingCard from '@/components/EndingCard';
+import { PRESET_MEMBERS } from '@/data/members';
 
 export default function Home() {
-  const [phase, setPhase] = useState<Phase>("cold");
-  const [quest, setQuest] = useState<Quest | null>(null);
-  const [msgs, setMsgs] = useState<ChatMsg[]>([]);
-  const [round, setRound] = useState(0);
-  const [last, setLast] = useState<{ roll: number; label: string; advantage?: boolean } | null>(null);
-  const [fate, setFate] = useState<FateCard[]>([]);
-  const [card, setCard] = useState<QC | null>(null);
-  const [showShare, setShowShare] = useState(false);
-  const [actionOptions, setActionOptions] = useState<string[]>([]);
-  const [customAction, setCustomAction] = useState("");
-  const [activePlayer, setActivePlayer] = useState<Player | null>(null);
-  const [selectedAction, setSelectedAction] = useState<string | null>(null);
-  const [showDice, setShowDice] = useState(false);
-  const [isCustomAction, setIsCustomAction] = useState(false);
-  const idRef = useRef(0);
-  const questId = useRef<string>("");
-  const recent = useRef<string>("");
+  const game = useGameState();
+  const { state, startQuest } = game;
+  const [lang, setLang] = useState<'en' | 'zh'>('zh');
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
-  const nextId = () => `m${idRef.current++}`;
-  const shareUrl = typeof window !== "undefined" && questId.current ? `${window.location.origin}/q/${questId.current}` : "";
-  function push(author: string, text: string, kind: ChatMsg["kind"]) {
-    const avatar = kind === "narration" ? "🎬" : (PRESET_MEMBERS.find((m) => m.name === author)?.avatar ?? "🎲");
-    setMsgs((m) => [...m, { id: nextId(), author, avatar, text, kind }]);
-  }
+  // Restore saved theme on mount; apply to <html data-theme> + persist on change.
+  useEffect(() => {
+    const saved = (typeof window !== 'undefined' ? localStorage.getItem('rc-theme') : null) as 'light' | 'dark' | null;
+    if (saved === 'light' || saved === 'dark') setTheme(saved);
+  }, []);
+  useEffect(() => {
+    if (typeof document !== 'undefined') document.documentElement.setAttribute('data-theme', theme);
+    if (typeof window !== 'undefined') localStorage.setItem('rc-theme', theme);
+  }, [theme]);
 
-  async function start(theme: string) {
-    setPhase("loading"); setMsgs([]); setRound(0); setLast(null); setFate([]); setCard(null); setShowShare(false);
-    setActionOptions([]); setCustomAction(""); setActivePlayer(null); setSelectedAction(null); setShowDice(false); setIsCustomAction(false);
-    questId.current = `q_${idRef.current++}_${theme.length}`;
-    let q: Quest;
-    try {
-      const res = await fetch("/api/quest", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ questId: questId.current, members: PRESET_MEMBERS.map((m) => m.name), theme }) });
-      q = await res.json();
-    } catch {
-      setPhase("cold"); // never strand the user on the loading spinner
-      return;
+  const handleStart = () => {
+    game.setPhase('theme');
+  };
+
+  const handleSelectTheme = (selectedTheme: string) => {
+    startQuest(PRESET_MEMBERS.map(m => m.name), selectedTheme);
+  };
+
+  const handlePlayAgain = () => {
+    game.resetGame();
+  };
+
+  const handleShare = () => {
+    if (state.shareUrl) {
+      navigator.clipboard.writeText(state.shareUrl);
+      alert('链接已复制！');
     }
-    setQuest(q);
-    setPhase("playing");
-    // story prologue (generated with the quest): reveal the opening lines one by one before the first roll
-    const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
-    const lines = q.prologue && q.prologue.length ? q.prologue : [q.scene.setup];
-    for (const line of lines) {
-      push("Narrator", line, "narration");
-      recent.current = line;
-      await delay(700);
-    }
-    prepareRound(0);
-  }
-
-  function prepareRound(roundIdx: number) {
-    if (!quest) return;
-    const idx = roundIdx % quest.players.length;
-    const active = quest.players[idx];
-    setActivePlayer(active);
-    setPhase("choosing");
-    setSelectedAction(null);
-    setShowDice(false);
-    fetchActions(active, roundIdx);
-  }
-
-  async function fetchActions(active: { name: string; role: string }, roundIdx: number) {
-    if (!quest) return;
-    try {
-      const res = await fetch("/api/actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ questId: questId.current, recent: recent.current, active: { name: active.name, role: active.role }, seed: roundIdx }) });
-      const data = await res.json();
-      setActionOptions(data.options ?? []);
-    } catch {
-      setActionOptions(["Search the area", "Use your ability", "Take a bold move"]);
-    }
-  }
-
-  async function chooseAction(action: string, isCustom = false) {
-    if (!activePlayer) return;
-    setPhase("rolling");
-    setSelectedAction(action);
-    setIsCustomAction(isCustom);
-    push(activePlayer.name, action, "action");
-    setShowDice(true);
-  }
-
-  async function onRoll(n: number, advantage?: boolean) {
-    if (!selectedAction || !activePlayer) return;
-    setPhase("playing");
-    setActionOptions([]); setCustomAction(""); setSelectedAction(null); setShowDice(false); setIsCustomAction(false);
-    // pull any friend interference submitted via the share link before resolving the roll
-    try {
-      const f = await (await fetch(`/api/fate?questId=${questId.current}`)).json();
-      if (Array.isArray(f.cards)) setFate(f.cards);
-    } catch { /* fate fetch is best-effort */ }
-    try {
-      const res = await fetch("/api/roll", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ questId: questId.current, roll: n, recent: recent.current, round, active: { name: activePlayer.name, role: activePlayer.role }, action: selectedAction }) });
-      const r = await res.json();
-      setLast({ roll: r.roll, label: r.label, advantage });
-      (r.reactions ?? []).forEach((rc: { member: string; text: string }) => push(rc.member, rc.text, "member"));
-      push("Narrator", r.narration, "narration");
-      recent.current = r.narration;
-    } catch {
-      // never hang the demo if the roll API fails
-      setLast({ roll: n, label: "Partial Progress", advantage });
-      push("Narrator", "The scene wavers for a moment, then the story pushes on…", "narration");
-    }
-    const next = round + 1; setRound(next);
-    if (next === 1) setShowShare(true);
-    if (next >= TOTAL_ROUNDS) await finish(n);
-    else prepareRound(next);
-  }
-
-  async function finish(finalRoll: number) {
-    const res = await fetch("/api/questcard", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ questId: questId.current, finalRoll, summary: recent.current }) });
-    setCard(await res.json()); setPhase("ended");
-  }
+  };
 
   return (
-    <main className="mx-auto flex h-screen max-w-md flex-col bg-white text-zinc-900">
-      <MiniAppBar />
-      <div className="flex-1 overflow-y-auto">
-        {phase === "cold" && (
-          <div>
-            <DeadGroup msgs={DEAD_GROUP} />
-            <div className="p-4 text-center">
-              <div className="mb-2 text-zinc-600">This group&apos;s been quiet for a while. Start a mini adventure? 👇</div>
-              <div className="flex flex-wrap justify-center gap-2">
-                {QUEST_THEMES.map((t) => (
-                  <button key={t} type="button" onClick={() => start(t)} className="rounded-full bg-zinc-100 px-4 py-2 hover:bg-emerald-100">{t}</button>
-                ))}
-                <button type="button" onClick={() => start("")} className="rounded-full bg-gradient-to-r from-fuchsia-600 to-indigo-600 px-4 py-2 font-semibold text-white">🎲 Roll to revive</button>
-              </div>
-            </div>
+    <main className="mx-auto flex h-screen flex-col max-w-md">
+      {/* Zymix-style top navigation bar */}
+      <div className="zymix-navbar">
+        {/* Left: back arrow + group name */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => state.phase !== 'lobby' && game.resetGame()}
+            className="flex items-center justify-center w-8 h-8 rounded-full transition-colors"
+            style={{
+              color: 'var(--zymix-green)',
+              background: state.phase !== 'lobby' ? 'var(--zymix-green-light)' : 'transparent',
+            }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
+          <div className="flex flex-col">
+            <span className="font-semibold text-sm leading-tight" style={{ color: 'var(--zymix-text-primary)' }}>
+              UCL Flat 4B 🏠
+            </span>
+            <span className="text-xs" style={{ color: 'var(--zymix-text-tertiary)' }}>{PRESET_MEMBERS.length} members</span>
           </div>
-        )}
-        {phase === "loading" && <div className="p-8 text-center text-zinc-500">Rolling up your quest… 🎲</div>}
-        {quest && phase !== "cold" && (
-          <div className="grid grid-cols-2 gap-2 p-3">
-            {quest.players.map((p) => (
-              <div key={p.name} className={`rounded-xl p-3 text-white transition-all ${activePlayer?.name === p.name ? "bg-gradient-to-br from-fuchsia-500 to-indigo-500 ring-2 ring-fuchsia-400" : "bg-gradient-to-br from-fuchsia-700 to-indigo-700"}`}>
-                <div className="text-xs opacity-80">{p.name}</div><div className="font-bold">{p.role}</div><div className="text-xs opacity-90">{p.ability}</div>
-              </div>
-            ))}
-          </div>
-        )}
-        <FateCardList cards={fate} />
-        {msgs.map((m) => <MessageBubble key={m.id} msg={m} />)}
-        {last && phase !== "choosing" && phase !== "rolling" && <RollResultBanner roll={last.roll} label={last.label} advantage={last.advantage} />}
-        {phase === "ended" && card && <QuestCard card={card} />}
+        </div>
+
+        {/* Center: Roll Call badge */}
+        <div
+          className="flex items-center gap-1.5 px-3 py-1 rounded-full"
+          style={{ background: 'var(--zymix-green-light)' }}
+        >
+          <span className="text-base">🎭</span>
+          <span className="text-xs font-semibold" style={{ color: 'var(--zymix-green)' }}>Roll Call</span>
+        </div>
+
+        {/* Right: theme + language toggles */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="w-8 h-8 flex items-center justify-center rounded-full text-sm"
+            style={{ background: 'var(--zymix-bg)' }}
+            aria-label="Toggle dark mode"
+          >
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
+          <button
+            onClick={() => setLang(lang === 'en' ? 'zh' : 'en')}
+            className="w-8 h-8 flex items-center justify-center rounded-full text-xs font-semibold"
+            style={{ background: 'var(--zymix-bg)', color: 'var(--zymix-text-secondary)' }}
+          >
+            {lang.toUpperCase()}
+          </button>
+        </div>
       </div>
-      {phase === "choosing" && (
-        <div className="border-t border-zinc-200 p-3">
-          <div className="mb-2 text-center text-xs text-zinc-500">
-            {activePlayer?.name}&apos;s turn · What do you do?
-          </div>
-          <div className="flex flex-col gap-2 mb-3">
-            {actionOptions.map((opt, i) => (
-              <button key={i} type="button" onClick={() => chooseAction(opt)} className="rounded-lg bg-zinc-100 px-3 py-2 text-left text-sm hover:bg-emerald-100 transition-colors">
-                {opt}
-              </button>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <input type="text" placeholder="Or type your own action…" value={customAction} onChange={(e) => setCustomAction(e.target.value)} className="flex-1 rounded bg-zinc-100 px-3 py-2 text-sm placeholder-zinc-500" />
-            <button type="button" onClick={() => customAction && chooseAction(customAction, true)} disabled={!customAction.trim()} className="rounded bg-emerald-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">Go</button>
-          </div>
-        </div>
-      )}
-      {showDice && phase === "rolling" && (
-        <div className="border-t border-zinc-200 p-3">
-          <div className="px-3 pt-2 text-center text-xs text-zinc-500">Rolling the die…</div>
-          <DiceRoller onRoll={onRoll} advantage={isCustomAction} />
-        </div>
-      )}
-      {phase === "playing" && (
-        <div className="border-t border-zinc-200">
-          <div className="px-3 pt-2 text-center text-xs text-zinc-500">Round {round + 1}/{TOTAL_ROUNDS} · tap the die to continue</div>
-          <DiceRoller onRoll={onRoll} advantage={isCustomAction} />
-          {showShare && shareUrl && (
-            <div className="px-3 pb-3 text-center">
-              <div className="text-xs text-zinc-500 mb-1">Let WhatsApp friends interfere with your quest:</div>
-              <input readOnly value={shareUrl} className="w-full rounded bg-zinc-100 px-2 py-1 text-xs" onFocus={(e) => e.currentTarget.select()} />
-              <a href={shareUrl} target="_blank" className="mt-1 inline-block text-xs underline text-emerald-600">Open interference page (demo)</a>
+
+      {/* Main content area */}
+      <div className="flex-1" style={{ background: 'var(--zymix-bg)' }}>
+        {state.phase === 'lobby' && (
+          <LobbyScreen
+            onStart={handleStart}
+            lang={lang}
+            testMode={game.testMode}
+            onToggleTestMode={() => game.setTestMode(!game.testMode)}
+          />
+        )}
+        {state.phase === 'theme' && (
+          <ThemeScreen
+            onSelect={handleSelectTheme}
+            lang={lang}
+          />
+        )}
+        {state.phase === 'loading' && (
+          <div className="flex items-center justify-center h-full" style={{ color: 'var(--zymix-text-tertiary)' }}>
+            <div className="text-center">
+              <div className="text-3xl mb-2">🎲</div>
+              <div className="text-sm">{lang === 'zh' ? '正在生成冒险…' : 'Rolling up your quest…'}</div>
             </div>
-          )}
-        </div>
-      )}
-      {phase === "ended" && <button type="button" onClick={() => setPhase("cold")} className="m-3 rounded-full bg-emerald-500 py-2 text-white">Play again 🔁</button>}
+          </div>
+        )}
+        {state.phase === 'playing' && (
+          <PlayingScreen game={game} />
+        )}
+        {state.phase === 'ended' && (
+          <EndingCard
+            card={state.questCard}
+            onPlayAgain={handlePlayAgain}
+            onShare={handleShare}
+          />
+        )}
+      </div>
+
+      {/* Bottom safe area */}
+      <div className="h-6" />
     </main>
   );
 }
