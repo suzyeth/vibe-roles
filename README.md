@@ -49,6 +49,7 @@ npm run dev   # http://localhost:3000 (auto-picks another port if busy)
 
 ## Doc map
 - [DESIGN.md](./DESIGN.md) — Vibe Dice product design (incl. §3.3 narrative rule)
+- [SPEC.md](./SPEC.md) — full engineering spec (state machine, schemas, AI calls, UI, fallback, demo data)
 - [PLAN.md](./PLAN.md) — implementation plan
 - [ORBIT-GLM-GUIDE.md](./ORBIT-GLM-GUIDE.md) — Z.ai×Orbit + GLM setup + call examples
 - [DEMO-RUNBOOK.md](./DEMO-RUNBOOK.md) — 3-minute demo runbook
