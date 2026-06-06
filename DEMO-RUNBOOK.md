@@ -1,32 +1,29 @@
-# Demo 跑场手册（3 分钟）
+# Demo 跑场手册（3 分钟）· Vibe Dice
 
-> 这是 Claude 搭的**参考版**。开赛请在接了 GLM 的 Claude Code 里重走 PLAN.md（让 Orbie 全程记录），才算 Z.ai×Orbit 证据。
+> 开赛请在接了 GLM 的 Claude Code 里实现/演示（让 Orbie 全程记录），才算 Z.ai×Orbit 证据。
 
 ## 三档保底（按现场网络选）
-- **网络好**：`.env.local` 设 `GLM_OFFLINE=false` + 填好 `GLM_API_KEY`，真 GLM 现场即兴生成（有惊艳感）。
-- **网络差/风险高**：`.env.local` 设 `GLM_OFFLINE=true`，全程走兜底剧本，**零翻车**（参考版默认就是这个，开箱即跑）。
+- **网络好**：`.env.local` 设 `GLM_OFFLINE=false` + 填好 `GLM_API_KEY`，真 GLM 现场生成 quest + Fate Card（有惊艳感）。
+- **网络差/风险高**：`.env.local` 设 `GLM_OFFLINE=true`，全程走兜底 quest + mock Fate Card，**零翻车**。
 - **终极保底**：播放预录的完美一局录屏。
 
-## 启动
-```bash
-cd C:\Users\ASUS\Desktop\VibeRoles
-# 若无 .env.local，先建一个（参考 README）：至少含 GLM_OFFLINE=true
-npm run dev   # 打开 http://localhost:3000（被占用会自动用 3001）
-```
-
-## 节奏（对齐手册评分节拍）
-- **0:00–0:25 痛点**：甩死群截图（已读不回、3 天没消息）+ 一句"没人想当第一个发言的人" + 区隔话术："我们不是又一个常驻陪聊 AI，而是把破冰变成一局 30 秒的轻游戏。"
-- **0:25–0:50 核心**：点一个主题 → AI 给全场选角（角色卡刷出来，**高光**）。
-- **0:50–2:15 现场演**：输入框照角色冒 1–2 句（队友配合）/ 或点"😶 我潜水让 AI 替我接一句" → 旁白接龙 → 点"收尾 → 出名场面卡" → 卡片弹出 → 点"⬇️ 保存卡片去分享"。
-- **2:15–2:40 AI 与工作流**：GLM 为这个群即兴现编；GLM+Claude Code 构建、Orbie 捕获；名场面卡（Fotor）；Manus 跑了调研/剧本库。
-- **2:40–3:00 影响**：解决 Zymix 冷启动（引用 ~61 下载/低活跃）；原生 Mini Game + 病毒卡 = 增长飞轮；下一步。
+## 节奏（对齐设计 §12）
+- **0:00–0:25 痛点**：甩冷群（"20 hours, no messages"）+ 区隔话术："不是又一个 chatbot，我们把沉默变成 3 分钟 AI 骰子冒险，连不在 Zymix 的朋友都能通过 WhatsApp 干预。"
+- **0:25–0:55 一键开启**：点 **Roll to revive this chat** → AI 生成开场（The Unread Beast 偷走话题）+ 给成员分配角色（Overthinking Wizard / Ghost Rogue / Chaos Bard / Snack Healer）。
+- **0:55–1:25 第一轮投骰**：点骰子 → roll=7 Messy Progress → "找到话题但被诅咒，需要外部混乱" → 冒出 **Ask friends to interfere** 按钮。
+- **1:25–1:55 WhatsApp 好友干预**：切到 share link 页 → 好友输入"Everyone can only speak in food metaphors" → AI 生成 **Curse Card: Food Metaphor Mode**。
+- **1:55–2:30 第二轮投骰 + 编入干预**：回 Zymix，roll=18 Main Character Moment → AI 把诅咒编进剧情，野兽化成一碗面。
+- **2:30–2:45 结果卡**：弹 **Quest Card**（Best Interference: Food Metaphor Mode / Mood: chaotic but alive / CTA: Start your own quest on Zymix）→ 保存分享。
+- **2:45–3:00 影响**：单人即可开局；故事经 WhatsApp 扩散；外部朋友无需下载即可参与；Quest Card 把人带回 Zymix。
 
 ## 开演前检查
 - [ ] `.env.local` 已就绪（GLM_OFFLINE=true 保底，或填了真 key 走 false）
-- [ ] 预录录屏已就绪
-- [ ] `npm run dev` 已起、页面已打开、已预热过一局
-- [ ] 名场面卡"保存"按钮能下载 PNG（演示分享）
+- [ ] 预录录屏已就绪（含 share link 干预页那一段）
+- [ ] dev server 已起、主页面 + Fate Card 干预页都已打开预热
+- [ ] Quest Card "保存/分享"可用
+- [ ] 演示设备和"好友手机"两块屏准备好（演 WhatsApp 干预切换）
 
-## 已知留白（参考版未做，开赛可补）
-- **Fotor 真集成**：当前用 `html-to-image` 把卡片 DOM 导出 PNG 保底；要拿 Fotor 营销奖，按 ORBIT-GLM-GUIDE.md 接 Fotor 模板/API 生成更精美的卡，并把生成链接/截图存到 `evidence/`。
-- **多回合 beats 全自动推进**：当前是单回合手动推进（够 demo）。
+## 防卡死要点
+- 固定 3 回合、每轮最多 2 句旁白。
+- Fate Card 输入失败 → 本地 mock card 替代。
+- 全链路预生成数据兜底，API 挂了无缝切录屏。
