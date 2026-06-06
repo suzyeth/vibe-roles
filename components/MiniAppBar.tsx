@@ -8,7 +8,7 @@ export function MiniAppBar() {
           <div className="text-[10px] text-fuchsia-300">Zymix · Mini App</div>
         </div>
       </div>
-      <span className="rounded-full bg-fuchsia-600/80 px-2 py-0.5 text-[10px] text-white">Vibe Dice</span>
+      <span className="rounded-full bg-fuchsia-600/80 px-2 py-0.5 text-[10px] text-white">Vibe Roles</span>
     </header>
   );
 }
