@@ -1,4 +1,4 @@
-import type { Quest, FateCard, RoundResult, QuestCard } from "@/lib/schema";
+import type { Quest, FateCard, RoundResult, QuestCard, ActionOptions } from "@/lib/schema";
 import { rollLabel } from "@/lib/dice";
 
 const ROLE_POOL = [
@@ -48,4 +48,17 @@ export function fallbackFateCard(input: string, seed: number): FateCard {
 }
 export function fallbackQuestCard(finalRoll: number, bestInterference: string): QuestCard {
   return { title: "Quest Completed", caption: "chaotic but alive", best_interference: bestInterference || "—", final_roll: finalRoll, cta: "Start your own quest on Zymix" };
+}
+/** Deterministic offline action options (English). */
+export function fallbackActions(active: { name: string; role: string }, seed = 0): ActionOptions {
+  const BASE: Record<string, string[]> = {
+    "The Overthinking Wizard": ["Analyze the symbols on the wall", "Cast a light spell to reveal hidden paths", "Question whether this is even real"],
+    "The Ghost Rogue": ["Sneak past the sleeping guards", "Pick the ancient lock in the shadows", "Vanish and scout ahead"],
+    "The Chaos Bard": ["Sing a confusing song to distract them", "Cast a wild spell and see what happens", "Narrate dramatically as you charge in"],
+    "The Snack Healer": ["Share chips to boost morale", "Offer a snack to the creature", "Snack your way to victory"],
+  };
+  const fallback = BASE[active.role] ?? ["Search the area carefully", "Try the obvious solution", "Take a wild guess"];
+  const options = fallback.map((s) => s.slice(0, 24));
+  const rotate = (arr: string[], k: number): string[] => arr.slice(k).concat(arr.slice(0, k));
+  return { options: rotate(options, seed % options.length).slice(0, 3) };
 }

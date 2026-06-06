@@ -8,7 +8,7 @@ import { getQuest, listFateCards } from "@/lib/questStore";
 import { RoundResultSchema } from "@/lib/schema";
 
 export async function POST(req: NextRequest) {
-  const { questId, roll, recent, round } = await req.json();
+  const { questId, roll, recent, round, active, action } = await req.json();
   const n = clampD20(typeof roll === "number" ? roll : 1);
   const label = rollLabel(n);
   const r = typeof round === "number" ? round : 0;
@@ -21,12 +21,13 @@ export async function POST(req: NextRequest) {
         .filter((x, i, a) => x && a.indexOf(x) === i)
         .map((p) => ({ name: p.name, role: p.role }))
     : [];
+  const activePlayer = active?.name && active?.role ? { name: active.name, role: active.role } : undefined;
   if (isOffline()) {
     const fb = fallbackRoundResult(n, fate, reactors, r);
     return Response.json({ roll: n, label, narration: fb.narration, reactions: fb.reactions });
   }
   try {
-    const { system, user } = buildRollPrompt(setup, label, fate, recent ?? "", reactors);
+    const { system, user } = buildRollPrompt(setup, label, fate, recent ?? "", reactors, activePlayer, action);
     const parsed = RoundResultSchema.parse(await glmJSON(system, user));
     return Response.json({ roll: n, label, narration: parsed.narration, reactions: parsed.reactions });
   } catch {

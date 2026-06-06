@@ -10,9 +10,9 @@ import { DiceRoller } from "@/components/DiceRoller";
 import { RollResultBanner } from "@/components/RollResultBanner";
 import { FateCardList } from "@/components/FateCardList";
 import { QuestCard } from "@/components/QuestCard";
-import type { Quest, FateCard, QuestCard as QC } from "@/lib/schema";
+import type { Quest, FateCard, QuestCard as QC, Player } from "@/lib/schema";
 
-type Phase = "cold" | "loading" | "playing" | "ended";
+type Phase = "cold" | "loading" | "choosing" | "rolling" | "playing" | "ended";
 const TOTAL_ROUNDS = 3;
 
 export default function Home() {
@@ -24,6 +24,11 @@ export default function Home() {
   const [fate, setFate] = useState<FateCard[]>([]);
   const [card, setCard] = useState<QC | null>(null);
   const [showShare, setShowShare] = useState(false);
+  const [actionOptions, setActionOptions] = useState<string[]>([]);
+  const [customAction, setCustomAction] = useState("");
+  const [activePlayer, setActivePlayer] = useState<Player | null>(null);
+  const [selectedAction, setSelectedAction] = useState<string | null>(null);
+  const [showDice, setShowDice] = useState(false);
   const idRef = useRef(0);
   const questId = useRef<string>("");
   const recent = useRef<string>("");
@@ -37,6 +42,7 @@ export default function Home() {
 
   async function start(theme: string) {
     setPhase("loading"); setMsgs([]); setRound(0); setLast(null); setFate([]); setCard(null); setShowShare(false);
+    setActionOptions([]); setCustomAction(""); setActivePlayer(null); setSelectedAction(null); setShowDice(false);
     questId.current = `q_${idRef.current++}_${theme.length}`;
     const res = await fetch("/api/quest", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ questId: questId.current, members: PRESET_MEMBERS.map((m) => m.name), theme }) });
     const q: Quest = await res.json();
@@ -50,15 +56,49 @@ export default function Home() {
       recent.current = line;
       await delay(700);
     }
+    prepareRound();
+  }
+
+  function prepareRound() {
+    if (!quest) return;
+    const idx = round % quest.players.length;
+    const active = quest.players[idx];
+    setActivePlayer(active);
+    setPhase("choosing");
+    setSelectedAction(null);
+    setShowDice(false);
+    fetchActions();
+  }
+
+  async function fetchActions() {
+    if (!quest || !activePlayer) return;
+    try {
+      const res = await fetch("/api/actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ questId: questId.current, recent: recent.current, active: { name: activePlayer.name, role: activePlayer.role }, seed: round }) });
+      const data = await res.json();
+      setActionOptions(data.options ?? []);
+    } catch {
+      setActionOptions(["Search the area", "Use your ability", "Take a bold move"]);
+    }
+  }
+
+  async function chooseAction(action: string, _isCustom = false) {
+    if (!activePlayer) return;
+    setPhase("rolling");
+    setSelectedAction(action);
+    push(activePlayer.name, action, "action");
+    setShowDice(true);
   }
 
   async function onRoll(n: number) {
+    if (!selectedAction || !activePlayer) return;
+    setPhase("playing");
+    setActionOptions([]); setCustomAction(""); setSelectedAction(null); setShowDice(false);
     // pull any friend interference submitted via the share link before resolving the roll
     try {
       const f = await (await fetch(`/api/fate?questId=${questId.current}`)).json();
       if (Array.isArray(f.cards)) setFate(f.cards);
     } catch { /* fate fetch is best-effort */ }
-    const res = await fetch("/api/roll", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ questId: questId.current, roll: n, recent: recent.current, round }) });
+    const res = await fetch("/api/roll", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ questId: questId.current, roll: n, recent: recent.current, round, active: { name: activePlayer.name, role: activePlayer.role }, action: selectedAction }) });
     const r = await res.json();
     setLast({ roll: r.roll, label: r.label });
     (r.reactions ?? []).forEach((rc: { member: string; text: string }) => push(rc.member, rc.text, "member"));
@@ -67,6 +107,7 @@ export default function Home() {
     const next = round + 1; setRound(next);
     if (next === 1) setShowShare(true);
     if (next >= TOTAL_ROUNDS) await finish(r.roll);
+    else prepareRound();
   }
 
   async function finish(finalRoll: number) {
@@ -96,7 +137,7 @@ export default function Home() {
         {quest && phase !== "cold" && (
           <div className="grid grid-cols-2 gap-2 p-3">
             {quest.players.map((p) => (
-              <div key={p.name} className="rounded-xl bg-gradient-to-br from-fuchsia-700 to-indigo-700 p-3 text-white">
+              <div key={p.name} className={`rounded-xl p-3 text-white transition-all ${activePlayer?.name === p.name ? "bg-gradient-to-br from-fuchsia-500 to-indigo-500 ring-2 ring-fuchsia-400" : "bg-gradient-to-br from-fuchsia-700 to-indigo-700"}`}>
                 <div className="text-xs opacity-80">{p.name}</div><div className="font-bold">{p.role}</div><div className="text-xs opacity-90">{p.ability}</div>
               </div>
             ))}
@@ -104,9 +145,33 @@ export default function Home() {
         )}
         <FateCardList cards={fate} />
         {msgs.map((m) => <MessageBubble key={m.id} msg={m} />)}
-        {last && phase === "playing" && <RollResultBanner roll={last.roll} label={last.label} />}
+        {last && phase !== "choosing" && phase !== "rolling" && <RollResultBanner roll={last.roll} label={last.label} />}
         {phase === "ended" && card && <QuestCard card={card} />}
       </div>
+      {phase === "choosing" && (
+        <div className="border-t border-zinc-800 p-3">
+          <div className="mb-2 text-center text-xs text-fuchsia-300">
+            {activePlayer?.name}&apos;s turn · What do you do?
+          </div>
+          <div className="flex flex-col gap-2 mb-3">
+            {actionOptions.map((opt, i) => (
+              <button key={i} type="button" onClick={() => chooseAction(opt)} className="rounded-lg bg-zinc-800 px-3 py-2 text-left text-sm hover:bg-fuchsia-700 transition-colors">
+                {opt}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <input type="text" placeholder="Or type your own action…" value={customAction} onChange={(e) => setCustomAction(e.target.value)} className="flex-1 rounded bg-zinc-800 px-3 py-2 text-sm placeholder-zinc-500" />
+            <button type="button" onClick={() => customAction && chooseAction(customAction, true)} disabled={!customAction.trim()} className="rounded bg-fuchsia-600 px-4 py-2 text-sm font-semibold disabled:opacity-50">Go</button>
+          </div>
+        </div>
+      )}
+      {showDice && phase === "rolling" && (
+        <div className="border-t border-zinc-800 p-3">
+          <div className="px-3 pt-2 text-center text-xs text-zinc-400">Rolling the die…</div>
+          <DiceRoller onRoll={onRoll} />
+        </div>
+      )}
       {phase === "playing" && (
         <div className="border-t border-zinc-800">
           <div className="px-3 pt-2 text-center text-xs text-zinc-400">Round {round + 1}/{TOTAL_ROUNDS} · tap the die to continue</div>

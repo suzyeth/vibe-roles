@@ -32,6 +32,12 @@ export type Prologue = z.infer<typeof PrologueSchema>;
 
 export const ReactionSchema = z.object({ member: z.string().min(1), text: z.string().min(1) });
 export type Reaction = z.infer<typeof ReactionSchema>;
+
+export const ActionOptionsSchema = z.object({
+  options: z.array(z.string().min(1)).min(1),
+});
+export type ActionOptions = z.infer<typeof ActionOptionsSchema>;
+
 export const RoundResultSchema = z.object({
   narration: z.string().min(1),
   reactions: z.array(ReactionSchema).default([]),

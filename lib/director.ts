@@ -18,13 +18,23 @@ Rules: players count = number of members; witty roles (e.g. The Ghost Rogue / Th
   return { system, user };
 }
 
-export function buildRollPrompt(sceneSetup: string, label: string, fateCards: FateCard[], recent: string, reactors: { name: string; role: string }[]) {
+/** Generate 2-3 action options for the active player. */
+export function buildActionsPrompt(sceneSetup: string, recent: string, active: { name: string; role: string }) {
+  const system = `You are the Vibe Dice Game Master. Generate 2-3 concrete action options for the active player to choose from. Output JSON ONLY (no markdown):
+{"options":["option 1","option 2","option 3"]}
+Rules: each option <=10 words; fit the scene and the active player's role; offer a mix of cautious, bold, and creative choices; English; Gen Z tone; safe.`;
+  const user = `Scene: ${sceneSetup}\nPreviously: ${recent}\nActive player: ${active.name} the ${active.role}`;
+  return { system, user };
+}
+
+export function buildRollPrompt(sceneSetup: string, label: string, fateCards: FateCard[], recent: string, reactors: { name: string; role: string }[], active?: { name: string; role: string }, action?: string) {
   const fate = fateCards.length ? fateCards.map((f) => `${f.type}:${f.title}(${f.effect})`).join("; ") : "none";
   const cast = reactors.length ? reactors.map((r) => `${r.name}(${r.role})`).join(", ") : "none";
+  const actionContext = active && action ? `\nActive action: ${active.name} the ${active.role} chose to ${action}` : "";
   const system = `You are the Vibe Dice Game Master. A hero just acted and the dice decided their fate. Narrate the OUTCOME as a vivid scene. Output JSON ONLY (no markdown):
-{"narration":"2-4 cinematic sentences: reflect the success/failure tone of the dice label, show concrete consequences and rising stakes, weave in any pending Fate Cards, and end on a hook or a choice","reactions":[{"member":"member name","text":"that member's in-character one-liner, <=14 words"}]}
+{"narration":"2-4 cinematic sentences: reflect the success/failure tone of the dice label, show concrete consequences and rising stakes, weave in any pending Fate Cards, and end on a hook or a choice. If a specific action was taken, the narration MUST explicitly react to that action's outcome.","reactions":[{"member":"member name","text":"that member's in-character one-liner, <=14 words"}]}
 Rules: continue naturally from "Previously" for continuity; reactions may ONLY include the given "reacting members", one line each; English; dramatic, Gen Z; safe.`;
-  const user = `Scene: ${sceneSetup}\nPreviously: ${recent}\nDice result: ${label}\nPending Fate Cards: ${fate}\nReacting members: ${cast}`;
+  const user = `Scene: ${sceneSetup}\nPreviously: ${recent}\nDice result: ${label}\nPending Fate Cards: ${fate}\nReacting members: ${cast}${actionContext}`;
   return { system, user };
 }
 
