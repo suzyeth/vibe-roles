@@ -12,7 +12,9 @@ export async function POST(req: NextRequest) {
   const list = Array.isArray(transcript) ? transcript : [];
   if (isOffline()) return Response.json(fallbackHighlight(list));
   try {
-    const user = list.map((t: any) => `${t.member}：${t.text}`).join("\n");
+    const user = list
+      .map((t: { member: string; text: string }) => `${t.member}：${t.text}`)
+      .join("\n");
     const h = HighlightSchema.parse(await glmJSON(SYSTEM, user));
     return Response.json(h);
   } catch {
