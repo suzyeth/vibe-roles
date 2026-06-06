@@ -40,6 +40,7 @@
 18:35 | TASK 2a: Tighten prologue to ≤3 lines | Claude Code | ok | TASK 2b: Condense reactions (already implemented, max 2 unique reactors)
 18:41 | TASK 2c: Add Advantage for free-type actions | Claude Code | ok | push changes, verify end-to-end offline demo
 18:47 | Add demo checklist + 3-minute script | Claude Code | ok | prepare for live demo + Plan B offline recording
+18:52 | Create evidence capture guides | Claude Code | ok | guides ready for ZYMIX screenshots, demo recording, GLM evidence; push to GitHub
 ```
 
 - 
