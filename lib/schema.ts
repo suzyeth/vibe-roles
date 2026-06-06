@@ -27,7 +27,7 @@ export const QuestSchema = z.object({
 });
 export type Quest = z.infer<typeof QuestSchema>;
 
-export const PrologueSchema = z.object({ lines: z.array(z.string().min(1)).min(1) });
+export const PrologueSchema = z.object({ lines: z.array(z.string().min(1)).min(1).max(3) });
 export type Prologue = z.infer<typeof PrologueSchema>;
 
 export const ReactionSchema = z.object({ member: z.string().min(1), text: z.string().min(1) });

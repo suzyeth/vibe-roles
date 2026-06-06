@@ -36,10 +36,9 @@ const MOCK_FATE: FateCard[] = [
 export function fallbackPrologue(quest: Quest): string[] {
   const names = quest.players.map((p) => p.name).join(", ");
   return [
-    `${quest.scene.theme}.`,
-    quest.scene.setup,
-    `Our heroes — ${names} — have absolutely no idea what they just walked into.`,
-    `The quest: ${quest.goal} Roll the die to begin.`,
+    `${quest.scene.theme}. ${quest.scene.setup}`,
+    `Heroes: ${names}. Goal: ${quest.goal}`,
+    `Roll the die to begin.`,
   ];
 }
 export function fallbackFateCard(input: string, seed: number): FateCard {
