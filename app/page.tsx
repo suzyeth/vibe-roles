@@ -118,24 +118,24 @@ export default function Home() {
   }
 
   return (
-    <main className="mx-auto flex h-screen max-w-md flex-col bg-zinc-950 text-zinc-100">
+    <main className="mx-auto flex h-screen max-w-md flex-col bg-white text-zinc-900">
       <MiniAppBar />
       <div className="flex-1 overflow-y-auto">
         {phase === "cold" && (
           <div>
             <DeadGroup msgs={DEAD_GROUP} />
             <div className="p-4 text-center">
-              <div className="mb-2 text-zinc-300">This group&apos;s been quiet for a while. Start a mini adventure? 👇</div>
+              <div className="mb-2 text-zinc-600">This group&apos;s been quiet for a while. Start a mini adventure? 👇</div>
               <div className="flex flex-wrap justify-center gap-2">
                 {QUEST_THEMES.map((t) => (
-                  <button key={t} type="button" onClick={() => start(t)} className="rounded-full bg-zinc-800 px-4 py-2 hover:bg-fuchsia-700">{t}</button>
+                  <button key={t} type="button" onClick={() => start(t)} className="rounded-full bg-zinc-100 px-4 py-2 hover:bg-emerald-100">{t}</button>
                 ))}
-                <button type="button" onClick={() => start("")} className="rounded-full bg-gradient-to-r from-fuchsia-600 to-indigo-600 px-4 py-2 font-semibold">🎲 Roll to revive</button>
+                <button type="button" onClick={() => start("")} className="rounded-full bg-gradient-to-r from-fuchsia-600 to-indigo-600 px-4 py-2 font-semibold text-white">🎲 Roll to revive</button>
               </div>
             </div>
           </div>
         )}
-        {phase === "loading" && <div className="p-8 text-center text-zinc-400">Rolling up your quest… 🎲</div>}
+        {phase === "loading" && <div className="p-8 text-center text-zinc-500">Rolling up your quest… 🎲</div>}
         {quest && phase !== "cold" && (
           <div className="grid grid-cols-2 gap-2 p-3">
             {quest.players.map((p) => (
@@ -151,43 +151,43 @@ export default function Home() {
         {phase === "ended" && card && <QuestCard card={card} />}
       </div>
       {phase === "choosing" && (
-        <div className="border-t border-zinc-800 p-3">
-          <div className="mb-2 text-center text-xs text-fuchsia-300">
+        <div className="border-t border-zinc-200 p-3">
+          <div className="mb-2 text-center text-xs text-zinc-500">
             {activePlayer?.name}&apos;s turn · What do you do?
           </div>
           <div className="flex flex-col gap-2 mb-3">
             {actionOptions.map((opt, i) => (
-              <button key={i} type="button" onClick={() => chooseAction(opt)} className="rounded-lg bg-zinc-800 px-3 py-2 text-left text-sm hover:bg-fuchsia-700 transition-colors">
+              <button key={i} type="button" onClick={() => chooseAction(opt)} className="rounded-lg bg-zinc-100 px-3 py-2 text-left text-sm hover:bg-emerald-100 transition-colors">
                 {opt}
               </button>
             ))}
           </div>
           <div className="flex gap-2">
-            <input type="text" placeholder="Or type your own action…" value={customAction} onChange={(e) => setCustomAction(e.target.value)} className="flex-1 rounded bg-zinc-800 px-3 py-2 text-sm placeholder-zinc-500" />
-            <button type="button" onClick={() => customAction && chooseAction(customAction, true)} disabled={!customAction.trim()} className="rounded bg-fuchsia-600 px-4 py-2 text-sm font-semibold disabled:opacity-50">Go</button>
+            <input type="text" placeholder="Or type your own action…" value={customAction} onChange={(e) => setCustomAction(e.target.value)} className="flex-1 rounded bg-zinc-100 px-3 py-2 text-sm placeholder-zinc-500" />
+            <button type="button" onClick={() => customAction && chooseAction(customAction, true)} disabled={!customAction.trim()} className="rounded bg-emerald-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">Go</button>
           </div>
         </div>
       )}
       {showDice && phase === "rolling" && (
-        <div className="border-t border-zinc-800 p-3">
-          <div className="px-3 pt-2 text-center text-xs text-zinc-400">Rolling the die…</div>
+        <div className="border-t border-zinc-200 p-3">
+          <div className="px-3 pt-2 text-center text-xs text-zinc-500">Rolling the die…</div>
           <DiceRoller onRoll={onRoll} advantage={isCustomAction} />
         </div>
       )}
       {phase === "playing" && (
-        <div className="border-t border-zinc-800">
-          <div className="px-3 pt-2 text-center text-xs text-zinc-400">Round {round + 1}/{TOTAL_ROUNDS} · tap the die to continue</div>
+        <div className="border-t border-zinc-200">
+          <div className="px-3 pt-2 text-center text-xs text-zinc-500">Round {round + 1}/{TOTAL_ROUNDS} · tap the die to continue</div>
           <DiceRoller onRoll={onRoll} advantage={isCustomAction} />
           {showShare && shareUrl && (
             <div className="px-3 pb-3 text-center">
-              <div className="text-xs text-fuchsia-300 mb-1">Let WhatsApp friends interfere with your quest:</div>
-              <input readOnly value={shareUrl} className="w-full rounded bg-zinc-800 px-2 py-1 text-xs" onFocus={(e) => e.currentTarget.select()} />
-              <a href={shareUrl} target="_blank" className="mt-1 inline-block text-xs underline text-fuchsia-400">Open interference page (demo)</a>
+              <div className="text-xs text-zinc-500 mb-1">Let WhatsApp friends interfere with your quest:</div>
+              <input readOnly value={shareUrl} className="w-full rounded bg-zinc-100 px-2 py-1 text-xs" onFocus={(e) => e.currentTarget.select()} />
+              <a href={shareUrl} target="_blank" className="mt-1 inline-block text-xs underline text-emerald-600">Open interference page (demo)</a>
             </div>
           )}
         </div>
       )}
-      {phase === "ended" && <button type="button" onClick={() => setPhase("cold")} className="m-3 rounded-full bg-fuchsia-600 py-2 text-white">Play again 🔁</button>}
+      {phase === "ended" && <button type="button" onClick={() => setPhase("cold")} className="m-3 rounded-full bg-emerald-500 py-2 text-white">Play again 🔁</button>}
     </main>
   );
 }
