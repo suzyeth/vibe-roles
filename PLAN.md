@@ -1014,3 +1014,26 @@ git add DEMO-RUNBOOK.md && git commit -m "docs: demo runbook + offline fallback"
 - **占位符**：无 TODO/TBD；每个 code step 均给完整代码。✅
 - **类型一致**：`Scene/Role/Highlight`(schema.ts) 在 fallback/director/routes/components 中签名一致；`ChatMsg` 在 MessageBubble 定义并被 page 复用。✅
 - **已知留白（非占位，时间盒）**：Fotor 真集成(Task12 Step5)与多回合 beats 全自动推进为"时间允许再增强"项，已用 PNG 导出与单回合手动推进保底，不影响可运行闭环。
+
+---
+
+# Phase 10 · v2 体验优化（提升原创/UX/相关性/防翻车）
+
+> 目标：把"能跑"升级成"惊艳"。核心是一回合一次调用 + 自动播放 + 开屏死群场景 + Zymix 皮肤 + 离线多样化。
+
+## Task v2-A: 一回合一次调用 + 离线多样化（逻辑/API，TDD）
+- `lib/schema.ts`：加 `RoundLineSchema`、`RoundSchema`（lines[{member,role,text}] + narration）、type `Round`。
+- `lib/director.ts`：加 `buildRoundPrompt(sceneSetup, roles[{member,role}], recentContext)` → {system,user}，要求 GLM 一次返回整回合 JSON。
+- `lib/fallback.ts`：
+  - `fallbackScene` 升级为 4 套按主题的剧本变体（宿舍悬案/综艺现场/飞船危机/八卦法庭），空主题用第一套（保持旧测试通过）。
+  - 加 `fallbackRound(roles, seed)`：从台词池按 seed 确定性取词，返回 RoundSchema 合法对象。
+- `app/api/round/route.ts`：POST {sceneSetup, roles, recentContext, seed} → Round；离线/失败兜底 `fallbackRound`。
+- 验收：新增测试全过、旧 18 测试不破、tsc clean。
+
+## Task v2-B: 开屏死群 + 自动播放 + Zymix 皮肤 + 小优化（UI）
+- `data/deadGroup.ts`：预置"3 天前已读不回"的冷群消息。
+- `components/MiniAppBar.tsx`：Zymix 风格顶栏（"Mini App" 外壳）。
+- `app/globals.css`：加 Zymix 品牌色 tokens（紫粉渐变系）。
+- `app/page.tsx` 重写：新增 `cold` 开屏阶段（死群 + 浮出"用 Vibe Roles 救场"入口）→ 选主题 → loading → `playing`（**自动逐条播放 2 回合 + 旁白，再自动出结局并收尾**，真人仍可随时插话）→ `ended`。
+- 小优化：输入框上方显示"你演【角色】"；名场面卡区加"发到 Zymix 动态"分享位（mock）。
+- 验收：tsc clean、`npm run build` 成功、离线手动验证整条自动播放跑通。
