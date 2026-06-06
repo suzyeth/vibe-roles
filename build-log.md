@@ -11,7 +11,7 @@
 
 ## 0. North Star (fill first)
 - **Team name:** `<your team name>`
-- **Members & roles:** `<name (role)>, <name (role)> …`
+- **Members:** Xiaomin Fan, Suzy Su
 - **Track:** Track 2 — Vibe with ZYMIX
 - **Project:** Vibe Dice
 - **Real problem (one sentence):** ZYMIX group chats go cold and early users don't know what to say first — and many real friends aren't even on the app yet.
