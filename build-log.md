@@ -39,6 +39,7 @@
 18:33 | TASK 1: Interactive action selection | Claude Code | ESLint unused vars → removed; test JSON case sensitivity → fixed | TASK 2: Real-human optimizations (Advantage, Prologue ≤3 lines)
 18:35 | TASK 2a: Tighten prologue to ≤3 lines | Claude Code | ok | TASK 2b: Condense reactions (already implemented, max 2 unique reactors)
 18:41 | TASK 2c: Add Advantage for free-type actions | Claude Code | ok | push changes, verify end-to-end offline demo
+18:47 | Add demo checklist + 3-minute script | Claude Code | ok | prepare for live demo + Plan B offline recording
 ```
 
 - 
