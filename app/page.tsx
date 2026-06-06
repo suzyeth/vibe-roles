@@ -45,8 +45,14 @@ export default function Home() {
     setPhase("loading"); setMsgs([]); setRound(0); setLast(null); setFate([]); setCard(null); setShowShare(false);
     setActionOptions([]); setCustomAction(""); setActivePlayer(null); setSelectedAction(null); setShowDice(false); setIsCustomAction(false);
     questId.current = `q_${idRef.current++}_${theme.length}`;
-    const res = await fetch("/api/quest", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ questId: questId.current, members: PRESET_MEMBERS.map((m) => m.name), theme }) });
-    const q: Quest = await res.json();
+    let q: Quest;
+    try {
+      const res = await fetch("/api/quest", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ questId: questId.current, members: PRESET_MEMBERS.map((m) => m.name), theme }) });
+      q = await res.json();
+    } catch {
+      setPhase("cold"); // never strand the user on the loading spinner
+      return;
+    }
     setQuest(q);
     setPhase("playing");
     // story prologue (generated with the quest): reveal the opening lines one by one before the first roll
