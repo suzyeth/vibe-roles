@@ -125,7 +125,7 @@ export default function Home() {
           <div>
             <DeadGroup msgs={DEAD_GROUP} />
             <div className="p-4 text-center">
-              <div className="mb-2 text-zinc-300">Chat&apos;s gone cold? Roll a die to revive it 👇</div>
+              <div className="mb-2 text-zinc-300">This group&apos;s been quiet for a while. Start a mini adventure? 👇</div>
               <div className="flex flex-wrap justify-center gap-2">
                 {QUEST_THEMES.map((t) => (
                   <button key={t} type="button" onClick={() => start(t)} className="rounded-full bg-zinc-800 px-4 py-2 hover:bg-fuchsia-700">{t}</button>
