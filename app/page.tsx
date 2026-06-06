@@ -57,24 +57,24 @@ export default function Home() {
       recent.current = line;
       await delay(700);
     }
-    prepareRound();
+    prepareRound(0);
   }
 
-  function prepareRound() {
+  function prepareRound(roundIdx: number) {
     if (!quest) return;
-    const idx = round % quest.players.length;
+    const idx = roundIdx % quest.players.length;
     const active = quest.players[idx];
     setActivePlayer(active);
     setPhase("choosing");
     setSelectedAction(null);
     setShowDice(false);
-    fetchActions();
+    fetchActions(active, roundIdx);
   }
 
-  async function fetchActions() {
-    if (!quest || !activePlayer) return;
+  async function fetchActions(active: { name: string; role: string }, roundIdx: number) {
+    if (!quest) return;
     try {
-      const res = await fetch("/api/actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ questId: questId.current, recent: recent.current, active: { name: activePlayer.name, role: activePlayer.role }, seed: round }) });
+      const res = await fetch("/api/actions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ questId: questId.current, recent: recent.current, active: { name: active.name, role: active.role }, seed: roundIdx }) });
       const data = await res.json();
       setActionOptions(data.options ?? []);
     } catch {
@@ -100,16 +100,22 @@ export default function Home() {
       const f = await (await fetch(`/api/fate?questId=${questId.current}`)).json();
       if (Array.isArray(f.cards)) setFate(f.cards);
     } catch { /* fate fetch is best-effort */ }
-    const res = await fetch("/api/roll", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ questId: questId.current, roll: n, recent: recent.current, round, active: { name: activePlayer.name, role: activePlayer.role }, action: selectedAction }) });
-    const r = await res.json();
-    setLast({ roll: r.roll, label: r.label, advantage });
-    (r.reactions ?? []).forEach((rc: { member: string; text: string }) => push(rc.member, rc.text, "member"));
-    push("Narrator", r.narration, "narration");
-    recent.current = r.narration;
+    try {
+      const res = await fetch("/api/roll", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ questId: questId.current, roll: n, recent: recent.current, round, active: { name: activePlayer.name, role: activePlayer.role }, action: selectedAction }) });
+      const r = await res.json();
+      setLast({ roll: r.roll, label: r.label, advantage });
+      (r.reactions ?? []).forEach((rc: { member: string; text: string }) => push(rc.member, rc.text, "member"));
+      push("Narrator", r.narration, "narration");
+      recent.current = r.narration;
+    } catch {
+      // never hang the demo if the roll API fails
+      setLast({ roll: n, label: "Partial Progress", advantage });
+      push("Narrator", "The scene wavers for a moment, then the story pushes on…", "narration");
+    }
     const next = round + 1; setRound(next);
     if (next === 1) setShowShare(true);
-    if (next >= TOTAL_ROUNDS) await finish(r.roll);
-    else prepareRound();
+    if (next >= TOTAL_ROUNDS) await finish(n);
+    else prepareRound(next);
   }
 
   async function finish(finalRoll: number) {

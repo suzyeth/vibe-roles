@@ -3,6 +3,7 @@ import { fallbackActions } from "@/lib/fallback";
 import { buildActionsPrompt } from "@/lib/director";
 import { glmJSON } from "@/lib/glm";
 import { ActionOptionsSchema } from "@/lib/schema";
+import { getQuest } from "@/lib/questStore";
 
 interface ActionsReq {
   questId: string;
@@ -22,7 +23,8 @@ export async function POST(req: Request): Promise<Response> {
       return Response.json(fallbackActions(active, seed));
     }
     try {
-      const { system, user } = buildActionsPrompt(recent, recent, active);
+      const setup = getQuest(questId)?.quest.scene.setup ?? recent;
+      const { system, user } = buildActionsPrompt(setup, recent, active);
       const raw = await glmJSON(system, user);
       const parsed = ActionOptionsSchema.parse(raw);
       return Response.json(parsed);
