@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildQuestPrompt, buildRollPrompt, buildFateCardPrompt, buildQuestCardPrompt } from "@/lib/director";
+import { buildQuestPrompt, buildRollPrompt, buildFateCardPrompt, buildQuestCardPrompt, buildPartyPrompt } from "@/lib/director";
 
 describe("director prompts", () => {
   it("buildQuestPrompt 含成员与主题，要求 JSON", () => {
@@ -17,5 +17,10 @@ describe("director prompts", () => {
   it("buildQuestCardPrompt 含 finalRoll", () => {
     const { user } = buildQuestCardPrompt("打败了野兽", 18, ["Food Metaphor"]);
     expect(user).toContain("18");
+  });
+  it("buildPartyPrompt 含队友名单与 roll 标签，要求 JSON", () => {
+    const { system, user } = buildPartyPrompt(["小鹿", "阿K"], "silence", "Total Chaos", "前情");
+    expect(system).toContain("JSON");
+    expect(user).toContain("小鹿"); expect(user).toContain("阿K"); expect(user).toContain("Total Chaos");
   });
 });

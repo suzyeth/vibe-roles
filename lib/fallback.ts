@@ -26,6 +26,19 @@ const NARR: Record<string, string> = {
 export function fallbackRoundResult(roll: number, _fate: FateCard[]): RoundResult {
   return { narration: NARR[rollLabel(roll)] ?? "故事继续推进……", advance: true };
 }
+const PARTY_LINES: Record<string, string[]> = {
+  "Total Chaos": ["完了完了我先撤为敬", "我就知道会这样……", "谁让你乱掷的啊！"],
+  "Awkward Fail": ["啊这……", "尴尬到脚趾抠出三室一厅", "假装无事发生.jpg"],
+  "Messy Progress": ["勉强算赢？", "先别高兴太早", "我怎么闻到一股埋伏的味"],
+  "Works Somehow": ["居然成了？", "别问，问就是实力", "见好就收啊喂"],
+  "Main Character Moment": ["这波太顶了！", "主角光环直接拉满", "我宣布你是天命人"],
+  "Iconic Roll": ["封神现场！", "教科书级操作", "我要截图发到群里炫"],
+};
+/** 队友针对骰子结果各冒一句（兜底，纯）；按 (seed, index) 取，保证可重现 */
+export function fallbackPartyLines(names: string[], label: string, seed: number): { name: string; text: string }[] {
+  const pool = PARTY_LINES[label] ?? ["……", "继续继续", "好戏开场了"];
+  return names.map((n, i) => ({ name: n, text: pool[(((seed + i) % pool.length) + pool.length) % pool.length] }));
+}
 const MOCK_FATE: FateCard[] = [
   { type: "curse", title: "Food Metaphor Mode", effect: "All future dialogue must sound like dinner is a psychological condition.", tone: "chaotic but harmless", trigger: "next_round" },
   { type: "character", title: "The Sunglasses Pigeon", effect: "Offers suspicious advice but demands chips.", tone: "chaotic but harmless", trigger: "roll_under_10" },

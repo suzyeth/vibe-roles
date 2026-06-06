@@ -29,6 +29,11 @@ export type Quest = z.infer<typeof QuestSchema>;
 export const RoundResultSchema = z.object({ narration: z.string().min(1), advance: z.boolean().default(true) });
 export type RoundResult = z.infer<typeof RoundResultSchema>;
 
+export const PartyLineSchema = z.object({ name: z.string().min(1), text: z.string().min(1) });
+export type PartyLine = z.infer<typeof PartyLineSchema>;
+export const PartyLinesSchema = z.object({ lines: z.array(PartyLineSchema) });
+export type PartyLines = z.infer<typeof PartyLinesSchema>;
+
 export const QuestCardSchema = z.object({
   title: z.string().min(1),
   caption: z.string().min(1),

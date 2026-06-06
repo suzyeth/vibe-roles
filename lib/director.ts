@@ -15,6 +15,14 @@ export function buildRollPrompt(sceneSetup: string, label: string, fateCards: Fa
   return { system, user };
 }
 
+export function buildPartyPrompt(names: string[], sceneSetup: string, label: string, recent: string) {
+  const system = `你是 Vibe Dice 主持人。让每位队友针对刚才的骰子结果各冒一句简短在场反应(<=20字)，要有个性、Gen Z 语气、安全。
+严格只输出 JSON（不要 markdown）：{"lines":[{"name":"队友名","text":"台词"}]}
+规则：lines 里每个 name 必须来自给定队友名单且各出现一次；不得暴力/露骨/仇恨。`;
+  const user = `场景：${sceneSetup}\n前情：${recent}\n骰子结果：${label}\n队友名单：${names.join("、")}`;
+  return { system, user };
+}
+
 export function buildFateCardPrompt(type: string, input: string) {
   const system = `你把好友的一句自由输入转成结构化 Fate Card。严格只输出 JSON：{"type":"character|object|curse|rule|blessing","title":"<=12字","effect":"一句话效果","tone":"chaotic but harmless","trigger":"next_round|roll_under_10"}
 规则：type 必须等于给定类型；effect 安全、好玩、可被主持人编入剧情；过滤暴力/露骨/仇恨/人身攻击。`;

@@ -14,6 +14,7 @@ import type { Quest, FateCard, QuestCard as QC } from "@/lib/schema";
 
 type Phase = "cold" | "loading" | "playing" | "ended";
 const TOTAL_ROUNDS = 3;
+const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export default function Home() {
   const [phase, setPhase] = useState<Phase>("cold");
@@ -30,8 +31,9 @@ export default function Home() {
 
   const nextId = () => `m${idRef.current++}`;
   const shareUrl = typeof window !== "undefined" && questId.current ? `${window.location.origin}/q/${questId.current}` : "";
-  function push(author: string, text: string, kind: ChatMsg["kind"]) {
-    setMsgs((m) => [...m, { id: nextId(), author, avatar: kind === "narration" ? "🎬" : "🎲", text, kind }]);
+  const avatarOf = (name: string) => PRESET_MEMBERS.find((m) => m.name === name)?.avatar ?? "🎭";
+  function push(author: string, text: string, kind: ChatMsg["kind"], avatar?: string) {
+    setMsgs((m) => [...m, { id: nextId(), author, avatar: avatar ?? (kind === "narration" ? "🎬" : "🎲"), text, kind }]);
   }
 
   async function start(theme: string) {
@@ -55,6 +57,13 @@ export default function Home() {
     setLast({ roll: r.roll, label: r.label });
     push("旁白", r.narration, "narration");
     recent.current = r.narration;
+    // teammates chime in one by one, like a live group chat
+    if (Array.isArray(r.lines)) {
+      for (const ln of r.lines) {
+        await delay(550);
+        push(ln.name, ln.text, "member", avatarOf(ln.name));
+      }
+    }
     const next = round + 1; setRound(next);
     if (next === 1) setShowShare(true);
     if (next >= TOTAL_ROUNDS) await finish(r.roll);
