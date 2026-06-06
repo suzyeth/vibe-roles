@@ -10,7 +10,7 @@
 ---
 
 ## 0. North Star (fill first)
-- **Team name:** `<your team name>`
+- **Team name:** 49b
 - **Members:** Xiaomin Fan, Suzy Su
 - **Track:** Track 2 — Vibe with ZYMIX
 - **Project:** Vibe Dice
