@@ -26,3 +26,16 @@ export const HighlightSchema = z.object({
 });
 
 export type Highlight = z.infer<typeof HighlightSchema>;
+
+export const RoundLineSchema = z.object({
+  member: z.string().min(1),
+  role: z.string().min(1),
+  text: z.string().min(1),
+});
+
+export const RoundSchema = z.object({
+  lines: z.array(RoundLineSchema).min(1),
+  narration: z.string().min(1),
+});
+
+export type Round = z.infer<typeof RoundSchema>;

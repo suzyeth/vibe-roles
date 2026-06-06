@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { padWithNPCs, buildScenePrompt, buildNarratePrompt, buildActPrompt } from "@/lib/director";
+import { padWithNPCs, buildScenePrompt, buildNarratePrompt, buildActPrompt, buildRoundPrompt } from "@/lib/director";
 
 describe("padWithNPCs", () => {
   it("补足到 3 人", () => {
@@ -32,5 +32,16 @@ describe("buildActPrompt", () => {
     expect(user).toContain("反派");
     expect(user).toContain("飞船失火");
     expect(system).toContain("台词");
+  });
+});
+
+describe("buildRoundPrompt", () => {
+  it("system 含 JSON，user 含成员、角色、场景、最近剧情", () => {
+    const { system, user } = buildRoundPrompt("飞船失火", [{ member: "阿K", role: "反派" }], "有人尖叫");
+    expect(system).toContain("JSON");
+    expect(user).toContain("阿K");
+    expect(user).toContain("反派");
+    expect(user).toContain("飞船失火");
+    expect(user).toContain("有人尖叫");
   });
 });

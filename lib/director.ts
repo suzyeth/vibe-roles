@@ -31,3 +31,12 @@ export function buildActPrompt(role: string, sceneSetup: string, last: string) {
   const user = `场景：${sceneSetup}\n你的角色：${role}\n最近的剧情：${last}`;
   return { system, user };
 }
+
+export function buildRoundPrompt(sceneSetup: string, roles: { member: string; role: string }[], recentContext: string) {
+  const cast = roles.map((r) => `${r.member}(${r.role})`).join("、");
+  const system = `你是群聊微剧场的导演。让指定成员各按自己角色冒一句简短台词(<=25字)，然后你给一句旁白推进剧情(<=40字)。
+严格只输出 JSON（不要 markdown）：{"lines":[{"member":"名","role":"角色","text":"台词"}],"narration":"旁白"}。
+中文，Gen Z 语气，要有戏，必须承接"最近剧情"保持连贯，不得不当内容。`;
+  const user = `场景：${sceneSetup}\n本轮发言成员：${cast}\n最近剧情：${recentContext}`;
+  return { system, user };
+}
