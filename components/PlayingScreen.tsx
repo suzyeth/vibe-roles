@@ -31,6 +31,9 @@ const NPC_ACTION_POOL = [
 
 const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
+// Emoji prefix per option chip — purely decorative, rotates by index.
+const OPT_EMOJI = ['🎯', '🔍', '💡', '🔥', '🗝️', '✨', '👀', '🎲'];
+
 // ─── Animated D20 die ──────────────────────────────────────────────────────
 function D20Dice({ wobbling, dice }: { wobbling: boolean; dice: DiceRoll }) {
   return (
@@ -81,10 +84,12 @@ export default function PlayingScreen({ game }: { game: GameHook }) {
   const [dice, setDice] = useState<DiceRoll | null>(null);
   const [diceWobbling, setDiceWobbling] = useState(false);
   const [showBigDice, setShowBigDice] = useState(false);
+  const [customText, setCustomText] = useState('');
 
   const endingRef = useRef(false);
   const lastRoundRef = useRef(0);
   const endRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const activePlayer = state.players[state.round % state.players.length];
   const isHuman = activePlayer?.name === 'You';
@@ -104,6 +109,21 @@ export default function PlayingScreen({ game }: { game: GameHook }) {
   const handleChooseAction = (action: string) => {
     setSelectedAction(action);
     setBeatPhase('rolling');
+  };
+
+  // Free-typed custom action from the input bar.
+  const submitCustom = () => {
+    const t = customText.trim();
+    if (!t) return;
+    setCustomText('');
+    handleChooseAction(t);
+  };
+
+  // 🔗 — copy the 5-minute disappearing invite link for an outside friend.
+  const copyInvite = () => {
+    if (!state.shareUrl) return;
+    navigator.clipboard?.writeText(state.shareUrl);
+    alert('Invite link copied — it disappears in 5 minutes!');
   };
 
   // NPC auto-play — pick a random local move (no LLM, ~1s pacing).
@@ -234,8 +254,8 @@ export default function PlayingScreen({ game }: { game: GameHook }) {
             <div key={msg.id} className={`flex items-end gap-2 ${isSelf ? 'flex-row-reverse' : ''} bubble-in`}>
               {isSelf && (
                 <div className="flex flex-col items-center gap-1 flex-shrink-0">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm flex-shrink-0" style={{ background: '#E8F8EE' }}>
-                    🫵
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ background: '#1DB954' }}>
+                    Y
                   </div>
                   <span className="text-xs" style={{ color: '#1DB954', fontSize: 10 }}>You</span>
                 </div>
@@ -276,30 +296,88 @@ export default function PlayingScreen({ game }: { game: GameHook }) {
 
       {/* Action area — interactive only on the human ("You") turn */}
       {beatPhase === 'action' && activePlayer && isHuman && (
-        <div className="p-4" style={footerStyle}>
-          <div className="mb-2 text-center text-xs" style={{ color: 'var(--zymix-text-tertiary)' }}>
-            Your turn · What do you do?
+        <div className="p-3" style={footerStyle}>
+          {/* Role-flavored options (green pills) */}
+          {actionOptions.slice(0, 2).length > 0 && (
+            <>
+              <div className="text-xs mb-1.5 px-1 font-medium" style={{ color: 'var(--zymix-text-tertiary)' }}>
+                🎭 Your role options
+              </div>
+              <div className="flex flex-wrap gap-2 mb-2.5">
+                {actionOptions.slice(0, 2).map((opt, i) => (
+                  <button
+                    key={`x${i}`}
+                    onClick={() => handleChooseAction(opt)}
+                    className="px-3 py-2 rounded-full text-sm font-medium transition-transform active:scale-95"
+                    style={{ background: 'var(--zymix-green-light)', color: 'var(--zymix-green)', border: '1px solid var(--zymix-green)' }}
+                  >
+                    {OPT_EMOJI[i % OPT_EMOJI.length]} {opt}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Common options (grey pills) */}
+          {actionOptions.slice(2).length > 0 && (
+            <>
+              <div className="text-xs mb-1.5 px-1 font-medium" style={{ color: 'var(--zymix-text-tertiary)' }}>
+                Common options
+              </div>
+              <div className="flex flex-wrap gap-2 mb-2.5">
+                {actionOptions.slice(2).map((opt, i) => (
+                  <button
+                    key={`g${i}`}
+                    onClick={() => handleChooseAction(opt)}
+                    className="px-3 py-2 rounded-full text-sm font-medium transition-transform active:scale-95"
+                    style={{ background: 'var(--zymix-bg)', color: 'var(--zymix-text-primary)', border: '1px solid var(--zymix-border)' }}
+                  >
+                    {OPT_EMOJI[(2 + i) % OPT_EMOJI.length]} {opt}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Input bar — custom action (🎲), invite a friend (🔗), free text, send */}
+          <div className="flex items-center gap-2 mt-1">
+            <button
+              onClick={() => inputRef.current?.focus()}
+              className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-base active:scale-90 transition-transform"
+              style={{ background: 'var(--zymix-green-light)' }}
+              aria-label="Type a custom action"
+            >
+              🎲
+            </button>
+            <button
+              onClick={copyInvite}
+              className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 text-base active:scale-90 transition-transform"
+              style={{ background: 'var(--zymix-fate-light)' }}
+              aria-label="Invite a friend to interfere"
+            >
+              🔗
+            </button>
+            <input
+              ref={inputRef}
+              value={customText}
+              onChange={(e) => setCustomText(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') submitCustom(); }}
+              type="text"
+              placeholder="Choose your action…"
+              className="flex-1 rounded-full px-4 py-2.5 text-sm outline-none"
+              style={{ background: 'var(--zymix-bg)', color: 'var(--zymix-text-primary)' }}
+            />
+            <button
+              onClick={submitCustom}
+              className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 active:scale-90 transition-transform"
+              style={{ background: 'var(--zymix-green)' }}
+              aria-label="Send action"
+            >
+              <svg width="16" height="16" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </button>
           </div>
-          <div className="flex flex-col gap-2 mb-3">
-            {actionOptions.map((opt, i) => (
-              <button
-                key={i}
-                onClick={() => handleChooseAction(opt)}
-                className="px-4 py-3 text-left rounded-xl transition-colors"
-                style={{ background: 'var(--zymix-bg)', color: 'var(--zymix-text-primary)' }}
-                onMouseOver={(e) => (e.currentTarget.style.background = 'var(--zymix-green-light)')}
-                onMouseOut={(e) => (e.currentTarget.style.background = 'var(--zymix-bg)')}
-              >
-                {opt}
-              </button>
-            ))}
-          </div>
-          <input
-            type="text"
-            placeholder="Or type your own action…"
-            className="w-full rounded-full px-4 py-3 text-sm"
-            style={{ background: 'var(--zymix-bg)', color: 'var(--zymix-text-primary)' }}
-          />
         </div>
       )}
 
