@@ -1,601 +1,251 @@
-# Vibe Dice — Full Product Spec (SPEC v1.0)
+# Vibe Roles — Engineering Spec (SPEC v2.0)
 
-> This document is the single implementation reference for engineers. All rules, data structures, state machine, and AI prompt specs are defined here.
-> Product background & track info: see DESIGN.md. Tech architecture: see PLAN.md.
+> Single implementation reference for engineers. Product rationale & scenarios: DESIGN.md (this spec follows the latest DESIGN). Architecture/status: PLAN.md.
 > Last updated: 2026-06-06
->
-> ⚠️ RECONCILE: DESIGN.md was revised after this spec and is the latest product truth — where they differ, DESIGN.md wins. Deltas to fold into this spec: product name **Vibe Roles** (not "Vibe Dice"); dice labels **Critical Fail / Fail / Partial Progress / Success / Strong Success / Critical Success**; trigger = **72h inactivity, no chat-history read** (controlled-random story); persistent **story_state** (clues / relationships / consequences / location & character status); **6** external-intervention types (Event / Message / Character / Object / Rule / Condition) via a **5-minute disappearing invite**; demo story **"The 404 Customer"** (Luna / Jake / Kai / Alex / Emma).
+
+## 0. Positioning (engineer version)
+**Vibe Roles is a ZYMIX-native cold-group-revival mini game.** A group that's been quiet ~72h shows a light in-chat prompt; one tap starts an AI-generated, DND-like adventure. The AI generates the story & roles **randomly, without reading chat history**, then maintains a persistent **story_state**: every action + D20 roll produces a lasting consequence that affects later beats and the relationships between characters. External friends can add ONE intervention via a **5-minute disappearing invite**. The run ends with a shareable card.
+
+Hard product constraints (must hold in code):
+- **Never read chat history.** Generation inputs: inactivity flag + member count + member names + ~3-min budget only.
+- **Consequences persist.** Each roll writes ≥1 entry into `story_state`.
+- **English only**, PG-safe, theme whitelist.
+- **Never crash the demo.** `GLM_OFFLINE=true` forces the full fallback path; every route falls back; all GLM output is Zod-validated.
 
 ---
 
-## 0. One-line positioning (engineer version)
+## 1. State machine
 
-**Vibe Dice is a multiplayer, turn-based AI dice-story game that runs inside a Zymix group chat.**
+```
+COLD_PROMPT     in-chat light prompt after ~72h inactivity (persistent, non-blocking)
+  ↓ any member taps "Start the adventure"
+OPENING         Call 1: random story + roles + first-round options (one structured call)
+  ↓ opening revealed (role name shown under each avatar)
+PLAYING         beat loop (see 1.1)
+  ↓ "Wrap it up" (after a minimum) OR beat cap
+ENDING          Call 4: ending narration + share-card copy
+  ↓
+SHARE_CARD      ending card shown + share
+```
 
-- Each player takes turns choosing an action + rolling the die; the roll decides success/failure, and the AI Game Master narrates in real time based on "the previous player's result + the current player's action".
-- Game length is variable; players can trigger "Wrap it up" anytime to jump to the ending.
-- External friends submit Fate Cards via a WhatsApp link (Demo version is pre-seeded, no live submission).
-- Each run generates a shareable Quest Card.
+### 1.1 PLAYING sub-loop (per beat)
+```
+BEAT_NARRATE     AI narrates the current situation (typewriter)
+  ↓
+ACTION_SELECT    active player taps one of 2–3 AI options OR types a custom action (30s soft timer → auto-pick option[0])
+  ↓
+DICE_ROLLING     D20 roll animation
+  ↓
+RESOLVE          Call 2: narrate the outcome of THAT action at the rolled tier + record ≥1 consequence into story_state
+  ↓
+STATE_UPDATE     merge consequence into story_state (clues / locations / character status / relationships); recompute next options
+  ↓ next actor → BEAT_NARRATE   |   wrap up → ENDING
+```
+External interventions can arrive at any time (5-min invite) and are woven in at the next suitable beat.
 
 ---
 
-## 1. Full game state machine
-
-### 1.1 Phases
-
-```
-COLD_CHAT          cold group-chat screen (entry)
-  ↓ tap "Roll to revive"
-SETUP              enter player names (1–4)
-  ↓ confirm count
-THEME_SELECT       pick a theme (4 presets or AI random)
-  ↓ choose theme
-OPENING            AI generates opening + role assignment (one structured LLM call)
-  ↓ animation done
-PLAYING            main loop (multi-Beat, turn-based)
-  ↓ player triggers "Wrap it up" OR beat count hits cap (default 12)
-CLIMAX             final beat (each player takes one Final Roll)
-  ↓ all done
-ENDING             AI generates the ending narration
-  ↓ narration done
-QUEST_CARD         Quest Card shown + share
-```
-
-### 1.2 PLAYING sub-state machine
-
-PLAYING is the core loop with its own sub-states:
-
-```
-BEAT_NARRATING     AI narration typewriter output (this beat's opening narration)
-  ↓ done
-ACTION_SELECT      active player chooses an action (2–3 AI options or free input)
-  ↓ player chooses (or 30s timeout → AI auto-picks)
-DICE_ROLLING       dice roll animation (1–2s)
-  ↓ done
-RESULT_NARRATING   AI narrates based on "action + dice result" (typewriter)
-  ↓ done
-BEAT_END           beat ends, check whether to continue
-  ↓ next player → back to BEAT_NARRATING
-  ↓ player taps "Wrap it up" → CLIMAX
-```
-
----
-
-## 2. Core data structures (TypeScript)
-
-### 2.1 Player & Role
-
-```typescript
-interface Player {
-  id: string;           // unique id, e.g. "p1"
-  name: string;         // player's real name, e.g. "Jamie"
-  avatar: string;       // emoji, e.g. "🧑‍🦱"
-  color: string;        // hex color for bubbles and highlights
-  isAI?: boolean;       // true = AI-filled NPC (when player count is low)
-}
-
-interface Role {
-  playerId: string;
-  roleName: string;     // e.g. "The Overthinking Wizard"
-  ability: string;      // one-line ability, e.g. "Detect hidden awkwardness"
-  emoji: string;        // role emoji
-}
-```
-
-### 2.2 Dice system
+## 2. Data structures (TypeScript)
 
 ```typescript
 type DiceResult =
-  | 'total-chaos'           // 1
-  | 'awkward-fail'          // 2–5
-  | 'messy-progress'        // 6–10
-  | 'works-somehow'         // 11–15
-  | 'main-character-moment' // 16–19
-  | 'iconic-roll';          // 20
+  | "critical-fail"        // 1
+  | "fail"                 // 2–5
+  | "partial-progress"     // 6–10
+  | "success"              // 11–15
+  | "strong-success"       // 16–19
+  | "critical-success";    // 20
 
-interface DiceRoll {
-  value: number;            // 1–20
-  result: DiceResult;
-  label: string;            // display text, e.g. "Messy Progress"
-  emoji: string;            // e.g. "😅"
-  color: string;            // result color
-}
+interface DiceRoll { value: number; result: DiceResult; label: string; emoji: string; color: string; }
 
-const DICE_MAP: Record<DiceResult, { label: string; emoji: string; color: string; range: [number, number] }> = {
-  'total-chaos':           { label: 'Total Chaos',           emoji: '💀', color: '#EF4444', range: [1, 1]   },
-  'awkward-fail':          { label: 'Awkward Fail',          emoji: '😬', color: '#F97316', range: [2, 5]   },
-  'messy-progress':        { label: 'Messy Progress',        emoji: '😅', color: '#EAB308', range: [6, 10]  },
-  'works-somehow':         { label: 'Works Somehow',         emoji: '😌', color: '#22C55E', range: [11, 15] },
-  'main-character-moment': { label: 'Main Character Moment', emoji: '😎', color: '#3B82F6', range: [16, 19] },
-  'iconic-roll':           { label: 'Iconic Roll',           emoji: '🔥', color: '#8B5CF6', range: [20, 20] },
-};
-
-function rollDice(): DiceRoll {
-  const value = Math.floor(Math.random() * 20) + 1;
-  // match value against DICE_MAP ranges
-  // ...
-}
-```
-
-### 2.3 Beat (a single turn)
-
-```typescript
-interface Beat {
-  beatIndex: number;        // global beat number, from 0
-  playerId: string;         // acting player for this beat
-  roundIndex: number;       // which round (everyone acting once = one round)
-
-  // ACTION_SELECT
-  actionOptions: string[];  // 2–3 AI-generated options
-  chosenAction: string | null;  // chosen action (or free input)
-  autoPlayed: boolean;      // true = timed out, AI auto-picked
-
-  // DICE_ROLLING
-  roll: DiceRoll | null;
-
-  // RESULT_NARRATING
-  narration: string;        // AI result narration (2–4 sentences)
-
-  // Fate Card (Demo pre-seeded)
-  fateCardApplied?: FateCard;  // Fate Card activated this beat (if any)
-}
-```
-
-### 2.4 Fate Card (Demo pre-seeded version)
-
-```typescript
-type FateCardType = 'character' | 'object' | 'curse' | 'rule' | 'blessing';
-
-interface FateCard {
+interface Player {
   id: string;
-  type: FateCardType;
-  title: string;            // e.g. "The Sunglasses Pigeon"
-  effect: string;           // e.g. "Appears when roll < 10, offers suspicious advice"
-  submittedBy: string;      // external friend name, e.g. "Maya (WhatsApp)"
-  triggerCondition: 'next_beat' | 'roll_under_10' | 'round_2' | 'manual';
-  applied: boolean;         // whether the AI has woven it in
+  name: string;            // existing group member name (not entered by user)
+  role: string;            // story-relevant, generated this run (shown under avatar)
+  ability: string;
+  status: "active" | "sleeping_npc" | "npc";
+  inventory: string[];
+  trust: Record<string, number>; // playerName -> -2..+2
 }
 
-const DEMO_FATE_CARDS: Record<string, FateCard[]> = {
-  'flat-drama': [
-    { id: 'fc1', type: 'curse', title: 'Food Metaphor Mode', effect: 'All dialogue must sound like dinner is a psychological condition.', submittedBy: 'Sarah (WhatsApp)', triggerCondition: 'round_2', applied: false },
-    { id: 'fc2', type: 'character', title: 'The Suspicious Landlord', effect: 'Appears and demands rent evidence for everything.', submittedBy: 'Tom (WhatsApp)', triggerCondition: 'roll_under_10', applied: false },
-  ],
-  // ... other themes
-};
-```
+interface Beat {
+  round: number;
+  actor: string;           // player name
+  action: string;          // chosen option or free-typed
+  autoPlayed: boolean;
+  roll: DiceRoll;
+  rollLabel: string;
+  consequence: string;     // the lasting effect written to story_state
+}
 
-### 2.5 Quest (full game state)
+interface StoryState {
+  known_clues: string[];
+  location_status: Record<string, string>;
+  character_status: Record<string, string>;
+  relationships: string[];
+  active_consequences: string[];
+}
 
-```typescript
+type InterventionType = "event" | "message" | "character" | "object" | "rule" | "condition";
+
+interface Intervention {
+  source_friend: string;       // e.g. "Maya (WhatsApp)"
+  type: InterventionType;
+  title: string;
+  effect: string;
+  trigger: "next_round" | "later";
+  expires_after_minutes: 5;
+  visibility: "disappearing_invitation";
+  applied: boolean;
+}
+
 interface Quest {
   id: string;
-  theme: Theme;
+  source: "zymix_group_chat";
+  status: "playing" | "ending" | "ended";
+  generation: { mode: "random_story_generation"; uses_chat_history: false; trigger: "group_inactive_72_hours"; member_count: number; theme: string; role_generation_mode: "random_but_story_relevant" };
+  scene: { theme: string; setup: string; tone: string };
   players: Player[];
-  roles: Role[];
-  openingNarration: string;
-  beats: Beat[];
-  fateCards: FateCard[];
-  pendingFateCards: FateCard[];
-  status: 'playing' | 'climax' | 'ended';
-  endingNarration: string;
-  questCard: QuestCard | null;
+  story_state: StoryState;
+  rounds: Beat[];
+  external_interventions: Intervention[];
+  ending: string;
+  share_card: ShareCard | null;
 }
 
-interface QuestCard {
-  title: string;              // e.g. "The Unread Beast Was Defeated"
-  caption: string;            // e.g. "Chaotic but alive"
-  bestRoll: { playerName: string; value: number; label: string };
-  bestInterference: FateCard | null;
-  highlights: string[];       // 2–3 AI-generated highlight moments
-  cta: string;                // "Start your own quest on Zymix"
-}
+interface ShareCard { title: string; caption: string; best_interference: string; cta: string; }
 ```
+(Full populated example: DESIGN.md §9.4.)
 
 ---
 
-## 3. AI call spec
-
-### 3.1 Overview
+## 3. AI calls
 
 | Call | When | Input | Output | Streaming |
 |---|---|---|---|---|
-| Call 1 | OPENING | theme + player names | opening narration + role cards + first beat's action options | No (structured JSON) |
-| Call 2 | each beat's ACTION_SELECT | story summary + last beat result + current player role + pending Fate Cards | 2–3 action options | No (structured JSON) |
-| Call 3 | each beat's RESULT_NARRATING | current action + dice result tier + last beat narration summary + active Fate Cards | result narration (2–4 sentences) | Yes (streaming typewriter) |
-| Call 4 | ENDING | all beat summaries + final roll result | ending narration + Quest Card copy | Yes (streaming typewriter) |
+| Call 1 | OPENING | member count + names + theme (NO chat history) | scene + roles + firstActionOptions | JSON |
+| Call 2 | RESOLVE | action + dice tier + story_state + pending interventions | narration + ≥1 consequence + next options | JSON (narration may stream) |
+| Call 3 | friend submits | friend input + type | structured Intervention | JSON |
+| Call 4 | ENDING | rounds summary + story_state + best roll/intervention | ending + share_card | JSON (may stream) |
 
-### 3.2 Call 1: opening generation
-**Trigger:** after the player confirms the theme, enter OPENING.
-
+### 3.1 Call 1 (opening, no chat history)
 ```
-You are the AI Game Master for Vibe Dice, a Gen Z social micro-adventure game.
-
-THEME: {theme.label} — {theme.setup}
-PLAYERS: {players.map(p => p.name).join(', ')}
-TONE: Playful, Gen Z English, PG-safe. No violence, no explicit content.
-
-Generate a JSON response with this exact schema:
-{
-  "opening": "string — A vivid 2–4 sentence cold open. High stakes, a mystery or ticking problem. End with a hook.",
-  "roles": [
-    {
-      "playerId": "string — must match one of: {players.map(p => p.id).join(', ')}",
-      "roleName": "string — a fun Gen Z archetype, e.g. 'The Overthinking Wizard'",
-      "ability": "string — one short sentence, e.g. 'Can detect hidden awkwardness from 10 metres'",
-      "emoji": "string — one emoji"
-    }
-  ],
-  "firstActionOptions": [
-    "string — 2–3 concrete action options for the FIRST player ({players[0].name}), based on the opening scene"
-  ]
-}
-
-Rules:
-- opening must reference the theme and feel urgent
-- each role must feel unique and match the player's name vibe
-- firstActionOptions must be specific to the scene, not generic ("investigate the fridge" not "look around")
-- all text in English
+You are the AI Game Master for Vibe Roles. Randomly generate a 3-minute group adventure. DO NOT use or assume any chat history.
+INPUT: members = {names}; theme = {theme or "random from safe pool"}; member_count = {n}.
+Output JSON ONLY:
+{"scene":{"theme":"...","setup":"2-3 vivid sentences, a crisis/mystery","tone":"chaotic, playful, safe"},
+ "players":[{"name":"<member name>","role":"story-relevant role","ability":"one line","status":"active"}],
+ "firstActionOptions":["2-3 concrete options for the first actor"]}
+Rules: one role per member, tied to the crisis; English; Gen Z; PG-safe; theme from the safe whitelist only.
 ```
-**Fallback:** `fallback.ts` pre-seeds a full opening + roles + firstActionOptions per theme; use it directly if Call 1 fails.
 
-### 3.3 Call 2: action options
-**Trigger:** when a beat enters ACTION_SELECT.
-
+### 3.2 Call 2 (resolve action + advance story_state)
 ```
-You are the AI Game Master for Vibe Dice.
-
-CURRENT STORY CONTEXT:
-- Theme: {theme.label}
-- Round: {roundIndex + 1}
-- Last beat result: {lastBeat ? `${lastBeat.chosenAction} → ${lastBeat.roll.label}: ${lastBeat.narration.slice(0, 100)}...` : 'Game just started'}
-- Active Fate Cards: {pendingFateCards.map(fc => `[${fc.type.toUpperCase()}] ${fc.title}: ${fc.effect}`).join('; ') || 'None'}
-
-CURRENT PLAYER:
-- Name: {currentPlayer.name}
-- Role: {currentRole.roleName}
-- Ability: {currentRole.ability}
-
-Generate a JSON response:
-{
-  "actionOptions": [
-    "string — 2 to 3 concrete action options. Each must be a short verb phrase (max 8 words). They must be specific to the current story moment, not generic. If a Fate Card is active, at least one option should acknowledge it."
-  ]
-}
-
-Rules:
-- Options must escalate tension from the last beat
-- If last roll was Total Chaos or Awkward Fail, options should reflect a harder situation
-- If last roll was Main Character Moment or Iconic Roll, options can be bolder
-- Never repeat options from previous beats
-- All text in English, Gen Z tone
+You are the GM. Narrate the OUTCOME of the action at the dice tier, then record the lasting consequence.
+ACTOR: {name} ({role}); ACTION: "{action}"; DICE: {value}/20 — {label}.
+STORY STATE: clues={known_clues}; locations={location_status}; characters={character_status}; relationships={relationships}.
+PENDING INTERVENTIONS: {interventions or none}.
+TIER GUIDE: Critical Fail(1) severe-but-safe; Fail(2-5) fails, more complex; Partial Progress(6-10) progress with a cost; Success(11-15) succeed + clue/scene change; Strong Success(16-19) succeed + advantage affecting others; Critical Success(20) highlight/twist.
+Output JSON ONLY:
+{"narration":"2-3 vivid sentences reacting to THIS action at THIS tier; weave any intervention; end on a hook",
+ "consequence":"one lasting effect to store (clue/location/status/relationship)",
+ "story_state_updates":{"known_clues":[],"location_status":{},"character_status":{},"relationships":[]},
+ "nextActionOptions":["2-3 options for the next actor, escalating from this result"]}
 ```
-**Fallback:** return 3 generic options: `["Investigate the situation", "Ask for help", "Try something unexpected"]`
 
-### 3.4 Call 3: result narration (streaming)
-**Trigger:** after the player picks an action + the dice result is set.
-
+### 3.3 Call 3 (friend input → structured intervention)
 ```
-You are the AI Game Master for Vibe Dice. Narrate the outcome of this action.
-
-PLAYER: {currentPlayer.name} ({currentRole.roleName})
-ACTION CHOSEN: "{chosenAction}"
-DICE RESULT: {roll.value}/20 — {roll.label} ({roll.emoji})
-
-STORY CONTEXT:
-- Theme: {theme.label}
-- Previous beat (for continuity): "{lastNarration || 'Opening scene'}"
-- Active Fate Cards being woven in: {activeFateCards.map(fc => `[${fc.type.toUpperCase()}] ${fc.title}: ${fc.effect}`).join('; ') || 'None'}
-
-DICE RESULT GUIDE:
-- Total Chaos (1): Critical failure. The most absurd, chaotic consequence. Something goes very wrong.
-- Awkward Fail (2–5): Failure with a funny twist. It didn't work, but in an embarrassing way.
-- Messy Progress (6–10): Partial success with a cost. It kind of worked, but now there's a new problem.
-- Works Somehow (11–15): Success, but it leaves a loose end. Something is still unresolved.
-- Main Character Moment (16–19): Clear success. {currentPlayer.name} gains an edge.
-- Iconic Roll (20): Huge success. A highlight moment. The whole group benefits.
-
-Write 2–4 vivid sentences:
-1. Directly narrate what happened as a result of "{chosenAction}" — the outcome MUST match the dice result.
-2. React to the Fate Card if one is active (weave it in naturally, not as a bullet point).
-3. End with a light hook or cliffhanger that sets up the next player's turn.
-4. Address {currentPlayer.name} by their role name at least once.
-5. Include 1 short in-character reaction line from another player (not {currentPlayer.name}), e.g. '{otherPlayer.name} mutters: "..."'
-
-Tone: Playful, Gen Z English, PG-safe. No violence, no explicit content.
-Output plain text only — no JSON, no markdown.
+Turn a friend's one-line input into a structured intervention. Output JSON ONLY:
+{"type":"event|message|character|object|rule|condition","title":"<=6 words","effect":"one line","trigger":"next_round|later"}
+Rules: type fits the input; safe, fun, weaveable; filter violence/explicit/hate/personal attacks.
 ```
-**Fallback:** take the matching-tier generic narration from `fallback.ts` by `roll.result`, replacing `{name}` and `{action}` placeholders.
 
-### 3.5 Call 4: ending + Quest Card (streaming)
-**Trigger:** after all players finish their Final Roll in CLIMAX.
-
+### 3.4 Call 4 (ending + share card)
 ```
-You are the AI Game Master for Vibe Dice. Write the ending and generate the Quest Card.
-
-QUEST SUMMARY:
-- Theme: {theme.label}
-- Players: {players.map(p => `${p.name} (${roles[p.id].roleName})`).join(', ')}
-- Total beats: {beats.length}
-- Best roll: {bestRoll.playerName} rolled {bestRoll.value} ({bestRoll.label})
-- Worst roll: {worstRoll.playerName} rolled {worstRoll.value} ({worstRoll.label})
-- Fate Cards used: {appliedFateCards.map(fc => fc.title).join(', ') || 'None'}
-- Story so far (beat narrations): {beats.map(b => b.narration).join(' | ')}
-
-Generate a JSON response:
-{
-  "endingNarration": "string — A twist ending in 3–5 sentences. Must reference what actually happened in the beats. Resolve the main conflict in a surprising or funny way. End on a high note.",
-  "questCard": {
-    "title": "string — A punchy quest title, e.g. 'The Unread Beast Was Defeated'",
-    "caption": "string — A 3–5 word mood summary, e.g. 'Chaotic but alive'",
-    "highlights": ["string — 2–3 short highlight moments from the actual beats, referencing real player names and actions"],
-    "bestInterferenceCaption": "string — If a Fate Card was used, one sentence about its impact. If none, 'No outside interference — pure chaos within.'",
-    "cta": "Start your own quest on Zymix"
-  }
-}
+Write the ending and the share card. Reference what actually happened (rounds + story_state). Output JSON ONLY:
+{"ending":"3-5 sentence twist ending, resolve the crisis, end on a high note",
+ "share_card":{"title":"punchy title","caption":"<=5 words mood","best_interference":"best intervention title or 'pure chaos within'","cta":"Start your own Vibe Roles on Zymix"}}
 ```
-**Fallback:** `fallback.ts` pre-seeds a generic ending + Quest Card template per theme.
+Every call has a fallback (§6) and Zod validation.
 
 ---
 
-## 4. Detailed turn rules
-
-### 4.1 Player order
-- At game start, player order follows the order entered in SETUP (Player 1, 2, 3...).
-- Each beat passes to the next player, looping (P1 → P2 → P3 → P1...).
-- AI-filled NPC players (`isAI: true`) skip ACTION_SELECT — the system generates their action and rolls directly.
-
-### 4.2 Action-option chain-reaction rule (core)
-When Call 2 generates options, it MUST receive the previous beat's `roll.result` and adjust difficulty:
-
-| Last beat result | Current player's option style |
-|---|---|
-| Total Chaos | Options are all "save the situation" / "clean up the mess", hardest |
-| Awkward Fail | One "fix it" option and one "give up fixing" option |
-| Messy Progress | One option must deal with the "leftover problem" |
-| Works Somehow | Options can advance the main line, but one carries a hidden risk |
-| Main Character Moment | Options can be bolder; one "press the advantage" option |
-| Iconic Roll | One "extend the legendary moment" option, lowest risk |
-
-### 4.3 Timeout auto-play rule
-- Each beat's ACTION_SELECT has a **30s soft timer** (UI shows a countdown bar).
-- On timeout: the system auto-picks `actionOptions[0]` and marks `autoPlayed: true`.
-- Auto-played beats appear in chat as `[{playerName} was auto-played]`, in a grey bubble.
-- **Demo anti-crash:** if Call 2 also times out (no API), use fallback options and continue.
-
-### 4.4 "Wrap it up" rule
-- Any player can tap **"Wrap it up"** at the end of any beat.
-- On trigger: every player in the current round takes one Final Roll (no new ACTION_SELECT, roll directly), then ENDING.
-- Final Roll narration is from Call 3, but the prompt notes `"This is the FINAL ROLL — make it climactic."`.
-- **Minimum-beat protection:** "Wrap it up" is hidden for the first 3 beats, to guarantee a minimum experience.
-
-### 4.5 Fate Card activation (Demo version)
-Demo pre-seeds Fate Cards, auto-activated by condition:
-
-| triggerCondition | Activates |
-|---|---|
-| `next_beat` | immediately at the start of the next beat |
-| `roll_under_10` | when this beat's roll < 10 |
-| `round_2` | at the start of round 2 (after everyone has acted once) |
-| `manual` | no auto-activation; manual trigger during the demo only |
-
-On activation:
-1. Pop a Fate Card notification bubble in chat (special style, with sender name).
-2. Add the Fate Card to Call 2 and Call 3 prompt context.
-3. Mark `applied: true`, never re-activate.
+## 4. Turn & story rules
+- **Player order:** round-robin over `players` by join order; role name shown under each avatar.
+- **Consequence rule (core):** every RESOLVE must write ≥1 entry into `story_state`. The next beat's options/narration MUST reflect current `story_state` (clues, relationships, locked/open locations, suspicions).
+- **Cross-effects:** one player's result changes others' situation (open a door → others can enter; trip an alarm → everyone more endangered; gain a clue pointing at another player; a custom action that sets a rule binds everyone after).
+- **30s soft timer** in ACTION_SELECT → auto-pick option[0], mark `autoPlayed`, grey bubble.
+- **Wrap it up:** available after a minimum number of beats → each remaining player takes one Final Roll → ENDING.
 
 ---
 
-## 5. UI spec
+## 5. External intervention (5-minute disappearing invite)
+- Share generates a **5-minute** invite. Friend sees only the current story situation (never the chat).
+- Friend adds ONE factor of a whitelisted type:
 
-### 5.1 Screens
-
-| Screen | Phase | Core elements |
+| Type | Example | Effect |
 |---|---|---|
-| ColdChat | COLD_CHAT | simulated Zymix group chat, "seen, no reply" + "Roll to revive" |
-| Setup | SETUP | player name inputs (1–4) + confirm |
-| ThemeSelect | THEME_SELECT | 4 theme cards + "AI random" |
-| Opening | OPENING | role cards flip reveal + opening narration typewriter |
-| Playing | PLAYING | chat bubble stream + dice button + action options + Fate Card notice + "Wrap it up" |
-| Ending | ENDING | ending narration typewriter |
-| QuestCard | QUEST_CARD | shareable card + highlights + share |
-| FateCardPage | standalone | external friend submits Fate Card (Demo: shows pre-seeded cards) |
+| Event | An alarm blares | Change the situation |
+| Message | An anonymous text | New info |
+| Character | The 404th customer appears | Add an NPC |
+| Object | A key that opens no door | Give an item |
+| Rule | Doors auto-lock when someone lies | Change a world rule |
+| Condition | Leave the room within 5 minutes | Add a constraint |
 
-### 5.2 Playing layout
-
-```
-┌─────────────────────────────────────┐
-│  [theme emoji] Theme Name    [⚙️]    │  ← top nav
-│  Round 2 · Jamie's turn            │  ← status hint
-├─────────────────────────────────────┤
-│  [AI narration bubble]              │  ← grey, left, AI Game Master
-│  "The fridge door swings open..."   │
-│  [player bubble] Jamie              │  ← green, right (active player)
-│  "I demand a forensic investigation"│
-│  [dice result banner]               │  ← full-width, color = result
-│  😅 Messy Progress · 7/20          │
-│  [AI response bubble]               │
-│  "Jamie slams the counter..."       │
-│  [Fate Card notice bubble] 🃏       │  ← special, purple border
-│  Sarah added: Food Metaphor Mode    │
-├─────────────────────────────────────┤
-│  ── Kai's turn ──                   │  ← divider, next player
-│  [action option cards]              │
-│  A. Blame the pigeon               │
-│  B. Check the CCTV footage         │
-│  C. Confess everything             │
-│  [free input] Or say something...  │
-│  [30s countdown bar]                │
-│  [🎲 Roll]  [Wrap it up]           │  ← Roll active after choosing
-└─────────────────────────────────────┘
-```
-
-### 5.3 Dice interaction
-**Form:** Roll button + number-scramble animation + result card pop (combines approaches A+C).
-1. After choosing an action, `🎲 Roll` goes grey→green (active).
-2. On tap: button becomes a fast scrambling dice number (1–2s).
-3. On end: a full-width result banner pops (number + label + emoji + color).
-4. Banner holds ~1.5s, then Call 3 streaming narration begins.
-
-**Banner colors:**
-
-| Result | Background | Text |
-|---|---|---|
-| Total Chaos | `#EF4444` | `#FFFFFF` |
-| Awkward Fail | `#F97316` | `#FFFFFF` |
-| Messy Progress | `#EAB308` | `#1A1A1A` |
-| Works Somehow | `#22C55E` | `#FFFFFF` |
-| Main Character Moment | `#3B82F6` | `#FFFFFF` |
-| Iconic Roll | `#8B5CF6` | `#FFFFFF` |
-
-### 5.4 Zymix style
-- **Background:** `#FFFFFF`
-- **Primary accent:** `#1DB954` (Zymix green)
-- **AI narration bubble:** `#F3F4F6` (light grey), left, no avatar
-- **Player bubble:** `#1DB954` (green), right, white text
-- **Other player bubbles:** that player's `color`, left
-- **Font:** system (`-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`)
-- **Radius:** `12px` (bubbles), `16px` (cards)
-- **Fate Card bubble:** `#EDE9FE` (light purple), `#7C3AED` border, left
+- AI (Call 3) decides type/strength/trigger/relationship impact — friends never edit the story directly. "Friends provide chaos; the AI governs it."
+- **Disappearing behavior:** after 5 min the invite vanishes from view. In-app: the invite card disappears from chat. External (WhatsApp etc.): demo simulates "This invitation has disappeared". Store `expires_after_minutes: 5`, `visibility: "disappearing_invitation"`.
+- **Intervener reward:** after the run, the friend can see the ending summary, which round their intervention hit, its impact, and an "intervention contribution card".
 
 ---
 
-## 6. Fallback & anti-crash
-
-### 6.1 Three layers
-```
-Layer 1: JSON Schema constraint
-  → validate every LLM output with a Zod schema
-  → on failure → Layer 2
-Layer 2: auto-retry
-  → at most 1 retry per call (avoid long demo waits)
-  → on failure → Layer 3
-Layer 3: pre-generated fallback
-  → fallback.ts pre-seeds full opening / actionOptions / narrations / ending / questCard per theme
-  → fallback data passes the Zod schema (format guaranteed)
-  → GLM_OFFLINE=true forces Layer 3
-```
-
-### 6.2 Fallback data requirements
-`fallback.ts` must include:
-- Full Call 1 output per theme (4): opening + roles + firstActionOptions
-- A generic narration template per dice tier (6) × theme (4), with `{name}` and `{action}` placeholders
-- Full Call 4 output per theme: endingNarration + questCard
-- Generic action-option fallback: `["Investigate the situation", "Ask for help", "Try something unexpected"]`
+## 6. Fallback & anti-crash (3 layers)
+1. Zod schema validation on every call output.
+2. ≤1 retry per call.
+3. Pre-generated fallback per theme (opening + per-tier narration with {name}/{action} + ending + share_card) + mock interventions. `GLM_OFFLINE=true` forces layer 3. Fallback output must pass its Zod schema.
 
 ---
 
-## 7. Theme whitelist
-
-| ID | Name | Emoji | Opening setup | Color |
-|---|---|---|---|---|
-| `flat-drama` | Flat Drama | 🏠 | Someone nicked food from the fridge. Who did it? | `#8B5CF6` |
-| `love-island` | Love Island | 💘 | Tonight's Bombshell arrives. Who gets dumped? | `#F97316` |
-| `last-train` | Last Train Home | 🚇 | Last tube's leaving. Someone's getting left behind. | `#0EA5E9` |
-| `group-chat-trial` | Group Chat Trial | 💬 | That cursed message. Court is now in session. | `#1DB954` |
+## 7. Theme whitelist (random safe pool)
+Stories are drawn from a safe pool, e.g.: **The 404 Customer** (convenience-store loop), Space-station oxygen failure, Lost at Tube platform 404, Dorm-kitchen mystery order, Party "text from the future". Each: id, label, emoji, setup, color. Roles are generated per run, tied to the crisis (not a fixed job list).
 
 ---
 
-## 8. Degraded mode
-
+## 8. Degraded modes
 | Players | Handling |
 |---|---|
-| 1 | AI fills 2 NPCs (`isAI: true`); their action + roll run automatically, no countdown |
-| 2 | AI fills 1 NPC |
-| 3–4 | normal, no NPC |
-
-NPC action rule: pick a random one from `actionOptions`; roll result is truly random (no cheating).
-
----
-
-## 9. Suggested file structure
-
-```
-lib/
-  dice.ts          rollDice() → DiceRoll (pure, tested)
-  schema.ts        all Zod schemas (Quest / Player / Beat / FateCard / QuestCard)
-  fallback.ts      all fallback data (full dataset per theme)
-  director.ts      all prompt builders (buildOpeningPrompt / buildActionPrompt / buildNarrationPrompt / buildEndingPrompt)
-  questStore.ts    in-memory Quest state (shared by main game ↔ Fate Card page)
-  glm.ts           GLM OpenAI-compatible client (networked, untested)
-  env.ts           isOffline() reads GLM_OFFLINE
-app/api/
-  quest/route.ts       POST: create Quest (Call 1)
-  action/route.ts      POST: generate action options (Call 2)
-  roll/route.ts        POST: submit action + roll → narration (Call 3)
-  ending/route.ts      POST: generate ending + Quest Card (Call 4)
-  fate/route.ts        GET: fetch pending Fate Cards (Demo: pre-seeded)
-app/
-  page.tsx             main game state machine
-  q/[id]/page.tsx      external friend Fate Card page
-components/
-  ColdChat.tsx / Setup.tsx / ThemeSelect.tsx / Opening.tsx / Playing.tsx
-  DiceRoller.tsx / ActionOptions.tsx / FateCardBubble.tsx / QuestCard.tsx / MessageBubble.tsx
-```
+| 1 | Solo Quest + 2 NPCs (`isAI`/npc); NPC acts & rolls automatically, no countdown |
+| 2 | +1 NPC disruptor |
+| 3+ | normal |
+Offline/non-responding members → **Sleeping NPC**; can **Re-enter the quest**. NPC action: random from options; roll is truly random.
 
 ---
 
-## 10. Demo data (must pre-seed)
+## 9. UI screens
+| Screen | Phase | Core |
+|---|---|---|
+| ColdPrompt | COLD_PROMPT | in-chat light prompt (pinned/after last msg), non-blocking, "Start the adventure" |
+| Opening | OPENING | role reveal (role name under avatar) + opening narration |
+| Playing | PLAYING | chat stream + dice (D20 scramble → result banner, §4.1 colors) + action option cards + free-input box + intervention bubble (purple) + share + Wrap it up |
+| InterventionPage | standalone `/q/[id]` | friend sees only the story situation + a type picker + one-line input + **5-min countdown**; after expiry shows "This invitation has disappeared" |
+| EndingCard | SHARE_CARD | shareable card (title/caption/best moment/pivotal roll/best intervention/mood) + save/share |
 
-Demo uses the `flat-drama` theme, 3 players: `Jamie`, `Kai`, `Mia`, plus a pre-seeded Fate Card `Food Metaphor Mode` (submitted by `Sarah (WhatsApp)`, triggers at `round_2`).
+Result-banner colors (DESIGN §4.1 tiers): Critical Fail `#EF4444` · Fail `#F97316` · Partial Progress `#EAB308` (dark text) · Success `#22C55E` · Strong Success `#3B82F6` · Critical Success `#8B5CF6`. Avatar/player bubbles per ZYMIX style.
 
-**Full Demo chain (the perfect run when `GLM_OFFLINE=true`):**
+---
 
-```
-Opening: "The kitchen light flickers on at 2am. Three flatmates stand in a semicircle,
-          staring at the empty shelf where Jamie's leftover pasta used to be.
-          Someone ate it. Someone always does. Tonight, someone answers for it."
-
-Roles:
-  Jamie → The Forensic Foodie | "Can identify any meal by smell alone"
-  Kai   → The Ghost Rogue     | "Suspiciously good at not being noticed"
-  Mia   → The Chaos Bard      | "Turns every accusation into performance art"
-
-Beat 1 (Jamie, Roll: 7 → Messy Progress):
-  Action: "Demand a full forensic investigation"
-  Narration: "Jamie slams their hand on the counter and announces a full investigation.
-              The pasta evidence is found — but it's been microwaved beyond recognition.
-              Kai quietly takes a step backward.
-              Mia whispers: 'This is already better than the last flat meeting.'"
-
-Beat 2 (Kai, Roll: 3 → Awkward Fail):
-  Action: "Deny everything and blame the pigeon"
-  Narration: "Kai's alibi involves a pigeon, a 3am craving, and a very specific timeline
-              that somehow makes things worse. Nobody believes the pigeon theory.
-              Jamie raises an eyebrow: 'There are no pigeons on the fourth floor, Kai.'"
-
-[Fate Card activates: Food Metaphor Mode — Sarah (WhatsApp)]
-
-Beat 3 (Mia, Roll: 18 → Main Character Moment):
-  Action: "Deliver a closing argument in the style of a courtroom drama"
-  Narration: "Mia rises, and in the language of Food Metaphor Mode, delivers the verdict:
-              'The pasta was not stolen — it was emotionally consumed by someone who needed
-              carbohydrate closure.' The room falls silent. Even the microwave seems moved.
-              Kai slowly raises their hand."
-
-Ending: "The Flat Drama concludes not with justice, but with a group decision to label
-         everything in the fridge. Kai buys replacement pasta. Mia frames the verdict.
-         Jamie installs a padlock. The chat, once silent, now has 47 unread messages."
-
-QuestCard:
-  title: "The Great Pasta Incident: Resolved"
-  caption: "Chaotic but fed"
-  highlights: ["Jamie's forensic slam", "Kai's pigeon alibi", "Mia's carbohydrate closure verdict"]
-  bestInterferenceCaption: "Sarah's Food Metaphor Mode turned a flat argument into philosophy"
-```
+## 10. Demo data (must pre-seed; the perfect `GLM_OFFLINE=true` run)
+Theme **The 404 Customer**. Players: **Luna** (Delivery Driver), **Jake** (Lost Student), **Kai** (Store Manager), **Alex** (Investigator), **Emma** (CCTV Operator). Pre-seeded external intervention: **"Future Self Text"** (type message; submitted by Maya (WhatsApp); trigger next_round; 5-min disappearing).
+Key beat: Kai "photograph the video" → D20=15 Success → consequence "Kai has seen this clip 72 times; others' trust in Kai shifts." Ending: "the group escapes by finding which future message was lying." Card: "Customer #404 · chaotic but alive again · best intervention: Future Self Text".
 
 ---
 
 ## 11. Verification checklist
-
-Before submitting the Demo, all must pass:
-
-- [ ] `GLM_OFFLINE=true` runs end-to-end: cold chat → 3 beats → Wrap it up → ending → Quest Card
-- [ ] Fate Card activates correctly at `round_2`, appears in the chat stream
-- [ ] Dice animation is smooth, banner color correct
-- [ ] Timeout auto-play works (30s countdown → auto-picks actionOptions[0])
-- [ ] Quest Card can be screenshotted/downloaded
-- [ ] No white screen on any LLM failure; silently switches to fallback
-- [ ] Fate Card page (`/q/[id]`) is independently reachable, shows pre-seeded cards
-- [ ] Mobile (375px wide) layout is correct
-```
+- [ ] `GLM_OFFLINE=true` end-to-end: cold prompt → opening + roles → ≥3 beats with consequences in story_state → external intervention woven in → ending → share card
+- [ ] Generation never reads chat history (inputs limited to names/count/theme)
+- [ ] Each roll writes ≥1 story_state consequence; next options reflect it
+- [ ] D20 banner labels/colors per §4.1; role name under each avatar
+- [ ] 5-min invite shows countdown and the "disappeared" state; `/q/[id]` shows only the story situation
+- [ ] 30s auto-play; Sleeping NPC / solo mode
+- [ ] No white screen on any LLM failure (silent fallback)
+- [ ] Ending card downloadable; mobile 375px ok
+- [ ] All in-product text English
