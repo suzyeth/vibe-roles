@@ -8,9 +8,9 @@ describe("director prompts", () => {
     expect(system).toContain("JSON"); expect(user).toContain("Xiaomin"); expect(user).toContain("The Unread Beast");
   });
   it("buildRollPrompt includes label/fate/reactor and asks for JSON", () => {
-    const { system, user } = buildRollPrompt("silence", "Messy Progress", [{ type: "curse", title: "Food Metaphor", effect: "x", tone: "t", trigger: "next_round" }], "earlier", [{ name: "Kai", role: "Bard" }]);
+    const { system, user } = buildRollPrompt("silence", "Partial Progress", [{ type: "curse", title: "Food Metaphor", effect: "x", tone: "t", trigger: "next_round" }], "earlier", [{ name: "Kai", role: "Bard" }]);
     expect(system).toContain("JSON");
-    expect(user).toContain("Messy Progress");
+    expect(user).toContain("Partial Progress");
     expect(user).toContain("Food Metaphor");
     expect(user).toContain("Kai");
   });

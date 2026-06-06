@@ -16,12 +16,12 @@ export function fallbackQuest(members: string[]): Quest {
   };
 }
 const NARR: Record<string, string> = {
-  "Total Chaos": "Catastrophic miss — everything spirals into glorious nonsense.",
-  "Awkward Fail": "You fail, but in the funniest possible way.",
-  "Messy Progress": "You scrape forward, but leave a mess behind.",
-  "Works Somehow": "It somehow works — though you planted a problem for later.",
-  "Main Character Moment": "Main character moment — you flip the whole scene.",
-  "Iconic Roll": "Iconic roll — the whole group goes legendary.",
+  "Critical Fail": "Catastrophic miss — everything spirals into glorious nonsense.",
+  "Fail": "You fail, but in the funniest possible way; the situation gets messier.",
+  "Partial Progress": "You scrape forward, but it leaves a problem behind.",
+  "Success": "It works — you find a new clue or change the scene.",
+  "Strong Success": "Strong success — you gain an edge and it shifts the others' situation.",
+  "Critical Success": "Critical success — a highlight moment, the whole group benefits.",
 };
 const REACT_POOL = ["wait that actually worked?", "knew this would happen…", "who told you to do that lol", "i'm crying this is too much", "ok hold up we got this", "i'm leaving this group chat"];
 export function fallbackRoundResult(roll: number, _fate: FateCard[], reactors: { name: string; role: string }[] = [], seed = 0): RoundResult {

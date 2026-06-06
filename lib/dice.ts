@@ -1,32 +1,32 @@
 export type RollLabel =
-  | "Total Chaos"
-  | "Awkward Fail"
-  | "Messy Progress"
-  | "Works Somehow"
-  | "Main Character Moment"
-  | "Iconic Roll";
+  | "Critical Fail"
+  | "Fail"
+  | "Partial Progress"
+  | "Success"
+  | "Strong Success"
+  | "Critical Success";
 
 export function rollLabel(n: number): RollLabel {
-  if (n <= 1) return "Total Chaos";
-  if (n <= 5) return "Awkward Fail";
-  if (n <= 10) return "Messy Progress";
-  if (n <= 15) return "Works Somehow";
-  if (n <= 19) return "Main Character Moment";
-  return "Iconic Roll";
+  if (n <= 1) return "Critical Fail";
+  if (n <= 5) return "Fail";
+  if (n <= 10) return "Partial Progress";
+  if (n <= 15) return "Success";
+  if (n <= 19) return "Strong Success";
+  return "Critical Success";
 }
 
 export function clampD20(n: number): number {
   return Math.max(1, Math.min(20, Math.floor(n)));
 }
 
-// --- SPEC §2.2 dice system (additive; existing rollLabel/clampD20 stay) ---
+// --- DESIGN §4.1 dice system (D20, lightweight labels) ---
 export type DiceResult =
-  | "total-chaos"
-  | "awkward-fail"
-  | "messy-progress"
-  | "works-somehow"
-  | "main-character-moment"
-  | "iconic-roll";
+  | "critical-fail"
+  | "fail"
+  | "partial-progress"
+  | "success"
+  | "strong-success"
+  | "critical-success";
 
 export interface DiceRoll {
   value: number; // 1–20
@@ -37,12 +37,12 @@ export interface DiceRoll {
 }
 
 export const DICE_MAP: Record<DiceResult, { label: string; emoji: string; color: string; range: [number, number] }> = {
-  "total-chaos": { label: "Total Chaos", emoji: "💀", color: "#EF4444", range: [1, 1] },
-  "awkward-fail": { label: "Awkward Fail", emoji: "😬", color: "#F97316", range: [2, 5] },
-  "messy-progress": { label: "Messy Progress", emoji: "😅", color: "#EAB308", range: [6, 10] },
-  "works-somehow": { label: "Works Somehow", emoji: "😌", color: "#22C55E", range: [11, 15] },
-  "main-character-moment": { label: "Main Character Moment", emoji: "😎", color: "#3B82F6", range: [16, 19] },
-  "iconic-roll": { label: "Iconic Roll", emoji: "🔥", color: "#8B5CF6", range: [20, 20] },
+  "critical-fail": { label: "Critical Fail", emoji: "💀", color: "#EF4444", range: [1, 1] },
+  "fail": { label: "Fail", emoji: "😬", color: "#F97316", range: [2, 5] },
+  "partial-progress": { label: "Partial Progress", emoji: "😅", color: "#EAB308", range: [6, 10] },
+  "success": { label: "Success", emoji: "😌", color: "#22C55E", range: [11, 15] },
+  "strong-success": { label: "Strong Success", emoji: "😎", color: "#3B82F6", range: [16, 19] },
+  "critical-success": { label: "Critical Success", emoji: "🔥", color: "#8B5CF6", range: [20, 20] },
 };
 
 export function resultFromValue(value: number): DiceResult {

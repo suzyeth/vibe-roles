@@ -9,8 +9,8 @@ const BY_LABEL = Object.values(DICE_MAP).reduce<Record<string, { color: string; 
 export function RollResultBanner({ roll, label, advantage }: { roll: number; label: string; advantage?: boolean }) {
   const m = BY_LABEL[label];
   const bg = m?.color ?? "#3F3F46";
-  // Messy Progress uses a yellow background → dark text per SPEC §5.3
-  const darkText = label === "Messy Progress";
+  // Partial Progress uses a yellow background → dark text for contrast
+  const darkText = label === "Partial Progress";
   return (
     <div
       className="mx-3 my-2 rounded-xl px-3 py-2 text-center font-medium"

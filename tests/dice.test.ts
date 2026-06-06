@@ -3,15 +3,15 @@ import { rollLabel, clampD20, toDiceRoll, DICE_MAP } from "@/lib/dice";
 
 describe("rollLabel", () => {
   it("maps boundaries correctly", () => {
-    expect(rollLabel(1)).toBe("Total Chaos");
-    expect(rollLabel(5)).toBe("Awkward Fail");
-    expect(rollLabel(6)).toBe("Messy Progress");
-    expect(rollLabel(10)).toBe("Messy Progress");
-    expect(rollLabel(11)).toBe("Works Somehow");
-    expect(rollLabel(15)).toBe("Works Somehow");
-    expect(rollLabel(16)).toBe("Main Character Moment");
-    expect(rollLabel(19)).toBe("Main Character Moment");
-    expect(rollLabel(20)).toBe("Iconic Roll");
+    expect(rollLabel(1)).toBe("Critical Fail");
+    expect(rollLabel(5)).toBe("Fail");
+    expect(rollLabel(6)).toBe("Partial Progress");
+    expect(rollLabel(10)).toBe("Partial Progress");
+    expect(rollLabel(11)).toBe("Success");
+    expect(rollLabel(15)).toBe("Success");
+    expect(rollLabel(16)).toBe("Strong Success");
+    expect(rollLabel(19)).toBe("Strong Success");
+    expect(rollLabel(20)).toBe("Critical Success");
   });
 });
 
@@ -23,18 +23,18 @@ describe("clampD20", () => {
   });
 });
 
-describe("toDiceRoll (SPEC §2.2)", () => {
+describe("toDiceRoll (DESIGN §4.1)", () => {
   it("maps value to result with label/emoji/color", () => {
-    expect(toDiceRoll(1).result).toBe("total-chaos");
-    expect(toDiceRoll(7).result).toBe("messy-progress");
-    expect(toDiceRoll(20).result).toBe("iconic-roll");
+    expect(toDiceRoll(1).result).toBe("critical-fail");
+    expect(toDiceRoll(7).result).toBe("partial-progress");
+    expect(toDiceRoll(20).result).toBe("critical-success");
     const r = toDiceRoll(18);
-    expect(r.label).toBe("Main Character Moment");
-    expect(r.emoji).toBe(DICE_MAP["main-character-moment"].emoji);
+    expect(r.label).toBe("Strong Success");
+    expect(r.emoji).toBe(DICE_MAP["strong-success"].emoji);
     expect(r.color).toBe("#3B82F6");
   });
   it("clamps out-of-range values", () => {
-    expect(toDiceRoll(0).result).toBe("total-chaos");
-    expect(toDiceRoll(99).result).toBe("iconic-roll");
+    expect(toDiceRoll(0).result).toBe("critical-fail");
+    expect(toDiceRoll(99).result).toBe("critical-success");
   });
 });
