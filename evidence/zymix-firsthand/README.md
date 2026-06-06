@@ -1,15 +1,15 @@
-# Zymix 第一手体验截图（必做）
+# ZYMIX first-hand screenshots (required)
 
-> 官方公告要求："Download and experience Zymix as a real user first"。
-> 下载注册后，把下面这些截图丢进本文件夹（同时是 Z.ai×Orbit 的 build-in-public 证据）。
+> The official announcement requires: "Download and experience Zymix as a real user first."
+> After signing up, drop these screenshots in this folder (also build-in-public evidence for the Z.ai×Orbit award).
 
-## 要截的图（建议命名）
-- [ ] `01-register.png` — 注册流程（卡点/权限）
-- [ ] `02-group-empty.png` — 群组空间打开第一眼（多空）
-- [ ] `03-miniapps.png` — Mini Apps 列表（有几个能玩）
-- [ ] `04-social-scene.png` — Social Scene / 附近
-- [ ] `05-push-or-wheel.png` — 推送 / 转盘抽奖弹窗
-- [ ] `06-anything-annoying.png` — 任何让你不爽的一幕
-- [ ] `07-anything-cool.png` — 任何让你眼前一亮的一幕
+## Shots to capture (suggested names)
+- [ ] `01-register.png` — sign-up flow (stall points / permissions)
+- [ ] `02-group-empty.png` — first look at a group space (how empty)
+- [ ] `03-miniapps.png` — Mini Apps list (how many are playable)
+- [ ] `04-social-scene.png` — Social Scene / Nearby
+- [ ] `05-push-or-wheel.png` — push / wheel-spin popup
+- [ ] `06-anything-annoying.png` — anything that annoyed you
+- [ ] `07-anything-cool.png` — anything that impressed you
 
-截完图后，把观察写进 `DESIGN.md` §1.2.1，并把 demo 开场（§12 的 0:00–0:30）改成讲这些真实感受。
+After capturing, write the observations into `DESIGN.md` §1.2.1, and rewrite the demo opening (§12, 0:00–0:30) to tell those real impressions.

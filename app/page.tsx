@@ -14,7 +14,6 @@ import type { Quest, FateCard, QuestCard as QC } from "@/lib/schema";
 
 type Phase = "cold" | "loading" | "playing" | "ended";
 const TOTAL_ROUNDS = 3;
-const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export default function Home() {
   const [phase, setPhase] = useState<Phase>("cold");
@@ -31,9 +30,9 @@ export default function Home() {
 
   const nextId = () => `m${idRef.current++}`;
   const shareUrl = typeof window !== "undefined" && questId.current ? `${window.location.origin}/q/${questId.current}` : "";
-  const avatarOf = (name: string) => PRESET_MEMBERS.find((m) => m.name === name)?.avatar ?? "🎭";
-  function push(author: string, text: string, kind: ChatMsg["kind"], avatar?: string) {
-    setMsgs((m) => [...m, { id: nextId(), author, avatar: avatar ?? (kind === "narration" ? "🎬" : "🎲"), text, kind }]);
+  function push(author: string, text: string, kind: ChatMsg["kind"]) {
+    const avatar = kind === "narration" ? "🎬" : (PRESET_MEMBERS.find((m) => m.name === author)?.avatar ?? "🎲");
+    setMsgs((m) => [...m, { id: nextId(), author, avatar, text, kind }]);
   }
 
   async function start(theme: string) {
@@ -42,7 +41,7 @@ export default function Home() {
     const res = await fetch("/api/quest", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ questId: questId.current, members: PRESET_MEMBERS.map((m) => m.name), theme }) });
     const q: Quest = await res.json();
     setQuest(q); recent.current = q.scene.setup;
-    push("旁白", q.scene.setup, "narration");
+    push("Narrator", q.scene.setup, "narration");
     setPhase("playing");
   }
 
@@ -52,18 +51,12 @@ export default function Home() {
       const f = await (await fetch(`/api/fate?questId=${questId.current}`)).json();
       if (Array.isArray(f.cards)) setFate(f.cards);
     } catch { /* fate fetch is best-effort */ }
-    const res = await fetch("/api/roll", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ questId: questId.current, roll: n, recent: recent.current }) });
+    const res = await fetch("/api/roll", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ questId: questId.current, roll: n, recent: recent.current, round }) });
     const r = await res.json();
     setLast({ roll: r.roll, label: r.label });
-    push("旁白", r.narration, "narration");
+    (r.reactions ?? []).forEach((rc: { member: string; text: string }) => push(rc.member, rc.text, "member"));
+    push("Narrator", r.narration, "narration");
     recent.current = r.narration;
-    // teammates chime in one by one, like a live group chat
-    if (Array.isArray(r.lines)) {
-      for (const ln of r.lines) {
-        await delay(550);
-        push(ln.name, ln.text, "member", avatarOf(ln.name));
-      }
-    }
     const next = round + 1; setRound(next);
     if (next === 1) setShowShare(true);
     if (next >= TOTAL_ROUNDS) await finish(r.roll);
@@ -82,7 +75,7 @@ export default function Home() {
           <div>
             <DeadGroup msgs={DEAD_GROUP} />
             <div className="p-4 text-center">
-              <div className="mb-2 text-zinc-300">群里好冷？掷一颗骰子救场 👇</div>
+              <div className="mb-2 text-zinc-300">Chat&apos;s gone cold? Roll a die to revive it 👇</div>
               <div className="flex flex-wrap justify-center gap-2">
                 {QUEST_THEMES.map((t) => (
                   <button key={t} type="button" onClick={() => start(t)} className="rounded-full bg-zinc-800 px-4 py-2 hover:bg-fuchsia-700">{t}</button>
@@ -92,7 +85,7 @@ export default function Home() {
             </div>
           </div>
         )}
-        {phase === "loading" && <div className="p-8 text-center text-zinc-400">AI 正在生成冒险…🎲</div>}
+        {phase === "loading" && <div className="p-8 text-center text-zinc-400">Rolling up your quest… 🎲</div>}
         {quest && phase !== "cold" && (
           <div className="grid grid-cols-2 gap-2 p-3">
             {quest.players.map((p) => (
@@ -109,18 +102,18 @@ export default function Home() {
       </div>
       {phase === "playing" && (
         <div className="border-t border-zinc-800">
-          <div className="px-3 pt-2 text-center text-xs text-zinc-400">第 {round + 1}/{TOTAL_ROUNDS} 回合 · 点骰子推进</div>
+          <div className="px-3 pt-2 text-center text-xs text-zinc-400">Round {round + 1}/{TOTAL_ROUNDS} · tap the die to continue</div>
           <DiceRoller onRoll={onRoll} />
           {showShare && shareUrl && (
             <div className="px-3 pb-3 text-center">
-              <div className="text-xs text-fuchsia-300 mb-1">让 WhatsApp 好友干预故事：</div>
+              <div className="text-xs text-fuchsia-300 mb-1">Let WhatsApp friends interfere with your quest:</div>
               <input readOnly value={shareUrl} className="w-full rounded bg-zinc-800 px-2 py-1 text-xs" onFocus={(e) => e.currentTarget.select()} />
-              <a href={shareUrl} target="_blank" className="mt-1 inline-block text-xs underline text-fuchsia-400">打开干预页（演示用）</a>
+              <a href={shareUrl} target="_blank" className="mt-1 inline-block text-xs underline text-fuchsia-400">Open interference page (demo)</a>
             </div>
           )}
         </div>
       )}
-      {phase === "ended" && <button type="button" onClick={() => setPhase("cold")} className="m-3 rounded-full bg-fuchsia-600 py-2 text-white">再来一局 🔁</button>}
+      {phase === "ended" && <button type="button" onClick={() => setPhase("cold")} className="m-3 rounded-full bg-fuchsia-600 py-2 text-white">Play again 🔁</button>}
     </main>
   );
 }

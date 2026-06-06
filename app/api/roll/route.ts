@@ -1,41 +1,36 @@
 import { NextRequest } from "next/server";
 import { isOffline } from "@/lib/env";
 import { clampD20, rollLabel } from "@/lib/dice";
-import { buildRollPrompt, buildPartyPrompt } from "@/lib/director";
-import { glmText, glmJSON } from "@/lib/glm";
-import { fallbackRoundResult, fallbackPartyLines } from "@/lib/fallback";
-import { PartyLinesSchema } from "@/lib/schema";
+import { buildRollPrompt } from "@/lib/director";
+import { glmJSON } from "@/lib/glm";
+import { fallbackRoundResult } from "@/lib/fallback";
 import { getQuest, listFateCards } from "@/lib/questStore";
+import { RoundResultSchema } from "@/lib/schema";
 
 export async function POST(req: NextRequest) {
-  const { questId, roll, recent } = await req.json();
+  const { questId, roll, recent, round } = await req.json();
   const n = clampD20(typeof roll === "number" ? roll : 1);
   const label = rollLabel(n);
+  const r = typeof round === "number" ? round : 0;
   const entry = questId ? getQuest(String(questId)) : undefined;
   const fate = questId ? listFateCards(String(questId)) : [];
   const setup = entry?.quest.scene.setup ?? "";
-  // party = the AI teammates (everyone in the quest except the human "你")
-  const party = (entry?.quest.players ?? []).map((p) => p.name).filter((nm) => nm !== "你");
-
-  let narration: string;
-  let lines: { name: string; text: string }[];
+  const others = (entry?.quest.players ?? []).filter((p) => p.name !== "You");
+  const reactors = others.length
+    ? [others[r % others.length], others[(r + 1) % others.length]]
+        .filter((x, i, a) => x && a.indexOf(x) === i)
+        .map((p) => ({ name: p.name, role: p.role }))
+    : [];
   if (isOffline()) {
-    narration = fallbackRoundResult(n, fate).narration;
-    lines = fallbackPartyLines(party, label, n);
-  } else {
-    try {
-      const { system, user } = buildRollPrompt(setup, label, fate, recent ?? "");
-      narration = (await glmText(system, user)).trim() || fallbackRoundResult(n, fate).narration;
-    } catch {
-      narration = fallbackRoundResult(n, fate).narration;
-    }
-    try {
-      const { system, user } = buildPartyPrompt(party, setup, label, recent ?? "");
-      const parsed = PartyLinesSchema.parse(await glmJSON(system, user));
-      lines = parsed.lines.length ? parsed.lines : fallbackPartyLines(party, label, n);
-    } catch {
-      lines = fallbackPartyLines(party, label, n);
-    }
+    const fb = fallbackRoundResult(n, fate, reactors, r);
+    return Response.json({ roll: n, label, narration: fb.narration, reactions: fb.reactions });
   }
-  return Response.json({ roll: n, label, narration, lines });
+  try {
+    const { system, user } = buildRollPrompt(setup, label, fate, recent ?? "", reactors);
+    const parsed = RoundResultSchema.parse(await glmJSON(system, user));
+    return Response.json({ roll: n, label, narration: parsed.narration, reactions: parsed.reactions });
+  } catch {
+    const fb = fallbackRoundResult(n, fate, reactors, r);
+    return Response.json({ roll: n, label, narration: fb.narration, reactions: fb.reactions });
+  }
 }

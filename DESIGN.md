@@ -1,166 +1,166 @@
-# Vibe Dice — 产品设计文档（DESIGN.md）
+# Vibe Dice — Product Design Doc (DESIGN.md)
 
-> VibeHack London 2026 · 赛道 2「Vibe with Zymix」参赛项目设计源文件
-> 基于原「Vibe Roles」文档重构（v3 pivot）
-> 最后更新：2026-06-06
+> VibeHack London 2026 · Track 2 "Vibe with ZYMIX" — design source of truth
+> Rebuilt from the earlier "Vibe Roles" concept (v3 pivot)
+> Last updated: 2026-06-06
 
-## 0. 一句话定位
-**Zymix 原生 AI 骰子故事 Mini Game：当群聊冷掉时，用户一键开启一场 3 分钟微型冒险。AI 当主持人，骰子推动剧情，好友可以通过 WhatsApp / 通讯录链接添加角色、诅咒、道具和世界规则来干预故事。**
+## 0. One-line positioning
+**A ZYMIX-native AI dice-story mini game: when a group chat goes cold, one tap starts a 3-minute micro adventure. An AI Game Master runs the story, dice decide what happens, and friends can interfere through WhatsApp / contacts links by adding characters, curses, objects, and world rules.**
 
-区隔话术（demo 第一句，务必先讲）：
-> "我们不是又一个常驻陪聊 AI，也不是完整 DND。我们把冷掉的群聊变成一局 3 分钟的 AI 骰子冒险，并且让没有下载 Zymix 的朋友也能通过 WhatsApp 干预故事。"
+Differentiation line (say it first in the demo):
+> "We're not another chatbot in the group, and we're not a heavy DnD. We turn a dead chat into a 3-minute AI dice adventure, and even friends who haven't downloaded ZYMIX can shape the story through WhatsApp."
 
-产品短名：**Vibe Dice**
-备选名：**RollQuest / Chaos Quest / Zymix Side Quest**
+Short name: **Vibe Dice**
+Alternatives: **RollQuest / Chaos Quest / Zymix Side Quest**
 
-> 注意：产品对外尽量不要直接叫 DND。Dungeons & Dragons 是明确品牌，而且会让评委以为系统很重。我们应使用「AI dice story game」「micro roleplay quest」「chat-based adventure」这类说法。
-
-## 0.1 与现有代码的关系（迁移说明）
-当前仓库已有一份**可运行的「Vibe Roles」参考实现**（群聊微剧场 + 名场面卡），技术骨架可大量复用。本文件是 **v3 pivot**，玩法核心由「分角色演短剧」升级为「骰子驱动 + 外部好友 Fate Card 干预」。**代码尚未对齐本设计**——需改造的模块见 §16 迁移清单。复用与改造原则：保留 Next.js + GLM + 兜底三件套 + 离线开关的架构，替换玩法循环、加骰子系统与外部干预页。
-
-## 0.2 与评分维度的对齐（为什么这版更能拿分）
-| 评分项(权重) | Vibe Dice 如何命中 |
-|---|---|
-| 相关性 (25%) | 正面解决 Zymix「下载量低/群冷清」——单人即可开局，且把外部朋友带回 App |
-| 原创性 (20%) | 「骰子命运 + 外部非用户用 Fate Card 干预」的组合无成熟产品端到端做过 |
-| UX (20%) | 用户只需投骰子/一键，零打字门槛；3 分钟一局节奏紧凑 |
-| AI 有效性 (20%) | AI 做实时叙事整合、Fate Card 结构化、内容治理、节奏控制（不只是生成器） |
-| Demo 完成度 (15%) | 固定 3 回合 + 预生成兜底 + 离线录屏，闭环可控 |
+> Branding note: don't pitch it as "DnD" to judges. Dungeons & Dragons is a loaded brand and makes the system sound heavy. Use phrasing like "AI dice story game", "micro roleplay quest", "chat-based adventure". (Internally, the *experience target* is a DND-like AI Game Master — see §3.3.)
 
 ---
 
-## 1. 背景与机会
+## 1. Background & opportunity
 
-### 1.1 比赛
-- VibeHack London 2026，24 小时黑客松，3 分钟现场桌边 demo。
-- 主赛道：Vibe with Zymix（为 Gen Z 社交 App「Zymix」做 AI 原生功能）。
-- 提交：Devpost（主）；截止 2026-06-07 周日 12:00。
-- 评分权重：**相关性 25% / 原创 20% / UX 20% / AI 有效性 20% / demo 完成度 15%**。
+### 1.1 The competition
+- VibeHack London 2026, 24-hour hackathon, 3-minute live table-side demo.
+- Track: Vibe with ZYMIX (build an AI-native feature for the Gen Z social app "ZYMIX").
+- Submission: Devpost (main); deadline Sun 7 June 2026, 12:00.
+- Scoring weights: **Relevance 25% / Originality 20% / UX 20% / Effective use of AI 20% / Demo polish 15%**.
 
-### 1.2 Zymix 真实现状（按原文档保留）
-- 英国 Gen Z 一体化社交 SuperApp（"Social. Pay. Explore."）。
-- 功能：加密通讯、Social Scene（附近的人/匿名投票/排行榜/限时活动/校园&夜生活/群组空间）、Wallet（积分/打赏/投票/分账）、Mini Apps（短剧/直播/轻量小游戏/本地服务）、AI 助手。
-- 体量极早期：近 30 天约 61 次下载；App Store 4.6（仅 9 个评分）。
-- 用户反馈：👍"小游戏新鲜好玩"；👎 注册后垃圾推送、转盘抽奖促销太重、活跃度低。
+### 1.2 ZYMIX reality (from prior research)
+- A UK Gen Z all-in-one social SuperApp ("Social. Pay. Explore.").
+- Features: encrypted chat, Social Scene (nearby / anonymous polls / leaderboards / limited-time events / campus & nightlife / group spaces), Wallet (points / tipping / voting / bill-split), Mini Apps (short drama / livestream / lightweight games / local services), AI assistant.
+- Very early stage: ~61 downloads in the last 30 days; App Store 4.6 (only 9 ratings).
+- User feedback: 👍 "the mini games are fresh and fun"; 👎 spammy push after signup, too many wheel-spin promos, low activity.
 
-### 1.2.1 第一手亲身体验观察（下载 Zymix 后填 — 必做）
-> 官方公告明确要求 "Download and experience Zymix as a real user first"。上面的 §1.2 是从应用商店元数据推出来的，评委也能做；**下载后写下具体到按钮/秒的真实痛点（5–10 条）**，demo 开场就讲这些，比数据有力 10 倍。截图归档在 `evidence/zymix-firsthand/`。
+### 1.2.1 First-hand experience notes (fill after downloading ZYMIX — required)
+> The official announcement requires "Download and experience Zymix as a real user first." §1.2 above is derived from store metadata, which judges can also do. After installing, write down concrete, button-level, second-level pain points (5–10 of them). Open the demo with these — far stronger than stats. Archive screenshots in `evidence/zymix-firsthand/`.
 
-- [ ] 注册流程：________（卡在第几步？要哪些权限？）
-- [ ] 群组空间打开第一眼：________（多空？有内容吗？）
-- [ ] Mini Apps 列表：________（几个能玩？第一眼是什么？）
-- [ ] Social Scene / 附近：________
-- [ ] 推送 / 转盘抽奖：________（多久弹一次？弹了几次？）
-- [ ] 最想吐槽的一点：________
-- [ ] 最缺的一个功能：________
-- [ ] 一句话总结你的体感：________
+- [ ] Sign-up flow: ________ (which step stalls? what permissions?)
+- [ ] First look at a group space: ________ (how empty? any content?)
+- [ ] Mini Apps list: ________ (how many are playable? first impression?)
+- [ ] Social Scene / Nearby: ________
+- [ ] Push / wheel-spin: ________ (how often does it pop? how many times?)
+- [ ] Most annoying thing: ________
+- [ ] The one feature most missing: ________
+- [ ] One-line summary of how it felt: ________
 
-### 1.3 机会点（重新定义）
-原文档把问题定义为「死群没人想当第一个发言的人」。这个判断仍然成立，但还不够。真正的冷启动问题是：
+### 1.3 The opportunity (redefined)
+The earlier doc framed the problem as "a dead chat where nobody wants to speak first." That still holds, but it's not enough. The real cold-start problem is:
 
-1. **Zymix 下载量低，很多真实朋友可能根本不在 App 里。**
-2. **如果群聊本身不活跃，只做群内功能会很危险。**
-3. **早期社交 App 需要一个人也能开始，并能把外部朋友带进来。**
+1. **ZYMIX has low downloads, so many real friends may not be in the app at all.**
+2. **If the group chat itself isn't active, an in-chat-only feature is risky.**
+3. **An early social app needs something one person can start, and that can pull external friends in.**
 
-所以 Vibe Dice 的机会不是「让群里的人继续聊天」，而是：
+So Vibe Dice's opportunity is not "keep the people in the group chatting", but:
 
-> **让一个用户先玩起来，再通过 WhatsApp / 通讯录好友干预故事，把外部社交关系带回 Zymix。**
+> **Let one user start playing, then let WhatsApp / contacts friends interfere with the story, pulling external social ties back into ZYMIX.**
 
-这比单纯的群聊破冰更适合早期 App，因为它不依赖平台内已经存在大量活跃用户。
-
----
-
-## 2. 竞品与原创性
-
-### 2.1 仍需避开的红海
-「AI 进群聊」已经很拥挤。原文档中提到的竞品逻辑仍然成立：
-- AI 常驻群聊当成员：容易撞 Shapes。
-- AI Host 派对游戏：如果玩法预制，会像普通 party game。
-- Character.AI 群聊：更偏 AI 角色陪聊，真人互动反而弱。
-- AI Dungeon：长篇 RPG，过重，不解决社交 App 冷启动。
-
-### 2.2 新空白点
-Vibe Dice 的空白点不再是「AI 给真人分角色演短剧」，而是这条链路：
-
-> **冷群 / 单人启动 → AI 生成微型冒险 → 骰子决定剧情命运 → 外部好友通过链接添加 Fate Cards → AI 把好友干预编进下一轮故事 → 生成可分享结果卡 → 引导好友回流 Zymix。**
-
-这个组合比原 Vibe Roles 更强，因为它新增了两个关键创新：
-
-1. **Dice-based agency**：用户不是被动看 AI 写剧本，而是通过投骰子决定成功、失败、反转和代价。
-2. **External interference loop**：好友不需要已经在 Zymix 里，也可以通过 WhatsApp / 通讯录链接干预故事。
-
-### 2.3 Demo 卖点
-不要说：
-> "我们做了一个 AI DND。"
-
-要说：
-> "我们做了一个 AI-native social mini game。它把冷群变成骰子故事，把外部朋友变成剧情干预者，让 Zymix 在用户量很小时也能产生可分享的社交内容。"
+This fits an early app better than pure in-chat icebreaking, because it doesn't depend on a large active user base already existing on the platform.
 
 ---
 
-## 3. 核心玩法循环
+## 2. Competitors & originality
 
-### 3.1 主循环
-1. **触发**：Zymix 群聊冷掉后，出现按钮：**Roll to revive this chat**。用户也可以在 Mini Apps 中主动点开 **Vibe Dice**。
-2. **AI 开场**：AI 根据群名、成员名、最近聊天氛围或预设主题生成一个微型冒险。
-3. **自动分配角色**：AI 给在场成员分配轻量角色，例如 The Ghost Rogue / The Snack Healer / The Chaos Bard / The Budget Goblin。
-4. **投骰子推进故事**：用户点击骰子。骰子结果决定当前行动是失败、部分成功、成功还是荒谬大成功。
-5. **分享干预链接**：用户可以点击 **Ask friends to interfere**，把故事链接发到 WhatsApp / 通讯录 / IG DM。
-6. **好友添加 Fate Card**：外部好友不需要下载 App，可以在网页里添加一个角色、道具、诅咒、世界规则或祝福。
-7. **AI 编入下一轮**：下一轮投骰子时，AI 抽取或读取好友提交的 Fate Card，把它自然编进剧情。
-8. **结局与结果卡**：3 回合后，AI 生成反转结局和一张可分享 Quest Card。
-9. **回流**：结果卡底部显示：**Start your own Vibe Dice on Zymix**。
+### 2.1 Red ocean to avoid
+"AI in the group chat" is crowded. The competitor logic from the earlier doc still holds:
+- AI living in the group chat as a member: risks looking like Shapes.
+- AI-host party games: if gameplay is pre-baked, it looks like a normal party game.
+- Character.AI group chat: leans toward AI-character companionship; human interaction is weaker.
+- AI Dungeon: long-form RPG, too heavy, doesn't solve a social app's cold start.
 
-### 3.2 推荐时长
-- 每局：约 3 分钟。
-- 回合数：3 回合。
-- 每轮用户操作：一次投骰子 + 最多一次选择。
-- 好友干预：每个好友最多提交 1 张 Fate Card，防止故事失控。
+### 2.2 The white space
+Vibe Dice's white space is no longer "AI casts humans into a skit", but this chain:
+
+> **Cold chat / solo start → AI generates a micro adventure → dice decide the story's fate → external friends add Fate Cards via a link → AI weaves their interference into the next round → generate a shareable result card → drive friends back into ZYMIX.**
+
+Two key innovations beyond the old Vibe Roles:
+
+1. **Dice-based agency**: the user doesn't passively watch the AI write; they roll to decide success, failure, twists, and costs.
+2. **External interference loop**: friends don't need to already be on ZYMIX — they can interfere through a WhatsApp / contacts link.
+
+### 2.3 Demo pitch
+Don't say:
+> "We built an AI DnD."
+
+Say:
+> "We built an AI-native social mini game. It turns a dead chat into a dice story, turns outside friends into story interferers, and lets ZYMIX produce shareable social content even with a tiny user base."
 
 ---
 
-## 4. 骰子系统
+## 3. Core gameplay loop
 
-### 4.1 骰子不是传统 D20，而是 Vibe Dice
-为了更符合 Gen Z 语气，不直接使用传统数字规则。界面可以保留 1–20 数字，但结果标签用情绪化语言。
+### 3.1 Main loop
+1. **Trigger**: when a ZYMIX chat goes cold, a button appears: **Roll to revive this chat**. Users can also open **Vibe Dice** directly from Mini Apps.
+2. **AI opening**: the AI generates a micro adventure from the group name, member names, recent vibe, or a preset theme.
+3. **Auto role assignment**: the AI gives present members lightweight roles, e.g. The Ghost Rogue / The Snack Healer / The Chaos Bard / The Budget Goblin.
+4. **Roll to advance**: the user taps the die. The result decides whether the action fails, partly succeeds, succeeds, or goes absurdly well — and the AI narrates a rich beat (see §3.3).
+5. **Share an interference link**: the user can tap **Ask friends to interfere** and send the story link to WhatsApp / contacts / IG DM.
+6. **Friends add a Fate Card**: external friends don't need the app — on a web page they add a character, object, curse, world rule, or blessing.
+7. **AI weaves it in**: on the next roll, the AI reads the submitted Fate Cards and dramatizes them into the story.
+8. **Ending & result card**: after 3 rounds, the AI writes a twist ending and a shareable Quest Card.
+9. **Return**: the result card footer says **Start your own Vibe Dice on Zymix**.
 
-| 点数 | 结果标签 | 故事效果 |
+### 3.2 Recommended length
+- Per run: ~3 minutes.
+- Rounds: 3.
+- Per round: one roll + at most one choice.
+- Friend interference: each friend submits at most 1 Fate Card, to keep the story from spiraling.
+
+### 3.3 Narrative depth — a DND-like conversational story (RULE)
+Vibe Dice should feel like a lightweight tabletop RPG run by a great Game Master — a *conversation*, not a slot machine. Even in 3 minutes, the text must carry real story:
+
+- **Rich narration**: each beat is **2–4 vivid sentences** (not a one-word label), with concrete sensory detail, clear stakes, and a hook/cliffhanger at the end.
+- **The GM is in-character and reactive**: address players by their role names, and explicitly react to what just happened last beat (continuity with `recent`).
+- **Other players speak every round**: 1–2 short in-character lines from the other members each round, so it reads like a group adventure, not a solo roll. (This is a hard requirement — the chat must have multiple voices.)
+- **End each beat with a light choice or open question** that invites the next roll or a friend's Fate Card ("Do you trust the pigeon's advice, or run?").
+- **Dramatize Fate Cards**: when a friend's card lands, the GM narrates its arrival in-story, not as a bullet point.
+- **Tone**: playful, Gen Z, English; PG-safe (no violence/explicit/hate). Keep momentum (3 rounds), but prioritize vivid, connected story over terseness.
+
+Branding caution from §0 still applies (don't market it as DnD), but the internal design target is: **AI Game Master + dice + group dialogue.**
+
+---
+
+## 4. Dice system
+
+### 4.1 Not a traditional D20 — it's the Vibe Dice
+To fit Gen Z tone, don't expose raw numeric rules. The UI can keep 1–20, but result labels use emotional language.
+
+| Number | Result label | Story effect |
 |---|---|---|
-| 1 | Total Chaos | 大失败，触发最荒谬后果 |
-| 2–5 | Awkward Fail | 失败，但生成好笑转折 |
-| 6–10 | Messy Progress | 部分成功，有代价 |
-| 11–15 | Works Somehow | 成功，但留下隐患 |
-| 16–19 | Main Character Moment | 成功，并获得优势 |
-| 20 | Iconic Roll | 极大成功，进入高光场面 |
+| 1 | Total Chaos | Critical fail, triggers the most absurd consequence |
+| 2–5 | Awkward Fail | Failure, but with a funny twist |
+| 6–10 | Messy Progress | Partial success, with a cost |
+| 11–15 | Works Somehow | Success, but leaves a problem |
+| 16–19 | Main Character Moment | Success, and you gain an edge |
+| 20 | Iconic Roll | Huge success, a highlight moment |
 
-### 4.2 为什么需要骰子
-骰子解决三个问题：
+### 4.2 Why dice
+Dice solve three problems:
 
-1. **降低表演压力**：用户不用想自己该说什么，点一下骰子就能推进。
-2. **增加重复玩性**：同一个设定也会因为骰子结果不同而变成不同故事。
-3. **让 AI 不像纯生成器**：AI 不是直接输出完整故事，而是根据随机命运和好友干预动态编排。
+1. **Lower performance pressure**: the user doesn't have to think of what to say — one tap advances the story.
+2. **Replayability**: the same setup becomes a different story depending on the rolls.
+3. **Keeps the AI from being a pure generator**: the AI doesn't dump a full story — it dynamically orchestrates around random fate and friend interference.
 
 ---
 
-## 5. 好友干预机制：Fate Cards
+## 5. Friend interference: Fate Cards
 
-### 5.1 朋友如何参与
-用户点击 **Ask friends to interfere** 后，生成一个 share link。朋友打开链接后看到：
+### 5.1 How friends join
+After the user taps **Ask friends to interfere**, a share link is generated. Friends open it and see:
 
-> Help or ruin Xiaomin's quest.
+> Help or ruin your friend's quest.
 
-朋友可以选择一种干预类型：
+They pick one interference type:
 
-1. **Add a Character**：添加角色。
-2. **Add an Object**：添加道具。
-3. **Add a Curse**：添加诅咒。
-4. **Add a Rule**：添加世界规则。
-5. **Add a Blessing**：添加祝福。
+1. **Add a Character**
+2. **Add an Object**
+3. **Add a Curse**
+4. **Add a Rule** (world rule)
+5. **Add a Blessing**
 
-朋友只需要输入一句话，例如：
+The friend types one line, e.g.:
 > A pigeon wearing sunglasses.
 
-AI 会把它转化为结构化 Fate Card：
+The AI turns it into a structured Fate Card:
 
 ```json
 {
@@ -172,70 +172,67 @@ AI 会把它转化为结构化 Fate Card：
 }
 ```
 
-### 5.2 为什么要用 Fate Card，而不是直接让朋友改故事
-不能让朋友无限自由改剧情，否则故事会失控，内容安全也难控制。Fate Card 把外部输入变成可控单位：
+### 5.2 Why Fate Cards (not free story edits)
+Letting friends rewrite the story freely would break it and make content unsafe. Fate Cards turn external input into controllable units:
 
-> 好友提供混乱，AI 负责治理混乱。
+> Friends provide chaos; the AI governs it.
 
-这也是 AI 的有效性体现。AI 不只是写故事，而是在做实时叙事整合、内容过滤、语气统一和游戏节奏控制。
+This is also where the AI's value shows: it's not just writing a story — it's doing real-time narrative integration, content filtering, tone unification, and pacing control.
 
-### 5.3 Fate Card 白名单
-MVP 只做 5 类：
+### 5.3 Fate Card whitelist
+MVP ships 5 types only:
 
-| 类型 | 示例 | 作用 |
+| Type | Example | Effect |
 |---|---|---|
-| Character | A jealous duck | 添加 NPC |
-| Object | A broken umbrella | 给玩家道具 |
-| Curse | Everyone speaks in food metaphors | 增加限制 |
-| Rule | Doors only open after bad advice | 改变世界规则 |
-| Blessing | One free escape | 帮玩家一把 |
+| Character | A jealous duck | Add an NPC |
+| Object | A broken umbrella | Give the player an item |
+| Curse | Everyone speaks in food metaphors | Add a constraint |
+| Rule | Doors only open after bad advice | Change a world rule |
+| Blessing | One free escape | Help the player out |
 
 ---
 
-## 6. 核心用户场景
+## 6. Core user scenarios
 
-### 6.1 冷群复活场景
-Zymix 群聊 20 小时没人说话。界面出现：
+### 6.1 Reviving a cold chat
+A ZYMIX group chat has gone 20 hours with no messages. The UI shows:
 
 > This chat is getting cold. Roll to revive it?
 
-用户点击后，AI 生成：
+The user taps, and the AI generates:
 
 > The chat has fallen into silence. A creature called The Unread Beast has stolen the last topic. Roll to recover it.
 
-成员角色：
-- Xiaomin: The Overthinking Wizard
-- Emma: The Ghost Rogue
-- Leo: The Chaos Bard
-- Jack: The Snack Healer
+Member roles:
+- Mia: The Overthinking Wizard
+- Kai: The Ghost Rogue
+- Momo: The Chaos Bard
+- You: The Snack Healer
 
-用户投骰子，故事推进。若群里其他人暂时不回，AI 可以自动把他们变成 Sleeping NPC。
+The user rolls; the story advances. If others don't reply for now, the AI can turn them into Sleeping NPCs.
 
-### 6.2 单人启动场景
-如果 Zymix 里没有活跃群，用户也能一个人开始：
+### 6.2 Solo start
+If there's no active group on ZYMIX, a user can start alone:
 
 > Start a solo quest.
 
-AI 补位 NPC，用户可以把故事发到 WhatsApp 找朋友干预。
+The AI fills in NPCs, and the user can send the story to WhatsApp to find friends to interfere. This scenario is a must-have for MVP, because it directly solves "low downloads, the group can't get going."
 
-这个场景是 MVP 必须有的，因为它正面解决「下载量少，群聊做不起来」的问题。
+### 6.3 External friend interference
+The user sends the link to a WhatsApp friend. The friend doesn't need ZYMIX — they just open the web page:
 
-### 6.3 外部好友干预场景
-用户把链接发给 WhatsApp 好友。好友不需要下载 Zymix，只要点开网页：
+> Add one twist to your friend's quest.
 
-> Add one twist to Xiaomin's quest.
-
-好友提交：
+They submit:
 > Everyone can only speak in food metaphors.
 
-AI 转成 Fate Card：
-
+The AI turns it into a Fate Card:
 > Curse Card: Food Metaphor Mode. All future dialogue must sound like dinner is a psychological condition.
 
-下一轮故事里，AI 编入这个诅咒。
+Next round, the AI weaves the curse in.
 
-### 6.4 结果分享场景
-游戏结束后生成：
+### 6.4 Sharing the result
+At the end:
 
 > **Quest Completed**
 > The Unread Beast was defeated.
@@ -244,92 +241,88 @@ AI 转成 Fate Card：
 > Group Mood: chaotic but alive
 > Start your own quest on Zymix.
 
-这张卡可以分享到 Zymix 内容位、WhatsApp、IG Story、小红书。
+This card can be shared to ZYMIX content slots, WhatsApp, IG Story, etc.
 
 ---
 
-## 7. 降级模式（防翻车命脉，必做）
+## 7. Degraded modes (anti-fail backbone, must-do)
 
-### 7.1 人数不足
-- 1 人：AI 生成 Solo Quest，并补 2 个 NPC。
-- 2 人：AI 加 1 个 NPC 作为故事扰动者。
-- 3 人以上：正常分配角色。
+### 7.1 Not enough people
+- 1 person: AI generates a Solo Quest and adds 2 NPCs.
+- 2 people: AI adds 1 NPC as a story disruptor.
+- 3+ people: normal role assignment.
 
-### 7.2 群友不在线
-- 未回应成员自动变成 **Sleeping NPC**。
-- 他们回来后可以点击 **Re-enter the quest**。
-- AI 给补位剧情，例如：
+### 7.2 Group members offline
+- Non-responding members become **Sleeping NPCs**.
+- When they return they can tap **Re-enter the quest**.
+- The AI gives a re-entry beat, e.g.:
   > The Sleeping Oracle has awakened and brings one suspicious prophecy.
 
-### 7.3 好友不下载 App
-- 好友打开 Web share page 即可添加 Fate Card。
-- 不强制下载。
-- 只有在提交后才出现轻 CTA：
+### 7.3 Friend won't download the app
+- Friends add a Fate Card straight from the web share page.
+- No forced download.
+- Only after submitting does a light CTA appear:
   > Want to start your own quest? Open Zymix.
 
-### 7.4 API / 网络失败
-- 预生成一个完整兜底剧本。
-- Fate Card 输入失败时，用本地 mock card 替代。
-- Demo 必须准备离线录屏。
+### 7.4 API / network failure
+- Pre-generate a complete fallback script.
+- If Fate Card input fails, use a local mock card.
+- The demo must have an offline screen recording ready.
 
 ---
 
-## 8. 与 Zymix 原生整合
+## 8. ZYMIX-native integration
 
-| Zymix 现有功能 | Vibe Dice 怎么用 |
+| ZYMIX feature | How Vibe Dice uses it |
 |---|---|
-| Mini Apps（一键即用） | Vibe Dice 游戏入口 |
-| 群组空间 | 冷群触发场地 |
-| Social Scene / 附近活动 | 可以把 Quest 设定为「活动现场支线任务」 |
-| 通讯录 / 外部分享 | 把 WhatsApp 好友带进故事干预页 |
-| 短剧 / 内容位 | Quest Card 分享出口 |
-| Wallet / 积分 | 可选：给 Best Interference / Best Roll 打赏 |
-| 排行榜 | 可选：今日最混乱 Fate Card / Best Quest Card |
+| Mini Apps (one tap) | Vibe Dice entry point |
+| Group spaces | Where a cold chat is revived |
+| Social Scene / nearby events | Quests can be framed as "side quests at a real event" |
+| Contacts / external share | Bring WhatsApp friends into the interference page |
+| Short drama / content slots | Quest Card share outlet |
+| Wallet / points | Optional: tip Best Interference / Best Roll |
+| Leaderboards | Optional: most chaotic Fate Card / Best Quest Card today |
 
-重点：
-> Vibe Dice 不是只在 Zymix 内部消耗内容，而是让 Zymix 用户把外部朋友带进一个轻量互动入口。这比单纯做群聊功能更适合早期下载量低的状态。
+Key point:
+> Vibe Dice doesn't just consume content inside ZYMIX — it lets ZYMIX users pull external friends into a lightweight interactive entry point. That fits an early, low-download state better than a pure in-chat feature.
 
 ---
 
-## 9. 技术方案（24h）
+## 9. Technical approach (24h)
 
-### 9.1 形态（架构决策）
-- ✅ **单屏模拟 Web 原型**：像素级模仿 Zymix 群聊 / Mini App UI。
-- ✅ **Share Link 干预页**：一个独立网页，模拟 WhatsApp 好友打开后的 Fate Card 输入流程。
-- ✅ **本地状态即可**：用 local state / Supabase mock 存 quest、roll、fate cards。
-- ❌ 不做真·多端实时同步。
-- ❌ 不做真正通讯录权限。
-- ❌ 不做完整 DND 规则系统。
+### 9.1 Form (architecture decision)
+- ✅ **Single-screen simulated web prototype**: pixel-mimic the ZYMIX group chat / Mini App UI.
+- ✅ **Share-link interference page**: a standalone page simulating what a WhatsApp friend sees and the Fate Card input flow.
+- ✅ **Local state is enough**: store quest, rolls, fate cards in local state / mock store.
+- ❌ No real multi-device sync.
+- ❌ No real contacts permission.
+- ❌ No full DnD rules system.
 
-### 9.2 技术栈
-- 前端：Next.js / React 单页。
-- UI 快速搭建：Bolt / Lovable / Cursor。
-- AI 层：GLM / Z.ai 主力。
-  - 调用①：生成 quest opening + 角色卡 + 第一轮目标。
-  - 调用②：根据骰子结果 + 当前 Fate Cards 生成下一段剧情。
-  - 调用③：把外部好友输入转化为 Fate Card JSON。
-  - 调用④：生成 Quest Card 文案。
-- 卡片生成：Fotor 模板 / 或前端 canvas 先生成可下载卡片，Fotor 作为营销物料与 polished output。
+### 9.2 Stack
+- Frontend: Next.js / React single page.
+- Fast UI scaffolding: Bolt / Lovable / Cursor.
+- AI layer: GLM / Z.ai as primary.
+  - Call 1: generate quest opening + role cards + first goal.
+  - Call 2: per roll, generate the next beat (narration + member reactions) from the roll result + current Fate Cards.
+  - Call 3: turn external friend input into a Fate Card JSON.
+  - Call 4: generate the Quest Card text.
+- Card export: Fotor template / or a front-end canvas to produce a downloadable card first, with Fotor as the polished marketing output.
 
-### 9.3 稳定性三件套
-- JSON schema 约束。
-- 失败重试。
-- 预生成兜底剧本 + mock Fate Cards。
+### 9.3 Stability trio
+- JSON schema constraints.
+- Retry on failure.
+- Pre-generated fallback script + mock Fate Cards.
 
-### 9.4 数据 schema（草案）
+### 9.4 Data schema (draft)
 ```json
 {
   "quest_id": "q_001",
   "source": "zymix_group_chat",
   "status": "round_2",
-  "scene": {
-    "theme": "The Unread Beast",
-    "setup": "The chat has fallen into silence...",
-    "tone": "chaotic, playful, safe"
-  },
+  "scene": { "theme": "The Unread Beast", "setup": "The chat has fallen into silence...", "tone": "chaotic, playful, safe" },
   "players": [
-    { "name": "Xiaomin", "role": "The Overthinking Wizard", "ability": "Detect hidden awkwardness", "status": "active" },
-    { "name": "Emma", "role": "The Ghost Rogue", "ability": "Return from unread messages", "status": "sleeping_npc" }
+    { "name": "Mia", "role": "The Overthinking Wizard", "ability": "Detect hidden awkwardness", "status": "active" },
+    { "name": "Kai", "role": "The Ghost Rogue", "ability": "Return from unread messages", "status": "sleeping_npc" }
   ],
   "rounds": [
     { "round": 1, "roll": 7, "roll_label": "Messy Progress", "narration": "You found the lost topic, but it is cursed." }
@@ -338,154 +331,133 @@ AI 转成 Fate Card：
     { "source_friend": "Maya", "type": "curse", "title": "Food Metaphor Mode", "effect": "All future dialogue must sound like dinner is a psychological condition.", "trigger": "next_round" }
   ],
   "ending": "The Unread Beast was defeated by slow-cooked friendship.",
-  "share_card": {
-    "title": "Quest Completed",
-    "caption": "Chaotic but alive",
-    "best_interference": "Food Metaphor Mode",
-    "cta": "Start your own quest on Zymix"
-  }
+  "share_card": { "title": "Quest Completed", "caption": "Chaotic but alive", "best_interference": "Food Metaphor Mode", "cta": "Start your own quest on Zymix" }
 }
 ```
 
 ---
 
-## 10. 24h 时间分配（更新版）
+## 10. 24h time allocation
 
-| 时段 | 任务 |
+| Window | Task |
 |---|---|
-| H0–2 | 环境：Claude Code 接 GLM、建仓、Zymix 风格 UI 壳、确定 demo 主题 |
-| H2–6 | 核心循环：Start Quest → AI 开场 → 角色卡 → Roll 按钮 → 第一轮结果 |
-| H6–10 | Fate Card 干预页：分享链接页 + 好友输入 + AI 转 Fate Card JSON |
-| H10–14 | 第二/三轮剧情：骰子结果 + Fate Card 插入 + 结局生成 |
-| H14–17 | Quest Card：结果卡 UI / Fotor 模板 / 分享按钮 |
-| H17–19 | 单人模式 + Sleeping NPC + API 失败兜底 |
-| H19–21 | Demo 脚本 + 录屏 Plan B + 预生成完美数据 |
-| H21–23 | Manus / Fotor / Orbit 专项奖材料整理 |
-| H23–24 | Devpost 提交 + 链接测试 + buffer |
+| H0–2 | Setup: Claude Code on GLM, repo, ZYMIX-style UI shell, pick demo theme |
+| H2–6 | Core loop: Start Quest → AI opening → role cards → Roll button → first round result |
+| H6–10 | Fate Card interference page: share link page + friend input + AI → Fate Card JSON |
+| H10–14 | Rounds 2/3: roll result + Fate Card insertion + ending generation |
+| H14–17 | Quest Card: result card UI / Fotor template / share button |
+| H17–19 | Solo mode + Sleeping NPC + API failure fallback |
+| H19–21 | Demo script + recording Plan B + pre-generated perfect data |
+| H21–23 | Manus / Fotor / Orbit special-award materials |
+| H23–24 | Devpost submission + link checks + buffer |
 
-优先级：
+Priority:
 1. Roll + AI story loop
 2. WhatsApp interference page
 3. Quest Card
-4. Zymix UI polish
-5. 专项奖材料
+4. ZYMIX UI polish
+5. Special-award materials
 
 ---
 
-## 11. 专项奖嵌入点
+## 11. Special-award hooks
 
-### 11.1 Fotor 营销奖
-- 产品内：Quest Card 用 Fotor 风格模板生成。
-- 营销物料：做一张 poster：
-  > "Your group chat is dead. Roll to revive it."
-- 另做一张故事帖：展示「WhatsApp 好友添加诅咒 → AI 编进故事 → 结果卡」的传播链路。
+### 11.1 Fotor Marketing Award
+- In-product: the Quest Card uses a Fotor-style template.
+- Marketing asset: a poster — "Your group chat is dead. Roll to revive it."
+- Plus a story post showing the chain: WhatsApp friend adds a curse → AI weaves it in → result card.
 
-### 11.2 Manus 真实用例奖
-用 Manus 跑：
-- 竞品调研：AI Dungeon / Party games / AI chatbots / group chat games。
-- Fate Card 类型库生成。
-- Gen Z 语气库生成。
-- Demo 脚本和 Devpost 文案。
+### 11.2 Manus Real-World Use Case Award
+Use Manus to run:
+- Competitor research: AI Dungeon / party games / AI chatbots / group chat games.
+- Fate Card type library generation.
+- Gen Z tone library generation.
+- Demo script and Devpost copy.
 
-保留任务链接和产出截图。
+Keep task links and output screenshots.
 
-### 11.3 Z.ai × Orbit 奖
-- GLM 作为故事生成、Fate Card 结构化、结果卡文案的主力模型。
-- Orbie 全程观察编码过程。
-- 频繁 commit。
-- 下载 Zymix 的第一手截图归档在 `evidence/zymix-firsthand/`（同时作为 build-in-public 证据）。
-- 结束执行 `capture my persona`，上传 orbit24.uk。
+### 11.3 Z.ai × Orbit Award
+- GLM as the primary model for story generation, Fate Card structuring, and result-card copy.
+- Orbie observes the whole coding process.
+- Commit frequently.
+- Archive first-hand ZYMIX screenshots under `evidence/zymix-firsthand/` (also build-in-public evidence).
+- At the end run `capture my persona` and upload to orbit24.uk.
 
 ---
 
-## 12. 3 分钟 Demo 脚本（更新版 · 对齐官方公告"product + thinking + why it belongs"）
+## 12. 3-minute demo script (aligned to the official "product + thinking + why it belongs")
 
-> 官方原话：评委想看 "your product, your thinking, and why it belongs in the ZYMIX world"，且按 vibes test 判分（"something ZYMIX users would actually open"）。所以**开场先讲亲身体验，再讲为什么属于 Zymix，最后才是产品**。
+> Official wording: judges want to see "your product, your thinking, and why it belongs in the ZYMIX world", scored on a vibes test ("something ZYMIX users would actually open"). So **open with first-hand experience, then why it belongs, then the product**.
 
-### 0:00–0:30 亲身体验 + 真实痛点（用你下载 Zymix 后的截图）
-不要先甩数据。讲你作为真实用户的体感（下载后从 §1.2.1 提炼）：
-> 例："我注册完 Zymix，进群组空间——是空的。Mini Apps 里能玩的没几个。第一晚就被转盘抽奖弹了好几次。最强的感觉是：没人知道第一句该说什么。"
-（配图：群聊空状态 / Mini Apps 列表 / 转盘弹窗，来自 `evidence/zymix-firsthand/`）
+### 0:00–0:30 First-hand experience + real pain point (use your post-download ZYMIX screenshots)
+Don't lead with stats. Tell it as a real user (distil from §1.2.1):
+> e.g. "I signed up for ZYMIX, opened a group space — empty. Few Mini Apps were actually playable. The first night I got hit by wheel-spin promos several times. The strongest feeling: nobody knows what to say first."
+(Images: empty group state / Mini Apps list / wheel-spin popup, from `evidence/zymix-firsthand/`.)
 
-### 0:30–0:45 为什么它属于 Zymix（belongs-in-Zymix 论证）
-> "Zymix 要做 Gen Z 的社交 SuperApp，但早期最缺的是'一个人也能开始、还能把外部朋友拉进来'的轻入口。Vibe Dice 本来就该是 Mini Apps 里的一个——不是又一个 chatbot，而是把沉默变成一局 3 分钟骰子冒险，连没下载的朋友都能通过 WhatsApp 干预。"
+### 0:30–0:45 Why it belongs in ZYMIX
+> "ZYMIX wants to be a Gen Z social SuperApp, but what it most lacks early on is a lightweight entry one person can start that also pulls external friends in. Vibe Dice is exactly that — it should be one of the Mini Apps. Not another chatbot, but turning silence into a 3-minute dice adventure that even non-downloaders can shape via WhatsApp."
 
-### 0:45–1:10 一键开启
-点击 **Roll to revive this chat** → AI 生成开场（The Unread Beast 偷走话题）+ 分配角色（Overthinking Wizard / Ghost Rogue / Chaos Bard / Snack Healer）。
+### 0:45–1:10 One-tap start
+Tap **Roll to revive this chat** → AI generates the opening (The Unread Beast steals the last topic) + assigns roles (Overthinking Wizard / Ghost Rogue / Chaos Bard / Snack Healer).
 
-### 1:10–1:35 第一轮投骰
-roll = 7 → Messy Progress："找到话题但被诅咒，需要外部混乱。" → 冒出 **Ask friends to interfere**。
+### 1:10–1:35 First roll
+roll = 7 → Messy Progress: "You found the topic, but it's cursed and needs outside chaos." → the **Ask friends to interfere** button appears.
 
-### 1:35–2:00 WhatsApp 好友干预
-切到 share link 页 → 好友输入 "Everyone can only speak in food metaphors" → AI 生成 **Curse Card: Food Metaphor Mode**。
+### 1:35–2:00 WhatsApp friend interferes
+Switch to the share link page → friend types "Everyone can only speak in food metaphors" → AI generates **Curse Card: Food Metaphor Mode**.
 
-### 2:00–2:30 第二轮投骰 + 编入干预
-回 Zymix，roll = 18 → Main Character Moment，AI 把诅咒编进剧情，野兽化成一碗面。
+### 2:00–2:30 Second roll + weaving in the interference
+Back in ZYMIX, roll = 18 → Main Character Moment; the AI weaves the curse in, the beast dissolves into a bowl of noodles.
 
-### 2:30–2:45 结果卡
-弹 Quest Card（Best Interference: Food Metaphor Mode / chaotic but alive / Start your own quest on Zymix）→ 保存分享。
+### 2:30–2:45 Result card
+Quest Card pops (Best Interference: Food Metaphor Mode / chaotic but alive / Start your own quest on Zymix) → save & share.
 
-### 2:45–3:00 影响 + 落地路径
-> 单人即可开局；故事经 WhatsApp 扩散；外部朋友无需下载即可参与；Quest Card 把人带回 Zymix。落地：作为 Zymix Mini App 上线，复用其群组空间 / 分享位 / 钱包积分。
+### 2:45–3:00 Impact + path to ship
+> One user is enough to start; the story spreads via WhatsApp; external friends join without downloading; the Quest Card pulls them back to ZYMIX. Path to ship: launch as a ZYMIX Mini App, reusing its group spaces / share slots / wallet points.
 
 ### Plan B
-- 全链路预生成。
-- API 挂了就播放完美录屏。
-- Fate Card 页面保留 mock input。
+- Pre-generate the whole chain.
+- If the API dies, play the perfect recording.
+- Keep mock input on the Fate Card page.
 
 ---
 
-## 13. 风险对冲表
+## 13. Risk mitigation
 
-| 风险 | 对冲 |
+| Risk | Mitigation |
 |---|---|
-| 被误解成 DND 复制 | 不叫 DND，主打 AI dice micro quest |
-| 故事太长 | 固定 3 回合，每轮最多 2 句旁白 |
-| 好友输入失控 | Fate Card 类型白名单 + 内容过滤 |
-| 用户不想表演 | 用户只需投骰子，不需要写长台词 |
-| 群友不在线 | Sleeping NPC + 单人模式 |
-| Zymix 用户少 | 外部 WhatsApp 干预页，不强制下载 |
-| LLM 格式乱 | JSON schema + fallback |
-| API 超时 | 预生成 demo 剧本 + 离线录屏 |
-| 内容安全 | 主题白名单、禁成人/暴力/仇恨/敏感身份攻击 |
+| Mistaken for a DnD clone | Don't call it DnD; pitch "AI dice micro quest" |
+| Story too thin or too long | Cap at 3 rounds, but each beat is 2–4 vivid sentences (§3.3) |
+| Friend input goes off the rails | Fate Card type whitelist + content filter |
+| User doesn't want to perform | User only rolls; no long typing required |
+| Members offline | Sleeping NPC + solo mode |
+| Few ZYMIX users | External WhatsApp interference page, no forced download |
+| LLM format breaks | JSON schema + fallback |
+| API timeout | Pre-generated demo script + offline recording |
+| Content safety | Theme whitelist; ban adult/violence/hate/sensitive-identity attacks |
 
 ---
 
-## 14. 提交清单
+## 14. Submission checklist
 
-- [ ] Devpost 主提交：队名/成员/主赛道(Vibe with Zymix)/项目名/产品说明/为何对 Zymix 用户重要/用了哪些 AI 工具
-- [ ] Live demo 链接
-- [ ] 录屏 Plan B 链接
-- [ ] Fotor 结果卡 / 营销海报链接
-- [ ] Manus 工作流链接 + 说明
-- [ ] Orbit package 上传 orbit24.uk
-- [ ] 所有链接在无登录浏览器窗口测试可打开
-- [ ] 12:00 前提交，留 buffer
-
----
-
-## 15. Devpost 简短产品说明草案
-
-**Vibe Dice is an AI-native dice storytelling mini game for Zymix. When a group chat goes cold, one user can start a 3-minute quest. AI assigns playful roles, dice rolls decide the story's fate, and friends outside Zymix can interfere through WhatsApp by adding characters, curses, objects, or rules. AI turns those interventions into Fate Cards and weaves them into the next round of the story. At the end, the game generates a shareable Quest Card that brings the moment back to Zymix.**
-
-**Why it matters:** early social apps often feel empty because users do not know what to say first. Vibe Dice makes one user enough to start a social moment, while external sharing turns non-users into playful participants before asking them to download anything.
+- [ ] Devpost main submission: team name / members / main track (Vibe with ZYMIX) / project title / product brief / why it matters to ZYMIX users / which AI tools were used
+- [ ] Live demo link
+- [ ] Plan B recording link
+- [ ] Fotor result card / marketing poster link
+- [ ] Manus workflow link + notes
+- [ ] Orbit package uploaded to orbit24.uk
+- [ ] All links open in a no-login browser window
+- [ ] Submit before 12:00, leave buffer
 
 ---
 
-## 16. 实现迁移清单（现有 Vibe Roles 代码 → Vibe Dice）
+## 15. Devpost short product brief (draft)
 
-> 现有代码是可运行的 Vibe Roles 参考实现。下面是改造为 Vibe Dice 的最小映射。架构（Next.js + GLM 客户端 + Zod schema + 兜底 + GLM_OFFLINE 开关）保留。
+**Vibe Dice is an AI-native dice storytelling mini game for ZYMIX. When a group chat goes cold, one user can start a 3-minute quest. An AI Game Master assigns playful roles, dice rolls decide the story's fate, the group reacts in character, and friends outside ZYMIX can interfere through WhatsApp by adding characters, curses, objects, or rules. AI turns those interventions into Fate Cards and weaves them into the next round. At the end, the game generates a shareable Quest Card that brings the moment back to ZYMIX.**
 
-| 现有 (Vibe Roles) | Vibe Dice 改造 |
-|---|---|
-| `lib/schema.ts` SceneSchema/RoundSchema | 改为 QuestSchema：scene + players(含 status) + rounds(含 roll/roll_label) + fate_cards + share_card；新增 `FateCardSchema`（type 白名单 5 类） |
-| `lib/director.ts` buildScenePrompt/buildRoundPrompt | 改为 buildQuestPrompt（开场+角色+目标）、buildRollPrompt（按 roll_label + 当前 fate_cards 生成下一段）、buildFateCardPrompt（自由输入→结构化 JSON）、buildQuestCardPrompt |
-| `lib/fallback.ts` 4 套剧本 | 改为 Quest 兜底 + mock Fate Cards + 每个 roll_label 的兜底旁白 |
-| `app/api/scene|narrate|round|highlight` | 改为 `/api/quest`(开局)、`/api/roll`(投骰子推进)、`/api/fate`(好友输入→Fate Card)、`/api/questcard`(结果卡) |
-| `components`（聊天气泡/角色卡/名场面卡） | 新增 `DiceRoller`、`RollResultBanner`、`FateCardList`、`QuestCard`；复用气泡/角色卡 |
-| `app/page.tsx` 自动播放状态机 | 改为 quest 状态机：cold→quest 开场→roll 循环(3 回合)→结局→QuestCard；骰子驱动而非自动播放 |
-| 新增 | **`app/q/[id]/page.tsx` 外部好友干预页**（Share Link 页：选 5 类 + 一句输入 → 调 /api/fate） |
-| `data/themes.ts` | 改为 Quest 主题（含 The Unread Beast 等） + Fate Card 示例库 |
-| 名场面卡导出 `lib/cardExport.ts` | 复用：改成导出 Quest Card |
+**Why it matters:** early social apps often feel empty because users don't know what to say first. Vibe Dice makes one user enough to start a social moment, while external sharing turns non-users into playful participants before asking them to download anything.
 
-骰子点数→标签映射（实现时放 `lib/dice.ts` 纯函数，便于 TDD）：见 §4.1 表。
+---
+
+## 16. Implementation status
+The repo is a working Vibe Dice prototype (Next.js + GLM + Zod + offline fallback). Build the experience to match §3.3 (rich, DND-like, multi-voice narration). Known time-boxed items: Sleeping NPC "re-enter" UI, optional Wallet/Leaderboard hooks, and real Fotor integration (currently PNG export fallback).

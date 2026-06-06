@@ -1,6 +1,6 @@
 {
   "env": {
-    "ANTHROPIC_AUTH_TOKEN": "在这里填你的GLM_KEY",
+    "ANTHROPIC_AUTH_TOKEN": "PUT_YOUR_GLM_KEY_HERE",
     "ANTHROPIC_BASE_URL": "https://api.z.ai/api/anthropic",
     "API_TIMEOUT_MS": "3000000"
   }

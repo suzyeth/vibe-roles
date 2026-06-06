@@ -22,7 +22,7 @@ npx tsc --noEmit     # typecheck (strict mode is on)
 Run a single test file or pattern:
 ```powershell
 npx vitest run tests/schema.test.ts
-npx vitest run -t "拒绝 roles 为空"
+npx vitest run -t "rejects empty players"
 ```
 
 Vitest only picks up `tests/**/*.test.ts` (node environment). The `@` alias maps to the repo root in **both** `vitest.config.ts` and `tsconfig.json` — import as `@/lib/...`, `@/data/...`.

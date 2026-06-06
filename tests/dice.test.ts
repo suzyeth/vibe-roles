@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { rollLabel, clampD20 } from "@/lib/dice";
 
 describe("rollLabel", () => {
-  it("边界映射正确", () => {
+  it("maps boundaries correctly", () => {
     expect(rollLabel(1)).toBe("Total Chaos");
     expect(rollLabel(5)).toBe("Awkward Fail");
     expect(rollLabel(6)).toBe("Messy Progress");
@@ -16,7 +16,7 @@ describe("rollLabel", () => {
 });
 
 describe("clampD20", () => {
-  it("夹到 1..20 且取整", () => {
+  it("clamps to 1..20 and truncates", () => {
     expect(clampD20(0)).toBe(1);
     expect(clampD20(25)).toBe(20);
     expect(clampD20(7.9)).toBe(7);

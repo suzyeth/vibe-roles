@@ -4,7 +4,7 @@ export function MiniAppBar() {
       <div className="flex items-center gap-2">
         <span className="text-lg">💬</span>
         <div>
-          <div className="text-sm font-bold leading-tight">舍友群 (4)</div>
+          <div className="text-sm font-bold leading-tight">Flatmates (4)</div>
           <div className="text-[10px] text-fuchsia-300">Zymix · Mini App</div>
         </div>
       </div>

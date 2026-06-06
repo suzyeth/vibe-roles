@@ -1,5 +1,5 @@
 import { toPng } from "html-to-image";
-/** 把卡片 DOM 导出为 PNG dataURL（Fotor 不可用时的保底分享路径） */
+/** Export the card DOM to a PNG data URL (fallback share path when Fotor isn't available). */
 export async function exportCardPng(el: HTMLElement): Promise<string> {
   return toPng(el, { pixelRatio: 2, cacheBust: true });
 }

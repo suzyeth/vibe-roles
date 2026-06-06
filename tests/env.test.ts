@@ -5,10 +5,10 @@ describe("isOffline", () => {
   beforeEach(() => {
     delete process.env.GLM_OFFLINE;
   });
-  it("默认为 false", () => {
+  it("defaults to false", () => {
     expect(isOffline()).toBe(false);
   });
-  it("GLM_OFFLINE='true' 时为 true", () => {
+  it("is true when GLM_OFFLINE='true'", () => {
     process.env.GLM_OFFLINE = "true";
     expect(isOffline()).toBe(true);
   });

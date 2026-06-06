@@ -12,7 +12,7 @@ export function DeadGroup({ msgs }: { msgs: DeadMsg[] }) {
           </div>
         </div>
       ))}
-      <div className="mt-2 text-center text-xs text-zinc-600">— 已读，3 天没人说话 —</div>
+      <div className="mt-2 text-center text-xs text-zinc-600">— Seen. 3 days, nobody spoke. —</div>
     </div>
   );
 }

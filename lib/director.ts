@@ -1,37 +1,34 @@
 import type { FateCard } from "@/lib/schema";
 
 export function buildQuestPrompt(members: string[], theme: string) {
-  const system = `你是 Vibe Dice 的 AI 主持人。生成一个 3 分钟微型冒险的开场。
-严格只输出 JSON（不要 markdown）：{"scene":{"theme":"...","setup":"<=40字开场","tone":"chaotic, playful, safe"},"players":[{"name":"成员名","role":"轻松角色名","ability":"一句能力","status":"active"}],"goal":"<=20字目标"}
-规则：players 数量=成员数；角色风趣(如 The Ghost Rogue/The Snack Healer)；中文+英文角色名皆可；Gen Z 语气；安全，不得暴力/露骨/仇恨。`;
-  const user = `主题：${theme || "随机"}\n在场成员：${members.join("、")}`;
+  const system = `You are the AI host of "Vibe Dice". Generate the opening of a 3-minute micro adventure.
+Output JSON ONLY (no markdown): {"scene":{"theme":"...","setup":"<=25 words opening","tone":"chaotic, playful, safe"},"players":[{"name":"member name","role":"playful role","ability":"one-line ability","status":"active"}],"goal":"<=12 words goal"}
+Rules: players count = number of members; witty roles (e.g. The Ghost Rogue / The Snack Healer); English; Gen Z tone; safe, no violence/explicit/hate.`;
+  const user = `Theme: ${theme || "random"}\nMembers present: ${members.join(", ")}`;
   return { system, user };
 }
 
-export function buildRollPrompt(sceneSetup: string, label: string, fateCards: FateCard[], recent: string) {
-  const fate = fateCards.length ? fateCards.map((f) => `${f.type}:${f.title}(${f.effect})`).join("；") : "无";
-  const system = `你是 Vibe Dice 主持人。根据骰子结果标签推进剧情一段(<=50字)，必须体现该标签的成败基调，并把"待生效 Fate Card"自然编进剧情。只输出旁白文本本身。中文，戏剧感，Gen Z 语气，安全。`;
-  const user = `场景：${sceneSetup}\n前情：${recent}\n骰子结果：${label}\n待生效 Fate Cards：${fate}`;
-  return { system, user };
-}
-
-export function buildPartyPrompt(names: string[], sceneSetup: string, label: string, recent: string) {
-  const system = `你是 Vibe Dice 主持人。让每位队友针对刚才的骰子结果各冒一句简短在场反应(<=20字)，要有个性、Gen Z 语气、安全。
-严格只输出 JSON（不要 markdown）：{"lines":[{"name":"队友名","text":"台词"}]}
-规则：lines 里每个 name 必须来自给定队友名单且各出现一次；不得暴力/露骨/仇恨。`;
-  const user = `场景：${sceneSetup}\n前情：${recent}\n骰子结果：${label}\n队友名单：${names.join("、")}`;
+export function buildRollPrompt(sceneSetup: string, label: string, fateCards: FateCard[], recent: string, reactors: { name: string; role: string }[]) {
+  const fate = fateCards.length ? fateCards.map((f) => `${f.type}:${f.title}(${f.effect})`).join("; ") : "none";
+  const cast = reactors.length ? reactors.map((r) => `${r.name}(${r.role})`).join(", ") : "none";
+  const system = `You are the Vibe Dice host. Advance the story based on the dice result label. Output JSON ONLY (no markdown):
+{"narration":"advance the story in <=25 words, reflecting the success/failure tone of the label, and weave in any pending Fate Cards","reactions":[{"member":"member name","text":"that member's in-character one-liner, <=12 words"}]}
+Rules: reactions may ONLY include the given "reacting members", one line each; English; dramatic; Gen Z tone; safe.`;
+  const user = `Scene: ${sceneSetup}\nPreviously: ${recent}\nDice result: ${label}\nPending Fate Cards: ${fate}\nReacting members: ${cast}`;
   return { system, user };
 }
 
 export function buildFateCardPrompt(type: string, input: string) {
-  const system = `你把好友的一句自由输入转成结构化 Fate Card。严格只输出 JSON：{"type":"character|object|curse|rule|blessing","title":"<=12字","effect":"一句话效果","tone":"chaotic but harmless","trigger":"next_round|roll_under_10"}
-规则：type 必须等于给定类型；effect 安全、好玩、可被主持人编入剧情；过滤暴力/露骨/仇恨/人身攻击。`;
-  const user = `类型：${type}\n好友输入：${input}`;
+  const system = `Turn a friend's one-line input into a structured Fate Card. Output JSON ONLY:
+{"type":"character|object|curse|rule|blessing","title":"<=6 words","effect":"one-line effect","tone":"chaotic but harmless","trigger":"next_round|roll_under_10"}
+Rules: type must equal the given type; effect is safe, fun, weaveable by the host; filter out violence/explicit/hate/personal attacks.`;
+  const user = `Type: ${type}\nFriend input: ${input}`;
   return { system, user };
 }
 
 export function buildQuestCardPrompt(summary: string, finalRoll: number, fateTitles: string[]) {
-  const system = `你给一局 Vibe Dice 生成可分享结果卡。严格只输出 JSON：{"title":"Quest Completed","caption":"<=10字气氛词","best_interference":"最出彩的 Fate Card 标题","final_roll":数字,"cta":"Start your own quest on Zymix"}`;
-  const user = `结局摘要：${summary}\n最终骰子：${finalRoll}\n候选 Fate Cards：${fateTitles.join("、") || "无"}`;
+  const system = `Generate a shareable result card for one Vibe Dice run. Output JSON ONLY:
+{"title":"Quest Completed","caption":"<=5 words mood phrase","best_interference":"the most fun Fate Card title","final_roll":number,"cta":"Start your own quest on Zymix"}`;
+  const user = `Ending summary: ${summary}\nFinal roll: ${finalRoll}\nCandidate Fate Cards: ${fateTitles.join(", ") || "none"}`;
   return { system, user };
 }

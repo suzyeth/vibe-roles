@@ -18,7 +18,7 @@ export function QuestCard({ card }: { card: QC }) {
         <div className="mt-3 text-xs opacity-80">{card.cta}</div>
         <div className="mt-2 text-right text-[10px] opacity-70">Vibe Dice · Zymix</div>
       </div>
-      <button type="button" onClick={save} className="rounded-full bg-white/90 px-4 py-2 font-semibold text-fuchsia-700">⬇️ 保存 Quest Card</button>
+      <button type="button" onClick={save} className="rounded-full bg-white/90 px-4 py-2 font-semibold text-fuchsia-700">⬇️ Save Quest Card</button>
     </div>
   );
 }
