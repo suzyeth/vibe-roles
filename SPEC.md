@@ -3,6 +3,8 @@
 > This document is the single implementation reference for engineers. All rules, data structures, state machine, and AI prompt specs are defined here.
 > Product background & track info: see DESIGN.md. Tech architecture: see PLAN.md.
 > Last updated: 2026-06-06
+>
+> ⚠️ RECONCILE: DESIGN.md was revised after this spec and is the latest product truth — where they differ, DESIGN.md wins. Deltas to fold into this spec: product name **Vibe Roles** (not "Vibe Dice"); dice labels **Critical Fail / Fail / Partial Progress / Success / Strong Success / Critical Success**; trigger = **72h inactivity, no chat-history read** (controlled-random story); persistent **story_state** (clues / relationships / consequences / location & character status); **6** external-intervention types (Event / Message / Character / Object / Rule / Condition) via a **5-minute disappearing invite**; demo story **"The 404 Customer"** (Luna / Jake / Kai / Alex / Emma).
 
 ---
 

@@ -13,10 +13,10 @@
 - **Team name:** 49b
 - **Members:** Xiaomin Fan, Suzy Su
 - **Track:** Track 2 — Vibe with ZYMIX
-- **Project:** Vibe Dice
-- **Real problem (one sentence):** ZYMIX group chats go cold and early users don't know what to say first — and many real friends aren't even on the app yet.
-- **Target user:** UK Gen Z (students / young urban), early ZYMIX users + their off-app friends.
-- **One-line pitch:** One tap turns a dead chat into a 3-minute AI dice adventure; friends outside ZYMIX can shape the story via WhatsApp; it ends with a shareable Quest Card.
+- **Project:** Vibe Roles (mode: Quest Mode / Roll to Revive)
+- **Real problem (one sentence):** ZYMIX group chats go quiet (~72h) and nobody wants to restart the conversation; the cost of speaking up first is high.
+- **Target user:** UK Gen Z temporary/buddy/project/event groups — early ZYMIX users + their off-app friends.
+- **One-line pitch:** When a group's been quiet for ~72h, one tap has AI randomly generate a DND-like adventure (no chat-history read), assign roles, resolve actions with a D20; external friends can interfere via a 5-minute disappearing invite; ends with a shareable card.
 - **Why it belongs in ZYMIX:** a lightweight Mini App one person can start that pulls external friends back into the app.
 - **Today's definition of done:** offline demo works + live GLM demo + 3-min script rehearsed + Devpost submitted + Orbit package uploaded.
 
