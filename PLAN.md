@@ -1,6 +1,8 @@
 # Vibe Dice — Implementation Plan & Status
 
-> The prototype is implemented and passing tests, so this is now an architecture + build reference rather than a task-by-task TDD script. Product rules live in [DESIGN.md](./DESIGN.md); award/GLM setup in [ORBIT-GLM-GUIDE.md](./ORBIT-GLM-GUIDE.md).
+> The prototype is implemented and passing tests, so this is now an architecture + build reference rather than a task-by-task TDD script. Product rules live in [DESIGN.md](./DESIGN.md); the **canonical engineering spec is [SPEC.md](./SPEC.md)** (state machine, schemas, AI calls, routes, UI, fallback, demo data) — if anything here disagrees with SPEC.md, SPEC.md wins; award/GLM setup in [ORBIT-GLM-GUIDE.md](./ORBIT-GLM-GUIDE.md).
+>
+> Target routes per SPEC §9: `quest` (Call 1) · `action` (Call 2) · `roll` (Call 3) · `ending` (Call 4) · `fate` (GET). The current build may still use `actions`/`questcard`/`prologue` — aligning to SPEC names is part of the SPEC-alignment work.
 
 **Goal:** A single-screen Next.js prototype where a cold ZYMIX chat is revived into a 3-minute, DND-like AI dice adventure: the AI Game Master narrates, dice decide outcomes, the group reacts in character, external friends interfere via a share link (Fate Cards), and the run ends with a shareable Quest Card.
 
