@@ -1,7 +1,11 @@
 import type { Quest, FateCard, StoryState } from "@/lib/schema";
 
 type Entry = { quest: Quest; fateCards: FateCard[]; storyState: StoryState };
-const store = new Map<string, Entry>();
+// Next.js evaluates each API route's module graph separately, so a plain module-level
+// Map is NOT shared across /api/quest, /api/roll, /api/fate, etc. Pin it to globalThis
+// so every route (and HMR reload) sees the same in-memory store within the process.
+const g = globalThis as unknown as { __vibeRolesStore?: Map<string, Entry> };
+const store: Map<string, Entry> = g.__vibeRolesStore ?? (g.__vibeRolesStore = new Map<string, Entry>());
 
 function emptyState(): StoryState {
   return { known_clues: [], location_status: {}, character_status: {}, relationships: [], active_consequences: [] };
