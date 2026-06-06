@@ -27,14 +27,18 @@ Rules: each option <=10 words; fit the scene and the active player's role; offer
   return { system, user };
 }
 
-export function buildRollPrompt(sceneSetup: string, label: string, fateCards: FateCard[], recent: string, reactors: { name: string; role: string }[], active?: { name: string; role: string }, action?: string) {
+type RollStoryState = { known_clues: string[]; relationships: string[]; location_status: Record<string, string>; character_status: Record<string, string>; active_consequences: string[] };
+export function buildRollPrompt(sceneSetup: string, label: string, fateCards: FateCard[], recent: string, reactors: { name: string; role: string }[], active?: { name: string; role: string }, action?: string, storyState?: RollStoryState) {
   const fate = fateCards.length ? fateCards.map((f) => `${f.type}:${f.title}(${f.effect})`).join("; ") : "none";
   const cast = reactors.length ? reactors.map((r) => `${r.name}(${r.role})`).join(", ") : "none";
   const actionContext = active && action ? `\nActive action: ${active.name} the ${active.role} chose to ${action}` : "";
-  const system = `You are the Vibe Dice Game Master. A hero just acted and the dice decided their fate. Narrate the OUTCOME as a vivid scene. Output JSON ONLY (no markdown):
-{"narration":"2-4 cinematic sentences: reflect the success/failure tone of the dice label, show concrete consequences and rising stakes, weave in any pending Fate Cards, and end on a hook or a choice. If a specific action was taken, the narration MUST explicitly react to that action's outcome.","reactions":[{"member":"member name","text":"that member's in-character one-liner, <=14 words"}]}
-Rules: continue naturally from "Previously" for continuity; reactions may ONLY include the given "reacting members", one line each; English; dramatic, Gen Z; safe.`;
-  const user = `Scene: ${sceneSetup}\nPreviously: ${recent}\nDice result: ${label}\nPending Fate Cards: ${fate}\nReacting members: ${cast}${actionContext}`;
+  const ss = storyState
+    ? `clues=[${storyState.known_clues.join("; ") || "none"}]; relationships=[${storyState.relationships.join("; ") || "none"}]; locations=[${Object.entries(storyState.location_status).map(([k, v]) => `${k}:${v}`).join(", ") || "none"}]; status=[${Object.entries(storyState.character_status).map(([k, v]) => `${k}:${v}`).join(", ") || "none"}]`
+    : "none";
+  const system = `You are the Vibe Dice Game Master. A hero just acted and the dice decided their fate. Narrate the OUTCOME and record its lasting consequence. Output JSON ONLY (no markdown):
+{"narration":"2-4 cinematic sentences: react to the action at the dice tier, show concrete consequences and rising stakes, weave in any pending Fate Cards, end on a hook","reactions":[{"member":"member name","text":"in-character one-liner, <=14 words"}],"consequence":"one lasting effect to remember (a clue, a changed location, a character's new status, or a relationship shift)","story_state_updates":{"known_clues":[],"relationships":[],"location_status":{},"character_status":{},"active_consequences":[]}}
+Rules: continue from "Previously" and the current Story State for continuity; the consequence MUST persist and may affect other characters; only include story_state_updates that actually changed; reactions only from the given reacting members; English; dramatic, Gen Z; safe.`;
+  const user = `Scene: ${sceneSetup}\nPreviously: ${recent}\nStory State: ${ss}\nDice result: ${label}\nPending Fate Cards: ${fate}\nReacting members: ${cast}${actionContext}`;
   return { system, user };
 }
 

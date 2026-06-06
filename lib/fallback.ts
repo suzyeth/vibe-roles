@@ -27,7 +27,7 @@ const NARR: Record<string, string> = {
 const REACT_POOL = ["wait that actually worked?", "knew this would happen…", "who told you to do that lol", "i'm crying this is too much", "ok hold up we got this", "i'm leaving this group chat"];
 export function fallbackRoundResult(roll: number, _fate: FateCard[], reactors: { name: string; role: string }[] = [], seed = 0): RoundResult {
   const reactions = reactors.map((r, i) => ({ member: r.name, text: REACT_POOL[(seed * 2 + i) % REACT_POOL.length] }));
-  return { narration: NARR[rollLabel(roll)] ?? "The story rolls on…", reactions, advance: true };
+  return { narration: NARR[rollLabel(roll)] ?? "The story rolls on…", reactions, consequence: "The group feels the ripple of that move.", story_state_updates: {}, advance: true };
 }
 const MOCK_FATE: FateCard[] = [
   { type: "rule", title: "Food Metaphor Mode", effect: "All future dialogue must sound like dinner is a psychological condition.", tone: "chaotic but harmless", trigger: "next_round" },

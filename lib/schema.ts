@@ -38,9 +38,28 @@ export const ActionOptionsSchema = z.object({
 });
 export type ActionOptions = z.infer<typeof ActionOptionsSchema>;
 
+export const StoryStateSchema = z.object({
+  known_clues: z.array(z.string()).default([]),
+  location_status: z.record(z.string(), z.string()).default({}),
+  character_status: z.record(z.string(), z.string()).default({}),
+  relationships: z.array(z.string()).default([]),
+  active_consequences: z.array(z.string()).default([]),
+});
+export type StoryState = z.infer<typeof StoryStateSchema>;
+
+const StoryStateUpdatesSchema = z.object({
+  known_clues: z.array(z.string()).optional(),
+  location_status: z.record(z.string(), z.string()).optional(),
+  character_status: z.record(z.string(), z.string()).optional(),
+  relationships: z.array(z.string()).optional(),
+  active_consequences: z.array(z.string()).optional(),
+}).default({});
+
 export const RoundResultSchema = z.object({
   narration: z.string().min(1),
   reactions: z.array(ReactionSchema).default([]),
+  consequence: z.string().default(""),
+  story_state_updates: StoryStateUpdatesSchema,
   advance: z.boolean().default(true),
 });
 export type RoundResult = z.infer<typeof RoundResultSchema>;
