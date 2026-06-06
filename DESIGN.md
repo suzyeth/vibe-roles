@@ -43,6 +43,18 @@
 - 体量极早期：近 30 天约 61 次下载；App Store 4.6（仅 9 个评分）。
 - 用户反馈：👍"小游戏新鲜好玩"；👎 注册后垃圾推送、转盘抽奖促销太重、活跃度低。
 
+### 1.2.1 第一手亲身体验观察（下载 Zymix 后填 — 必做）
+> 官方公告明确要求 "Download and experience Zymix as a real user first"。上面的 §1.2 是从应用商店元数据推出来的，评委也能做；**下载后写下具体到按钮/秒的真实痛点（5–10 条）**，demo 开场就讲这些，比数据有力 10 倍。截图归档在 `evidence/zymix-firsthand/`。
+
+- [ ] 注册流程：________（卡在第几步？要哪些权限？）
+- [ ] 群组空间打开第一眼：________（多空？有内容吗？）
+- [ ] Mini Apps 列表：________（几个能玩？第一眼是什么？）
+- [ ] Social Scene / 附近：________
+- [ ] 推送 / 转盘抽奖：________（多久弹一次？弹了几次？）
+- [ ] 最想吐槽的一点：________
+- [ ] 最缺的一个功能：________
+- [ ] 一句话总结你的体感：________
+
 ### 1.3 机会点（重新定义）
 原文档把问题定义为「死群没人想当第一个发言的人」。这个判断仍然成立，但还不够。真正的冷启动问题是：
 
@@ -381,64 +393,40 @@ AI 转成 Fate Card：
 - GLM 作为故事生成、Fate Card 结构化、结果卡文案的主力模型。
 - Orbie 全程观察编码过程。
 - 频繁 commit。
+- 下载 Zymix 的第一手截图归档在 `evidence/zymix-firsthand/`（同时作为 build-in-public 证据）。
 - 结束执行 `capture my persona`，上传 orbit24.uk。
 
 ---
 
-## 12. 3 分钟 Demo 脚本（更新版）
+## 12. 3 分钟 Demo 脚本（更新版 · 对齐官方公告"product + thinking + why it belongs"）
 
-### 0:00–0:25 痛点
-展示一个冷掉的 Zymix 群聊：
-> 20 hours, no messages. Nobody wants to be the first person to speak.
+> 官方原话：评委想看 "your product, your thinking, and why it belongs in the ZYMIX world"，且按 vibes test 判分（"something ZYMIX users would actually open"）。所以**开场先讲亲身体验，再讲为什么属于 Zymix，最后才是产品**。
 
-然后说区隔话术：
-> "We are not adding another chatbot to the group. We turn silence into a 3-minute AI dice quest, and even friends outside Zymix can interfere through WhatsApp."
+### 0:00–0:30 亲身体验 + 真实痛点（用你下载 Zymix 后的截图）
+不要先甩数据。讲你作为真实用户的体感（下载后从 §1.2.1 提炼）：
+> 例："我注册完 Zymix，进群组空间——是空的。Mini Apps 里能玩的没几个。第一晚就被转盘抽奖弹了好几次。最强的感觉是：没人知道第一句该说什么。"
+（配图：群聊空状态 / Mini Apps 列表 / 转盘弹窗，来自 `evidence/zymix-firsthand/`）
 
-### 0:25–0:55 一键开启
-点击：**Roll to revive this chat**。
+### 0:30–0:45 为什么它属于 Zymix（belongs-in-Zymix 论证）
+> "Zymix 要做 Gen Z 的社交 SuperApp，但早期最缺的是'一个人也能开始、还能把外部朋友拉进来'的轻入口。Vibe Dice 本来就该是 Mini Apps 里的一个——不是又一个 chatbot，而是把沉默变成一局 3 分钟骰子冒险，连没下载的朋友都能通过 WhatsApp 干预。"
 
-AI 生成：
-> The chat has fallen into silence. The Unread Beast has stolen the last topic.
+### 0:45–1:10 一键开启
+点击 **Roll to revive this chat** → AI 生成开场（The Unread Beast 偷走话题）+ 分配角色（Overthinking Wizard / Ghost Rogue / Chaos Bard / Snack Healer）。
 
-AI 分配角色：
-- Xiaomin: The Overthinking Wizard
-- Emma: The Ghost Rogue
-- Leo: The Chaos Bard
-- Jack: The Snack Healer
+### 1:10–1:35 第一轮投骰
+roll = 7 → Messy Progress："找到话题但被诅咒，需要外部混乱。" → 冒出 **Ask friends to interfere**。
 
-### 0:55–1:25 第一轮投骰
-用户点击骰子，roll = 7。
+### 1:35–2:00 WhatsApp 好友干预
+切到 share link 页 → 好友输入 "Everyone can only speak in food metaphors" → AI 生成 **Curse Card: Food Metaphor Mode**。
 
-AI 输出：
-> Messy Progress. You found the lost topic, but it is cursed. It needs outside chaos to survive.
-
-按钮出现：
-> Ask friends to interfere
-
-### 1:25–1:55 WhatsApp 好友干预
-切到 share link 页面。
-
-好友输入：
-> Everyone can only speak in food metaphors.
-
-AI 生成 Fate Card：
-> Curse Card: Food Metaphor Mode.
-
-### 1:55–2:30 第二轮投骰 + AI 编入干预
-回到 Zymix。用户继续 roll = 18。
-
-AI 输出：
-> Main Character Moment. The Unread Beast attacks, but you answer: "This group chat is not dead. It is just slow-cooked." The beast dissolves into a suspicious bowl of noodles.
+### 2:00–2:30 第二轮投骰 + 编入干预
+回 Zymix，roll = 18 → Main Character Moment，AI 把诅咒编进剧情，野兽化成一碗面。
 
 ### 2:30–2:45 结果卡
-生成 Quest Card：
-> Quest Completed
-> Best Interference: Food Metaphor Mode
-> Final Mood: chaotic but alive
-> CTA: Start your own quest on Zymix
+弹 Quest Card（Best Interference: Food Metaphor Mode / chaotic but alive / Start your own quest on Zymix）→ 保存分享。
 
-### 2:45–3:00 影响总结
-> Vibe Dice solves Zymix's cold-start problem by making one user enough to start. The story can spread through WhatsApp, external friends can interfere without downloading, and the final Quest Card brings them back to Zymix.
+### 2:45–3:00 影响 + 落地路径
+> 单人即可开局；故事经 WhatsApp 扩散；外部朋友无需下载即可参与；Quest Card 把人带回 Zymix。落地：作为 Zymix Mini App 上线，复用其群组空间 / 分享位 / 钱包积分。
 
 ### Plan B
 - 全链路预生成。
