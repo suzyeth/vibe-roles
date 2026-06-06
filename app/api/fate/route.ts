@@ -12,8 +12,11 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { questId, type, input, friend } = await req.json();
-  const safeType = (FATE_TYPES as readonly string[]).includes(type) ? type : "event";
+  let body: { questId?: string; type?: string; input?: string; friend?: string } = {};
+  try { body = await req.json(); } catch { /* malformed body → fallback fate card */ }
+  const { questId, type, input, friend } = body;
+  const t = typeof type === "string" ? type : "";
+  const safeType = ((FATE_TYPES as readonly string[]).includes(t) ? t : "event") as (typeof FATE_TYPES)[number];
   let card;
   if (isOffline()) card = fallbackFateCard(String(input ?? ""), 0);
   else {

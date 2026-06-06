@@ -13,7 +13,7 @@ import { QuestCard } from "@/components/QuestCard";
 import type { Quest, FateCard, QuestCard as QC, Player } from "@/lib/schema";
 
 type Phase = "cold" | "loading" | "choosing" | "rolling" | "playing" | "ended";
-const TOTAL_ROUNDS = 3;
+const TOTAL_ROUNDS = PRESET_MEMBERS.length; // everyone (incl. "You") acts once
 
 export default function Home() {
   const [phase, setPhase] = useState<Phase>("cold");

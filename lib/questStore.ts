@@ -24,9 +24,10 @@ export function getStoryState(id: string): StoryState { return store.get(id)?.st
 export function mergeStoryState(id: string, upd: Partial<StoryState>): void {
   const e = store.get(id); if (!e) return;
   const s = e.storyState;
-  if (upd.known_clues?.length) s.known_clues = [...s.known_clues, ...upd.known_clues];
-  if (upd.relationships?.length) s.relationships = [...s.relationships, ...upd.relationships];
-  if (upd.active_consequences?.length) s.active_consequences = [...s.active_consequences, ...upd.active_consequences];
+  const dedupe = (arr: string[]) => Array.from(new Set(arr));
+  if (upd.known_clues?.length) s.known_clues = dedupe([...s.known_clues, ...upd.known_clues]);
+  if (upd.relationships?.length) s.relationships = dedupe([...s.relationships, ...upd.relationships]);
+  if (upd.active_consequences?.length) s.active_consequences = dedupe([...s.active_consequences, ...upd.active_consequences]);
   if (upd.character_status) s.character_status = { ...s.character_status, ...upd.character_status };
   if (upd.location_status) s.location_status = { ...s.location_status, ...upd.location_status };
 }

@@ -7,13 +7,15 @@ import { QuestSchema, PrologueSchema, type Quest } from "@/lib/schema";
 import { createQuest } from "@/lib/questStore";
 
 export async function POST(req: NextRequest) {
-  const { questId, members, theme } = await req.json();
-  const names: string[] = Array.isArray(members) ? members : [];
+  let body: { questId?: string; members?: unknown; theme?: string } = {};
+  try { body = await req.json(); } catch { /* malformed body → fall through to fallback */ }
+  const { questId, members, theme } = body;
+  const names: string[] = Array.isArray(members) ? (members as string[]) : [];
   let quest: Quest;
-  if (isOffline()) quest = fallbackQuest(names);
+  if (isOffline()) quest = fallbackQuest(names, theme);
   else {
-    try { const { system, user } = buildQuestPrompt(names, theme); quest = QuestSchema.parse(await glmJSON(system, user)); }
-    catch { quest = fallbackQuest(names); }
+    try { const { system, user } = buildQuestPrompt(names, theme ?? ""); quest = QuestSchema.parse(await glmJSON(system, user)); }
+    catch { quest = fallbackQuest(names, theme); }
   }
   // opening prologue, revealed line-by-line on the client before the first roll
   let prologue: string[];

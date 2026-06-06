@@ -8,7 +8,9 @@ import { getQuest, listFateCards, getStoryState, mergeStoryState } from "@/lib/q
 import { RoundResultSchema } from "@/lib/schema";
 
 export async function POST(req: NextRequest) {
-  const { questId, roll, recent, round, active, action } = await req.json();
+  let body: { questId?: string; roll?: number; recent?: string; round?: number; active?: { name?: string; role?: string }; action?: string } = {};
+  try { body = await req.json(); } catch { /* malformed body → use defaults + fallback */ }
+  const { questId, roll, recent, round, active, action } = body;
   const n = clampD20(typeof roll === "number" ? roll : 1);
   const label = rollLabel(n);
   const r = typeof round === "number" ? round : 0;

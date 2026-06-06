@@ -1,19 +1,21 @@
 import type { Quest, FateCard, RoundResult, QuestCard, ActionOptions } from "@/lib/schema";
 import { rollLabel } from "@/lib/dice";
 
-const ROLE_POOL = [
-  { role: "Store Manager", ability: "Knows the store layout" },
-  { role: "Delivery Driver", ability: "Knows the route outside" },
-  { role: "Lost Student", ability: "Notices the smallest details" },
-  { role: "Investigator", ability: "Reads people and clues" },
-  { role: "CCTV Operator", ability: "Sees what others miss on the cameras" },
-];
-export function fallbackQuest(members: string[]): Quest {
+type FallbackVariant = { setup: string; goal: string; roles: { role: string; ability: string }[] };
+const VARIANTS: Record<string, FallbackVariant> = {
+  "The 404 Customer": { setup: "A late-night convenience store disconnects from the outside world; the register reads: Welcome, customer #404.", goal: "Escape the looping store and reconnect with the outside.", roles: [{ role: "Store Manager", ability: "Knows the store layout" }, { role: "Delivery Driver", ability: "Knows the route outside" }, { role: "Lost Student", ability: "Notices the smallest details" }, { role: "Investigator", ability: "Reads people and clues" }, { role: "CCTV Operator", ability: "Sees what others miss on the cameras" }] },
+  "Space Station SOS": { setup: "The station's oxygen is draining fast and a silent alarm blinks — someone sabotaged life support.", goal: "Restore life support before the timer hits zero.", roles: [{ role: "Commander", ability: "Keeps the crew together" }, { role: "Engineer", ability: "Can patch any system" }, { role: "Rookie Astronaut", ability: "Spots what everyone missed" }, { role: "Suspicious Robot", ability: "Knows things it shouldn't" }, { role: "Stowaway", ability: "Hides in plain sight" }] },
+  "Last Train Home": { setup: "The last tube leaves in five minutes and one of you is about to be left behind in the dark.", goal: "Get everyone onto the last train home.", roles: [{ role: "Night Conductor", ability: "Knows every shortcut" }, { role: "Lost Tourist", ability: "Trusts the wrong map" }, { role: "Night Owl", ability: "Wide awake at 2am" }, { role: "Busker", ability: "Distracts anyone with a tune" }, { role: "Pickpocket", ability: "Quick hands, quicker exits" }] },
+  "Dorm Kitchen Mystery": { setup: "A mysterious takeaway arrives in the dorm kitchen, addressed to someone who doesn't exist.", goal: "Uncover who placed the order and why.", roles: [{ role: "Flatmate Chef", ability: "Smells a lie a mile off" }, { role: "Hungry Gremlin", ability: "Always near the food" }, { role: "Clean Freak", ability: "Notices anything out of place" }, { role: "Night Snacker", ability: "Roams the kitchen at 3am" }, { role: "Suspicious Landlord", ability: "Has keys to everything" }] },
+};
+export function fallbackQuest(members: string[], theme?: string): Quest {
   const names = members.length ? members : ["You"];
+  const t = theme && VARIANTS[theme] ? theme : "The 404 Customer";
+  const v = VARIANTS[t];
   return {
-    scene: { theme: "The 404 Customer", setup: "A late-night convenience store disconnects from the outside world; the register reads: Welcome, customer #404.", tone: "chaotic, playful, safe" },
-    players: names.map((n, i) => ({ name: n, role: ROLE_POOL[i % ROLE_POOL.length].role, ability: ROLE_POOL[i % ROLE_POOL.length].ability, status: "active" as const })),
-    goal: "Escape the looping store and reconnect with the outside.",
+    scene: { theme: t, setup: v.setup, tone: "chaotic, playful, safe" },
+    players: names.map((n, i) => ({ name: n, role: v.roles[i % v.roles.length].role, ability: v.roles[i % v.roles.length].ability, status: "active" as const })),
+    goal: v.goal,
   };
 }
 const NARR: Record<string, string> = {

@@ -7,7 +7,9 @@ import { QuestCardSchema } from "@/lib/schema";
 import { listFateCards } from "@/lib/questStore";
 
 export async function POST(req: NextRequest) {
-  const { questId, finalRoll, summary } = await req.json();
+  let body: { questId?: string; finalRoll?: number; summary?: string } = {};
+  try { body = await req.json(); } catch { /* malformed body → fallback card */ }
+  const { questId, finalRoll, summary } = body;
   const n = typeof finalRoll === "number" ? finalRoll : 0;
   const titles = (questId ? listFateCards(String(questId)) : []).map((f) => f.title);
   const best = titles[titles.length - 1] ?? "—";

@@ -28,7 +28,9 @@ export async function glmJSON(system: string, user: string): Promise<unknown> {
     ],
     true,
   );
-  return JSON.parse(raw);
+  // Some providers wrap JSON in ```json fences despite response_format — strip them.
+  const cleaned = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/```$/i, "").trim();
+  return JSON.parse(cleaned);
 }
 
 export async function glmText(system: string, user: string): Promise<string> {
