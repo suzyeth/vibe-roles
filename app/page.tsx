@@ -101,7 +101,7 @@ export default function Home() {
           <div>
             <DeadGroup msgs={DEAD_GROUP} />
             <div className="p-4 text-center">
-              <button onClick={() => setPhase("idle")} className="rounded-full bg-gradient-to-r from-fuchsia-600 to-indigo-600 px-5 py-3 font-semibold text-white shadow-lg">✨ 群里好冷…用 Vibe Roles 救场</button>
+              <button type="button" onClick={() => setPhase("idle")} className="rounded-full bg-gradient-to-r from-fuchsia-600 to-indigo-600 px-5 py-3 font-semibold text-white shadow-lg">✨ 群里好冷…用 Vibe Roles 救场</button>
             </div>
           </div>
         )}
@@ -112,7 +112,7 @@ export default function Home() {
         {phase === "ended" && highlight && (
           <div className="flex flex-col items-center pb-4">
             <HighlightCard h={highlight} />
-            <button onClick={() => setPosted(true)} disabled={posted} className="mt-2 rounded-full bg-fuchsia-600 px-4 py-2 text-white disabled:opacity-60">
+            <button type="button" onClick={() => setPosted(true)} disabled={posted} className="mt-2 rounded-full bg-fuchsia-600 px-4 py-2 text-white disabled:opacity-60">
               {posted ? "已发到 Zymix 动态 ✨" : "📣 发到 Zymix 动态"}
             </button>
           </div>
@@ -122,11 +122,11 @@ export default function Home() {
         <div>
           {myRole && <div className="px-3 pt-2 text-center text-xs text-fuchsia-300">你演【{myRole}】，照角色随时插一句</div>}
           <Composer onSend={onSend} />
-          <button onClick={finish} className="mx-3 mb-3 rounded-full bg-indigo-600 py-2 text-white" style={{ width: "calc(100% - 1.5rem)" }}>⏭ 直接出名场面卡</button>
+          <button type="button" onClick={finish} className="mx-3 mb-3 rounded-full bg-indigo-600 py-2 text-white" style={{ width: "calc(100% - 1.5rem)" }}>⏭ 直接出名场面卡</button>
         </div>
       )}
       {phase === "ended" && (
-        <button onClick={() => setPhase("idle")} className="m-3 rounded-full bg-fuchsia-600 py-2 text-white">再来一局 🔁</button>
+        <button type="button" onClick={() => setPhase("idle")} className="m-3 rounded-full bg-fuchsia-600 py-2 text-white">再来一局 🔁</button>
       )}
     </main>
   );
