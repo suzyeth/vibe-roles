@@ -1,4 +1,14 @@
-import type { FateCard } from "@/lib/schema";
+import type { FateCard, Quest } from "@/lib/schema";
+
+/** Prompt for an AI-written opening prologue, revealed line-by-line before the first roll. */
+export function buildProloguePrompt(quest: Quest) {
+  const heroes = quest.players.map((p) => `${p.name} the ${p.role}`).join(", ");
+  const system = `You are the Game Master of "Vibe Dice". Write a THRILLING story PROLOGUE that opens the adventure, read out before the first dice roll.
+Output JSON ONLY (no markdown): {"lines":["line 1","line 2","line 3","line 4"]}
+Rules: 4-5 lines, each <=22 words, English, cinematic and high-stakes — build tension, name the danger, give each hero a beat — Gen Z and witty, safe (no violence/explicit/hate). End on a cliffhanger that makes them want to roll.`;
+  const user = `Theme: ${quest.scene.theme}\nSetup: ${quest.scene.setup}\nGoal: ${quest.goal}\nHeroes: ${heroes}`;
+  return { system, user };
+}
 
 export function buildQuestPrompt(members: string[], theme: string) {
   const system = `You are the AI Game Master of "Vibe Dice". Open a 3-minute micro adventure with a THRILLING cold open.

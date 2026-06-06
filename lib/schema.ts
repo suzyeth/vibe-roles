@@ -23,8 +23,12 @@ export const QuestSchema = z.object({
   scene: z.object({ theme: z.string().min(1), setup: z.string().min(1), tone: z.string().min(1) }),
   players: z.array(PlayerSchema).min(1),
   goal: z.string().min(1),
+  prologue: z.array(z.string()).optional(),
 });
 export type Quest = z.infer<typeof QuestSchema>;
+
+export const PrologueSchema = z.object({ lines: z.array(z.string().min(1)).min(1) });
+export type Prologue = z.infer<typeof PrologueSchema>;
 
 export const ReactionSchema = z.object({ member: z.string().min(1), text: z.string().min(1) });
 export type Reaction = z.infer<typeof ReactionSchema>;

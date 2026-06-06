@@ -32,6 +32,16 @@ const MOCK_FATE: FateCard[] = [
   { type: "curse", title: "Food Metaphor Mode", effect: "All future dialogue must sound like dinner is a psychological condition.", tone: "chaotic but harmless", trigger: "next_round" },
   { type: "character", title: "The Sunglasses Pigeon", effect: "Offers suspicious advice but demands chips.", tone: "chaotic but harmless", trigger: "roll_under_10" },
 ];
+/** Deterministic offline prologue derived from the quest (English). */
+export function fallbackPrologue(quest: Quest): string[] {
+  const names = quest.players.map((p) => p.name).join(", ");
+  return [
+    `${quest.scene.theme}.`,
+    quest.scene.setup,
+    `Our heroes — ${names} — have absolutely no idea what they just walked into.`,
+    `The quest: ${quest.goal} Roll the die to begin.`,
+  ];
+}
 export function fallbackFateCard(input: string, seed: number): FateCard {
   const base = MOCK_FATE[((seed % MOCK_FATE.length) + MOCK_FATE.length) % MOCK_FATE.length];
   return { ...base, title: (input || base.title).slice(0, 24) };

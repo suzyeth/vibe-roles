@@ -40,9 +40,16 @@ export default function Home() {
     questId.current = `q_${idRef.current++}_${theme.length}`;
     const res = await fetch("/api/quest", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ questId: questId.current, members: PRESET_MEMBERS.map((m) => m.name), theme }) });
     const q: Quest = await res.json();
-    setQuest(q); recent.current = q.scene.setup;
-    push("Narrator", q.scene.setup, "narration");
+    setQuest(q);
     setPhase("playing");
+    // story prologue (generated with the quest): reveal the opening lines one by one before the first roll
+    const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    const lines = q.prologue && q.prologue.length ? q.prologue : [q.scene.setup];
+    for (const line of lines) {
+      push("Narrator", line, "narration");
+      recent.current = line;
+      await delay(700);
+    }
   }
 
   async function onRoll(n: number) {

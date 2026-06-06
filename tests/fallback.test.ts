@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { fallbackQuest, fallbackRoundResult, fallbackFateCard, fallbackQuestCard } from "@/lib/fallback";
+import { fallbackQuest, fallbackRoundResult, fallbackFateCard, fallbackQuestCard, fallbackPrologue } from "@/lib/fallback";
 import { QuestSchema, FateCardSchema, RoundResultSchema, QuestCardSchema } from "@/lib/schema";
 
 describe("fallbackQuest", () => {
@@ -30,4 +30,14 @@ describe("fallbackFateCard", () => {
 
 describe("fallbackQuestCard", () => {
   it("passes schema", () => { expect(QuestCardSchema.parse(fallbackQuestCard(18, "Food Metaphor"))).toBeTruthy(); });
+});
+
+describe("fallbackPrologue", () => {
+  it("returns multiple non-empty lines weaving theme, heroes and goal", () => {
+    const q = fallbackQuest(["Mia", "Kai"]);
+    const lines = fallbackPrologue(q);
+    expect(lines.length).toBeGreaterThan(1);
+    expect(lines.every((l) => l.length > 0)).toBe(true);
+    expect(lines.join(" ")).toContain("Mia");
+  });
 });
