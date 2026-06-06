@@ -1,42 +1,29 @@
-const NPC_NAMES = ["AI·路人甲", "AI·路人乙", "AI·路人丙"];
+import type { FateCard } from "@/lib/schema";
 
-export function padWithNPCs(members: string[]): string[] {
-  const out = [...members];
-  let i = 0;
-  while (out.length < 3 && i < NPC_NAMES.length) out.push(NPC_NAMES[i++]);
-  return out;
-}
-
-export function buildScenePrompt(members: string[], theme: string) {
-  const system = `你是 Vibe Roles 的导演。根据"主题"和"在场成员名单"，即兴现编一个30秒微剧场。
-严格只输出 JSON（不要 markdown 代码块），结构：
-{"scene":{"theme":"...","setup":"一句话场景设定"},
- "roles":[{"member":"成员名","role":"角色名","hook":"一句话任务/台词钩子"}],
- "opening_narration":"旁白开场(<=40字)",
- "beats":[{"narration":"..."}],
- "ending":"反转结局(<=40字)"}
-规则：roles 数量必须等于成员数；每个成员都要出现；中文；Gen Z 活泼语气；不得生成暴力/露骨/歧视等不当内容。`;
+export function buildQuestPrompt(members: string[], theme: string) {
+  const system = `你是 Vibe Dice 的 AI 主持人。生成一个 3 分钟微型冒险的开场。
+严格只输出 JSON（不要 markdown）：{"scene":{"theme":"...","setup":"<=40字开场","tone":"chaotic, playful, safe"},"players":[{"name":"成员名","role":"轻松角色名","ability":"一句能力","status":"active"}],"goal":"<=20字目标"}
+规则：players 数量=成员数；角色风趣(如 The Ghost Rogue/The Snack Healer)；中文+英文角色名皆可；Gen Z 语气；安全，不得暴力/露骨/仇恨。`;
   const user = `主题：${theme || "随机"}\n在场成员：${members.join("、")}`;
   return { system, user };
 }
 
-export function buildNarratePrompt(sceneSetup: string, membersSaid: string) {
-  const system = `你是旁白。把成员刚才的发言接龙进剧情，推进一段(<=50字)，结尾留钩子让大家继续。中文，戏剧感，Gen Z 语气。只输出旁白文本本身。`;
-  const user = `场景：${sceneSetup}\n成员刚才的发言：${membersSaid}`;
+export function buildRollPrompt(sceneSetup: string, label: string, fateCards: FateCard[], recent: string) {
+  const fate = fateCards.length ? fateCards.map((f) => `${f.type}:${f.title}(${f.effect})`).join("；") : "无";
+  const system = `你是 Vibe Dice 主持人。根据骰子结果标签推进剧情一段(<=50字)，必须体现该标签的成败基调，并把"待生效 Fate Card"自然编进剧情。只输出旁白文本本身。中文，戏剧感，Gen Z 语气，安全。`;
+  const user = `场景：${sceneSetup}\n前情：${recent}\n骰子结果：${label}\n待生效 Fate Cards：${fate}`;
   return { system, user };
 }
 
-export function buildActPrompt(role: string, sceneSetup: string, last: string) {
-  const system = `你在玩一个群聊角色扮演。用你的角色身份，接着剧情冒一句简短台词(<=25字)，要有戏、Gen Z 语气。只输出台词本身，不要加引号或旁白。`;
-  const user = `场景：${sceneSetup}\n你的角色：${role}\n最近的剧情：${last}`;
+export function buildFateCardPrompt(type: string, input: string) {
+  const system = `你把好友的一句自由输入转成结构化 Fate Card。严格只输出 JSON：{"type":"character|object|curse|rule|blessing","title":"<=12字","effect":"一句话效果","tone":"chaotic but harmless","trigger":"next_round|roll_under_10"}
+规则：type 必须等于给定类型；effect 安全、好玩、可被主持人编入剧情；过滤暴力/露骨/仇恨/人身攻击。`;
+  const user = `类型：${type}\n好友输入：${input}`;
   return { system, user };
 }
 
-export function buildRoundPrompt(sceneSetup: string, roles: { member: string; role: string }[], recentContext: string) {
-  const cast = roles.map((r) => `${r.member}(${r.role})`).join("、");
-  const system = `你是群聊微剧场的导演。让指定成员各按自己角色冒一句简短台词(<=25字)，然后你给一句旁白推进剧情(<=40字)。
-严格只输出 JSON（不要 markdown）：{"lines":[{"member":"名","role":"角色","text":"台词"}],"narration":"旁白"}。
-中文，Gen Z 语气，要有戏，必须承接"最近剧情"保持连贯，不得不当内容。`;
-  const user = `场景：${sceneSetup}\n本轮发言成员：${cast}\n最近剧情：${recentContext}`;
+export function buildQuestCardPrompt(summary: string, finalRoll: number, fateTitles: string[]) {
+  const system = `你给一局 Vibe Dice 生成可分享结果卡。严格只输出 JSON：{"title":"Quest Completed","caption":"<=10字气氛词","best_interference":"最出彩的 Fate Card 标题","final_roll":数字,"cta":"Start your own quest on Zymix"}`;
+  const user = `结局摘要：${summary}\n最终骰子：${finalRoll}\n候选 Fate Cards：${fateTitles.join("、") || "无"}`;
   return { system, user };
 }
