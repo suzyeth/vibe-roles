@@ -1,101 +1,80 @@
-import Image from "next/image";
+"use client";
+import { useState } from "react";
+import { PRESET_MEMBERS } from "@/data/members";
+import { ThemePicker } from "@/components/ThemePicker";
+import { RoleCardList } from "@/components/RoleCardList";
+import { MessageBubble, type ChatMsg } from "@/components/MessageBubble";
+import { Composer } from "@/components/Composer";
+import { HighlightCard } from "@/components/HighlightCard";
+import type { Scene, Highlight } from "@/lib/schema";
+
+type Phase = "idle" | "loading" | "playing" | "ended";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [phase, setPhase] = useState<Phase>("idle");
+  const [scene, setScene] = useState<Scene | null>(null);
+  const [msgs, setMsgs] = useState<ChatMsg[]>([]);
+  const [transcript, setTranscript] = useState<{ member: string; text: string }[]>([]);
+  const [highlight, setHighlight] = useState<Highlight | null>(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+  const memberNames = PRESET_MEMBERS.map((m) => m.name);
+
+  async function start(theme: string) {
+    setPhase("loading"); setMsgs([]); setTranscript([]); setHighlight(null);
+    const res = await fetch("/api/scene", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ members: memberNames, theme }),
+    });
+    const s: Scene = await res.json();
+    setScene(s);
+    setMsgs([{ id: "open", author: "旁白", avatar: "🎬", text: s.opening_narration, kind: "narration" }]);
+    setPhase("playing");
+  }
+
+  async function onSend(text: string) {
+    const next = [...transcript, { member: "你", text }];
+    setTranscript(next);
+    setMsgs((m) => [...m, { id: `u${m.length}`, author: "你", avatar: "🫵", text, kind: "member" }]);
+    const res = await fetch("/api/narrate", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sceneSetup: scene?.scene.setup, membersSaid: `你：${text}` }),
+    });
+    const { narration } = await res.json();
+    setMsgs((m) => [...m, { id: `n${m.length}`, author: "旁白", avatar: "🎬", text: narration, kind: "narration" }]);
+  }
+
+  async function finish() {
+    const res = await fetch("/api/highlight", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ transcript }),
+    });
+    setHighlight(await res.json());
+    setPhase("ended");
+  }
+
+  return (
+    <main className="mx-auto flex h-screen max-w-md flex-col bg-zinc-950 text-zinc-100">
+      <header className="border-b border-zinc-800 p-3 text-center font-bold">Zymix 群 · Vibe Roles</header>
+      <div className="flex-1 overflow-y-auto">
+        {phase === "idle" && <ThemePicker onPick={start} />}
+        {phase === "loading" && <div className="p-8 text-center text-zinc-400">AI 正在选角…🎭</div>}
+        {scene && phase !== "idle" && <RoleCardList roles={scene.roles} />}
+        {msgs.map((m) => <MessageBubble key={m.id} msg={m} />)}
+        {phase === "ended" && highlight && <HighlightCard h={highlight} />}
+      </div>
+      {phase === "playing" && (
+        <>
+          <button
+            onClick={() => onSend("(我潜水，AI 替我演)")}
+            className="mx-3 mt-2 rounded-full border border-zinc-700 py-1 text-sm text-zinc-300"
+          >😶 我潜水，让 AI 替我接一句</button>
+          <Composer onSend={onSend} />
+          <button onClick={finish} className="m-3 rounded-full bg-indigo-600 py-2 text-white">收尾 → 出名场面卡</button>
+        </>
+      )}
+      {phase === "ended" && (
+        <button onClick={() => setPhase("idle")} className="m-3 rounded-full bg-fuchsia-600 py-2 text-white">再来一局 🔁</button>
+      )}
+    </main>
   );
 }
