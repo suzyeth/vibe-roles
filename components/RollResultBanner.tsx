@@ -1,11 +1,22 @@
-const COLOR: Record<string, string> = {
-  "Total Chaos": "bg-red-700", "Awkward Fail": "bg-orange-700", "Messy Progress": "bg-yellow-700",
-  "Works Somehow": "bg-emerald-700", "Main Character Moment": "bg-fuchsia-700", "Iconic Roll": "bg-indigo-600",
-};
+import { DICE_MAP } from "@/lib/dice";
+
+// SPEC §5.3 exact colors + emoji, keyed by display label.
+const BY_LABEL = Object.values(DICE_MAP).reduce<Record<string, { color: string; emoji: string }>>((acc, m) => {
+  acc[m.label] = { color: m.color, emoji: m.emoji };
+  return acc;
+}, {});
+
 export function RollResultBanner({ roll, label, advantage }: { roll: number; label: string; advantage?: boolean }) {
+  const m = BY_LABEL[label];
+  const bg = m?.color ?? "#3F3F46";
+  // Messy Progress uses a yellow background → dark text per SPEC §5.3
+  const darkText = label === "Messy Progress";
   return (
-    <div className={`mx-3 my-2 rounded-xl px-3 py-2 text-center text-white ${COLOR[label] ?? "bg-zinc-700"}`}>
-      🎲 {roll} · <span className="font-bold">{label}</span>
+    <div
+      className="mx-3 my-2 rounded-xl px-3 py-2 text-center font-medium"
+      style={{ backgroundColor: bg, color: darkText ? "#1A1A1A" : "#FFFFFF" }}
+    >
+      {m?.emoji ?? "🎲"} {roll} · <span className="font-bold">{label}</span>
       {advantage && <span className="ml-2 text-xs font-semibold">Advantage!</span>}
     </div>
   );
