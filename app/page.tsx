@@ -1,108 +1,129 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { PRESET_MEMBERS } from "@/data/members";
+import { DEAD_GROUP } from "@/data/deadGroup";
+import { MiniAppBar } from "@/components/MiniAppBar";
+import { DeadGroup } from "@/components/DeadGroup";
 import { ThemePicker } from "@/components/ThemePicker";
 import { RoleCardList } from "@/components/RoleCardList";
 import { MessageBubble, type ChatMsg } from "@/components/MessageBubble";
 import { Composer } from "@/components/Composer";
 import { HighlightCard } from "@/components/HighlightCard";
-import type { Scene, Highlight } from "@/lib/schema";
+import type { Scene, Highlight, Round } from "@/lib/schema";
 
-type Phase = "idle" | "loading" | "playing" | "ended";
+type Phase = "cold" | "idle" | "loading" | "playing" | "ended";
+const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export default function Home() {
-  const [phase, setPhase] = useState<Phase>("idle");
+  const [phase, setPhase] = useState<Phase>("cold");
   const [scene, setScene] = useState<Scene | null>(null);
   const [msgs, setMsgs] = useState<ChatMsg[]>([]);
-  const [transcript, setTranscript] = useState<{ member: string; text: string }[]>([]);
   const [highlight, setHighlight] = useState<Highlight | null>(null);
-  const [round, setRound] = useState(0);
+  const [posted, setPosted] = useState(false);
+  const idRef = useRef(0);
+  const transcriptRef = useRef<{ member: string; text: string }[]>([]);
 
-  const memberNames = PRESET_MEMBERS.map((m) => m.name);
-  const aiMembers = PRESET_MEMBERS.filter((m) => m.isAI);
+  const nextId = () => `m${idRef.current++}`;
+  const avatarOf = (name: string) => PRESET_MEMBERS.find((m) => m.name === name)?.avatar ?? "🎭";
+  const myRole = scene?.roles.find((r) => r.member === "你")?.role ?? "";
 
-  function roleOf(name: string): string {
-    return scene?.roles.find((r) => r.member === name)?.role ?? "神秘人";
+  function pushMsg(author: string, text: string, kind: ChatMsg["kind"]) {
+    setMsgs((m) => [...m, { id: nextId(), author, avatar: kind === "narration" ? "🎬" : avatarOf(author), text, kind }]);
   }
-
-  async function start(theme: string) {
-    setPhase("loading"); setMsgs([]); setTranscript([]); setHighlight(null); setRound(0);
-    const res = await fetch("/api/scene", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ members: memberNames, theme }),
-    });
-    const s: Scene = await res.json();
-    setScene(s);
-    setMsgs([{ id: "open", author: "旁白", avatar: "🎬", text: s.opening_narration, kind: "narration" }]);
-    setPhase("playing");
-  }
-
-  async function onSend(text: string) {
-    const next = [...transcript, { member: "你", text }];
-    setTranscript(next);
-    setMsgs((m) => [...m, { id: `u${m.length}`, author: "你", avatar: "🫵", text, kind: "member" }]);
-    const res = await fetch("/api/narrate", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sceneSetup: scene?.scene.setup, membersSaid: `你：${text}` }),
-    });
-    const { narration } = await res.json();
-    setMsgs((m) => [...m, { id: `n${m.length}`, author: "旁白", avatar: "🎬", text: narration, kind: "narration" }]);
-  }
-
-  async function autoRound() {
-    if (!scene) return;
-    const last = msgs[msgs.length - 1]?.text ?? scene.scene.setup;
-    const actors = [aiMembers[round % aiMembers.length], aiMembers[(round + 1) % aiMembers.length]];
-    const said: string[] = [];
-    for (let i = 0; i < actors.length; i++) {
-      const a = actors[i];
-      const res = await fetch("/api/act", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: roleOf(a.name), sceneSetup: scene.scene.setup, last, seed: round * 2 + i }),
-      });
-      const { line } = await res.json();
-      said.push(`${a.name}：${line}`);
-      setMsgs((m) => [...m, { id: `act${m.length}`, author: a.name, avatar: a.avatar, text: line, kind: "member" }]);
-      setTranscript((t) => [...t, { member: a.name, text: line }]);
-    }
-    const nres = await fetch("/api/narrate", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sceneSetup: scene.scene.setup, membersSaid: said.join("；") }),
-    });
-    const { narration } = await nres.json();
-    setMsgs((m) => [...m, { id: `rn${m.length}`, author: "旁白", avatar: "🎬", text: narration, kind: "narration" }]);
-    setRound((r) => r + 1);
+  function addTranscript(member: string, text: string) {
+    transcriptRef.current = [...transcriptRef.current, { member, text }];
   }
 
   async function finish() {
     const res = await fetch("/api/highlight", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ transcript }),
+      body: JSON.stringify({ transcript: transcriptRef.current }),
     });
     setHighlight(await res.json());
     setPhase("ended");
   }
 
+  async function autoPlay(s: Scene) {
+    const aiRoles = s.roles.filter((r) => PRESET_MEMBERS.find((m) => m.name === r.member)?.isAI);
+    let recent = s.scene.setup;
+    for (let round = 0; round < 2; round++) {
+      const picks = [aiRoles[round % aiRoles.length], aiRoles[(round + 1) % aiRoles.length]].filter(Boolean);
+      const roles = picks.map((r) => ({ member: r.member, role: r.role }));
+      const res = await fetch("/api/round", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sceneSetup: s.scene.setup, roles, recentContext: recent, seed: round }),
+      });
+      const r: Round = await res.json();
+      for (const ln of r.lines) {
+        pushMsg(ln.member, ln.text, "member");
+        addTranscript(ln.member, ln.text);
+        await delay(750);
+      }
+      pushMsg("旁白", r.narration, "narration");
+      recent = r.narration;
+      await delay(750);
+    }
+    pushMsg("旁白", s.ending, "narration");
+    await delay(600);
+    await finish();
+  }
+
+  async function start(theme: string) {
+    setPhase("loading"); setMsgs([]); setHighlight(null); setPosted(false);
+    transcriptRef.current = [];
+    const res = await fetch("/api/scene", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ members: PRESET_MEMBERS.map((m) => m.name), theme }),
+    });
+    const s: Scene = await res.json();
+    setScene(s);
+    setMsgs([{ id: nextId(), author: "旁白", avatar: "🎬", text: s.opening_narration, kind: "narration" }]);
+    setPhase("playing");
+    await autoPlay(s);
+  }
+
+  async function onSend(text: string) {
+    pushMsg("你", text, "member");
+    addTranscript("你", text);
+    const res = await fetch("/api/narrate", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sceneSetup: scene?.scene.setup, membersSaid: `你：${text}` }),
+    });
+    const { narration } = await res.json();
+    pushMsg("旁白", narration, "narration");
+  }
+
   return (
     <main className="mx-auto flex h-screen max-w-md flex-col bg-zinc-950 text-zinc-100">
-      <header className="border-b border-zinc-800 p-3 text-center font-bold">Zymix 群 · Vibe Roles</header>
+      <MiniAppBar />
       <div className="flex-1 overflow-y-auto">
+        {phase === "cold" && (
+          <div>
+            <DeadGroup msgs={DEAD_GROUP} />
+            <div className="p-4 text-center">
+              <button onClick={() => setPhase("idle")} className="rounded-full bg-gradient-to-r from-fuchsia-600 to-indigo-600 px-5 py-3 font-semibold text-white shadow-lg">✨ 群里好冷…用 Vibe Roles 救场</button>
+            </div>
+          </div>
+        )}
         {phase === "idle" && <ThemePicker onPick={start} />}
         {phase === "loading" && <div className="p-8 text-center text-zinc-400">AI 正在选角…🎭</div>}
-        {scene && phase !== "idle" && <RoleCardList roles={scene.roles} />}
+        {scene && (phase === "playing" || phase === "ended") && <RoleCardList roles={scene.roles} />}
         {msgs.map((m) => <MessageBubble key={m.id} msg={m} />)}
-        {phase === "ended" && highlight && <HighlightCard h={highlight} />}
+        {phase === "ended" && highlight && (
+          <div className="flex flex-col items-center pb-4">
+            <HighlightCard h={highlight} />
+            <button onClick={() => setPosted(true)} disabled={posted} className="mt-2 rounded-full bg-fuchsia-600 px-4 py-2 text-white disabled:opacity-60">
+              {posted ? "已发到 Zymix 动态 ✨" : "📣 发到 Zymix 动态"}
+            </button>
+          </div>
+        )}
       </div>
       {phase === "playing" && (
-        <>
-          <button onClick={autoRound} className="mx-3 mt-2 rounded-full bg-emerald-600 py-1 text-sm text-white">▶️ AI 接着演一轮（第 {round + 1} 幕）</button>
-          <button
-            onClick={() => onSend("(我潜水，AI 替我演)")}
-            className="mx-3 mt-2 rounded-full border border-zinc-700 py-1 text-sm text-zinc-300"
-          >😶 我潜水，让 AI 替我接一句</button>
+        <div>
+          {myRole && <div className="px-3 pt-2 text-center text-xs text-fuchsia-300">你演【{myRole}】，照角色随时插一句</div>}
           <Composer onSend={onSend} />
-          <button onClick={finish} className="m-3 rounded-full bg-indigo-600 py-2 text-white">收尾 → 出名场面卡</button>
-        </>
+          <button onClick={finish} className="mx-3 mb-3 rounded-full bg-indigo-600 py-2 text-white" style={{ width: "calc(100% - 1.5rem)" }}>⏭ 直接出名场面卡</button>
+        </div>
       )}
       {phase === "ended" && (
         <button onClick={() => setPhase("idle")} className="m-3 rounded-full bg-fuchsia-600 py-2 text-white">再来一局 🔁</button>
