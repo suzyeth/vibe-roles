@@ -2,17 +2,18 @@ import type { Quest, FateCard, RoundResult, QuestCard, ActionOptions } from "@/l
 import { rollLabel } from "@/lib/dice";
 
 const ROLE_POOL = [
-  { role: "The Overthinking Wizard", ability: "Detect hidden awkwardness" },
-  { role: "The Ghost Rogue", ability: "Return from unread messages" },
-  { role: "The Chaos Bard", ability: "Turn silence into a song" },
-  { role: "The Snack Healer", ability: "Restore morale with chips" },
+  { role: "Store Manager", ability: "Knows the store layout" },
+  { role: "Delivery Driver", ability: "Knows the route outside" },
+  { role: "Lost Student", ability: "Notices the smallest details" },
+  { role: "Investigator", ability: "Reads people and clues" },
+  { role: "CCTV Operator", ability: "Sees what others miss on the cameras" },
 ];
 export function fallbackQuest(members: string[]): Quest {
   const names = members.length ? members : ["You"];
   return {
-    scene: { theme: "The Unread Beast", setup: "The chat has fallen into silence. The Unread Beast has stolen the last topic.", tone: "chaotic, playful, safe" },
+    scene: { theme: "The 404 Customer", setup: "A late-night convenience store disconnects from the outside world; the register reads: Welcome, customer #404.", tone: "chaotic, playful, safe" },
     players: names.map((n, i) => ({ name: n, role: ROLE_POOL[i % ROLE_POOL.length].role, ability: ROLE_POOL[i % ROLE_POOL.length].ability, status: "active" as const })),
-    goal: "Recover the stolen topic and revive the chat.",
+    goal: "Escape the looping store and reconnect with the outside.",
   };
 }
 const NARR: Record<string, string> = {
@@ -51,10 +52,11 @@ export function fallbackQuestCard(finalRoll: number, bestInterference: string): 
 /** Deterministic offline action options (English). */
 export function fallbackActions(active: { name: string; role: string }, seed = 0): ActionOptions {
   const BASE: Record<string, string[]> = {
-    "The Overthinking Wizard": ["Analyze the symbols on the wall", "Cast a light spell to reveal hidden paths", "Question whether this is even real"],
-    "The Ghost Rogue": ["Sneak past the sleeping guards", "Pick the ancient lock in the shadows", "Vanish and scout ahead"],
-    "The Chaos Bard": ["Sing a confusing song to distract them", "Cast a wild spell and see what happens", "Narrate dramatically as you charge in"],
-    "The Snack Healer": ["Share chips to boost morale", "Offer a snack to the creature", "Snack your way to victory"],
+    "Store Manager": ["Check the register log", "Open the staff door", "Grab something to defend with"],
+    "Delivery Driver": ["Check the order address", "Look in the van's boot", "Scout the route outside"],
+    "Lost Student": ["Find the exit sign", "Check the phone map", "Hide behind the shelves"],
+    "Investigator": ["Question the others", "Inspect the receipt", "Follow the strange sound"],
+    "CCTV Operator": ["Rewind the footage", "Watch the back room", "Photograph the screen"],
   };
   const fallback = BASE[active.role] ?? ["Search the area carefully", "Try the obvious solution", "Take a wild guess"];
   const options = fallback.map((s) => s.slice(0, 24));

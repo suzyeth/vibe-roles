@@ -1,4 +1,4 @@
-export const QUEST_THEMES = ["The Unread Beast", "Flat Heist", "Last Train Home", "Group Chat Trial"] as const;
+export const QUEST_THEMES = ["The 404 Customer", "Space Station SOS", "Last Train Home", "Dorm Kitchen Mystery"] as const;
 export type QuestTheme = (typeof QUEST_THEMES)[number];
 export const FATE_TYPE_LABELS: { type: string; label: string; example: string }[] = [
   { type: "event", label: "Add an Event", example: "An alarm suddenly blares" },
