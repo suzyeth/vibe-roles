@@ -37,7 +37,7 @@ export function buildRollPrompt(sceneSetup: string, label: string, fateCards: Fa
     : "none";
   const system = `You are the Vibe Dice Game Master. A hero just acted and the dice decided their fate. Narrate the OUTCOME and record its lasting consequence. Output JSON ONLY (no markdown):
 {"narration":"2-4 cinematic sentences: react to the action at the dice tier, show concrete consequences and rising stakes, weave in any pending Fate Cards, end on a hook","reactions":[{"member":"member name","text":"in-character one-liner, <=14 words"}],"consequence":"one lasting effect to remember (a clue, a changed location, a character's new status, or a relationship shift)","story_state_updates":{"known_clues":[],"relationships":[],"location_status":{},"character_status":{},"active_consequences":[]}}
-Rules: continue from "Previously" and the current Story State for continuity; the consequence MUST persist and may affect other characters; only include story_state_updates that actually changed; reactions only from the given reacting members; English; dramatic, Gen Z; safe.`;
+Rules: REACTIONS ARE REQUIRED — include exactly ONE in-character line for EACH reacting member listed below; never return an empty reactions array. Continue from "Previously" and the current Story State for continuity; the consequence MUST persist and may affect other characters; only include story_state_updates that actually changed; reactions only from the given reacting members; English; dramatic, Gen Z; safe.`;
   const user = `Scene: ${sceneSetup}\nPreviously: ${recent}\nStory State: ${ss}\nDice result: ${label}\nPending Fate Cards: ${fate}\nReacting members: ${cast}${actionContext}`;
   return { system, user };
 }

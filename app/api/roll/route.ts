@@ -32,7 +32,9 @@ export async function POST(req: NextRequest) {
     const { system, user } = buildRollPrompt(setup, label, fate, recent ?? "", reactors, activePlayer, action, storyState);
     const parsed = RoundResultSchema.parse(await glmJSON(system, user));
     if (questId) mergeStoryState(String(questId), parsed.story_state_updates ?? {});
-    return Response.json({ roll: n, label, narration: parsed.narration, reactions: parsed.reactions });
+    // Guarantee other members always speak: if GLM returned no reactions, supplement from the fallback.
+    const reactions = parsed.reactions.length ? parsed.reactions : fallbackRoundResult(n, fate, reactors, r).reactions;
+    return Response.json({ roll: n, label, narration: parsed.narration, reactions });
   } catch {
     const fb = fallbackRoundResult(n, fate, reactors, r);
     return Response.json({ roll: n, label, narration: fb.narration, reactions: fb.reactions });
