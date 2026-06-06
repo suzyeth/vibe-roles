@@ -192,6 +192,15 @@ export default function PlayingScreen({ game }: { game: GameHook }) {
 
   return (
     <div className="flex flex-col" style={{ minHeight: 'calc(100vh - 56px)', background: 'var(--zymix-bg)' }}>
+      {/* Invite outsiders to drop a 5-minute twist into the story */}
+      <button
+        onClick={copyInvite}
+        className="mx-4 mt-3 flex items-center justify-center gap-2 rounded-full py-2 text-xs font-medium active:scale-[0.98] transition-transform"
+        style={{ background: 'var(--zymix-fate-light)', color: 'var(--zymix-fate)' }}
+      >
+        🔗 Invite a friend to twist the story (5 min)
+      </button>
+
       {/* Player cards — each tinted with its owner's accent color */}
       <div className="px-4 py-3 flex gap-2 overflow-x-auto">
         {state.players.map((p, i) => {
@@ -234,7 +243,9 @@ export default function PlayingScreen({ game }: { game: GameHook }) {
       {/* Messages */}
       <div className="flex-1 px-4 flex flex-col gap-2 overflow-y-auto pb-4">
         {state.messages.map((msg) => {
-          const isSelf = msg.kind === 'action';
+          // Only MY ("You") action sits on the right as a green bubble; every
+          // other player's action goes left with their own avatar + accent.
+          const isSelf = msg.kind === 'action' && msg.author === 'You';
           const isNarration = msg.kind === 'narration';
           if (isNarration) {
             return (
@@ -242,7 +253,7 @@ export default function PlayingScreen({ game }: { game: GameHook }) {
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-lg">{dm.avatar}</span>
                   <span className="text-xs" style={{ color: 'var(--zymix-green)', fontWeight: '600', textTransform: 'uppercase' }}>
-                    {dm.name}
+                    Story{state.lastActivePlayer && state.lastActivePlayer.name !== 'You' ? ` — ${state.lastActivePlayer.name}'s move caused this:` : ''}
                   </span>
                 </div>
                 <div className="text-sm leading-relaxed" style={{ color: 'var(--zymix-text-primary)' }}>{msg.text}</div>
@@ -294,8 +305,8 @@ export default function PlayingScreen({ game }: { game: GameHook }) {
         <div ref={endRef} />
       </div>
 
-      {/* Action area — interactive only on the human ("You") turn */}
-      {beatPhase === 'action' && activePlayer && isHuman && (
+      {/* Action area — interactive only on the human ("You") turn, after the intro */}
+      {state.ready && beatPhase === 'action' && activePlayer && isHuman && (
         <div className="p-3" style={footerStyle}>
           {/* Role-flavored options (green pills) */}
           {actionOptions.slice(0, 2).length > 0 && (

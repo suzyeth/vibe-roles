@@ -16,6 +16,11 @@ import type { TestStory } from '@/data/testStories';
 
 const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
+// Put the human ("You") first so the very first turn is theirs — they pick an
+// option and roll before any AI stand-in moves.
+const youFirst = <T extends { name: string }>(ps: T[]): T[] =>
+  [...ps.filter((p) => p.name === 'You'), ...ps.filter((p) => p.name !== 'You')];
+
 // Local, instant NPC resolution — no LLM call. The NPC "pretends" to have AI
 // but actually resolves its turn client-side so the loop never stalls.
 const LOCAL_NARR: Record<string, string> = {
@@ -64,6 +69,7 @@ export interface GameState {
   fateCards: Array<{ type: string; title: string; effect: string }>;
   questCard: { title: string; caption: string; best_interference: string; final_roll: number; cta: string } | null;
   shareUrl: string;
+  lastActivePlayer: { name: string; role: string } | null;
 }
 
 const initialState: GameState = {
@@ -79,6 +85,7 @@ const initialState: GameState = {
   fateCards: [],
   questCard: null,
   shareUrl: '',
+  lastActivePlayer: null,
 };
 
 export function useGameState() {
@@ -106,17 +113,29 @@ export function useGameState() {
       if (testMode) {
         const story = pickTestStory(theme, Date.now());
         storyRef.current = story;
-        const players = testQuestPlayers(story, members);
+        const players = youFirst(testQuestPlayers(story, members));
         setState({
           ...initialState,
           phase: 'playing',
           questId,
-          theme,
+          theme: story.theme,
           players,
           messages: [],
           round: 0,
           shareUrl: `${typeof window !== 'undefined' ? window.location.origin : ''}/q/${questId}`,
         });
+        // DM assigns each player a role in chat, with a character detail.
+        for (const p of players) {
+          const detail = story.roles[p.name]?.detail ?? story.defaultRole.detail;
+          setState(s => ({ ...s, narratorTyping: true }));
+          await delay(450);
+          setState(s => ({
+            ...s,
+            narratorTyping: false,
+            messages: [...s.messages, { id: nextId(), author: 'Narrator', avatar: '🎬', text: `🎭 @${p.name} — ${p.role}. ${detail}`, kind: 'narration' as const }],
+          }));
+          await delay(150);
+        }
         for (const line of story.prologue) {
           setState(s => ({ ...s, narratorTyping: true }));
           await delay(700);
@@ -143,13 +162,24 @@ export function useGameState() {
         ...initialState,
         phase: 'playing',
         questId,
-        theme,
-        players: quest.players,
+        theme: quest.scene?.theme ?? theme,
+        players: youFirst(quest.players ?? []),
         messages: [],
         round: 0,
         shareUrl: `${typeof window !== 'undefined' ? window.location.origin : ''}/q/${questId}`,
       });
 
+      // DM assigns roles in chat (live path: role + ability).
+      for (const p of (quest.players ?? [])) {
+        setState(s => ({ ...s, narratorTyping: true }));
+        await delay(450);
+        setState(s => ({
+          ...s,
+          narratorTyping: false,
+          messages: [...s.messages, { id: nextId(), author: 'Narrator', avatar: '🎬', text: `🎭 @${p.name} — ${p.role}. ${p.ability}`, kind: 'narration' as const }],
+        }));
+        await delay(150);
+      }
       // 逐行显示 prologue（每行前先让旁白"打字"一会儿）
       const lines = quest.prologue?.length ? quest.prologue : [quest.scene.setup];
       for (const line of lines) {
@@ -250,7 +280,7 @@ export function useGameState() {
     }
     // 3) 旁白"正在输入" → 旁白
     await delay(300);
-    setState(s => ({ ...s, narratorTyping: true }));
+    setState(s => ({ ...s, narratorTyping: true, lastActivePlayer: activePlayer }));
     await delay(900);
     setState(s => ({
       ...s,
@@ -290,7 +320,7 @@ export function useGameState() {
     }
     // 3) 旁白"正在输入" → 旁白
     await delay(300);
-    setState(s => ({ ...s, narratorTyping: true }));
+    setState(s => ({ ...s, narratorTyping: true, lastActivePlayer: activePlayer }));
     await delay(900);
     setState(s => ({
       ...s,
