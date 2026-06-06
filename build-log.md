@@ -36,11 +36,9 @@
 **Format:** `HH:MM | what you did | tool | problem → fix | next`
 
 ```
-14:20 | Generated the cold-open scene | GLM | too short → asked for 2-3 vivid sentences → fixed | add role cards
+18:33 | TASK 1: Interactive action selection | Claude Code | ESLint unused vars → removed; test JSON case sensitivity → fixed | TASK 2: Real-human optimizations (Advantage, Prologue ≤3 lines)
 ```
 
-- 
-- 
 - 
 - 
 - 
@@ -55,7 +53,8 @@ Screenshots → `VibeHack-screenshots/`, named `HHMM-tool-prompt.png` / `HHMM-to
 | (example) 14:20 | GLM (Z.ai) | generate quest cold-open | 1420-glm-prompt.png | 1420-glm-output.png | first output too terse → re-prompted "2-4 vivid sentences" → rich |
 | (example) 15:05 | Fotor | Quest Card visual | 1505-fotor-prompt.png | 1505-fotor-output.png | success |
 | (example) 15:40 | Manus | competitor research | 1540-manus-prompt.png | 1540-manus-output.png | success, saved link |
-|  |  |  |  |  |  |
+| 18:25 | GLM (Z.ai) | generate action options during gameplay | 1825-glm-prompt.png | 1825-glm-output.png | (will be captured during demo run) |
+| 18:25 | Claude Code | add ActionOptionsSchema, buildActionsPrompt, fallbackActions, /api/actions route, update roll route, page.tsx turn-based UI, tests |  |  | all tests green (37), build ok, no issues | |
 |  |  |  |  |  |  |
 
 ---
