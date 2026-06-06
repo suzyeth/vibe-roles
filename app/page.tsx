@@ -16,11 +16,17 @@ export default function Home() {
   const [msgs, setMsgs] = useState<ChatMsg[]>([]);
   const [transcript, setTranscript] = useState<{ member: string; text: string }[]>([]);
   const [highlight, setHighlight] = useState<Highlight | null>(null);
+  const [round, setRound] = useState(0);
 
   const memberNames = PRESET_MEMBERS.map((m) => m.name);
+  const aiMembers = PRESET_MEMBERS.filter((m) => m.isAI);
+
+  function roleOf(name: string): string {
+    return scene?.roles.find((r) => r.member === name)?.role ?? "神秘人";
+  }
 
   async function start(theme: string) {
-    setPhase("loading"); setMsgs([]); setTranscript([]); setHighlight(null);
+    setPhase("loading"); setMsgs([]); setTranscript([]); setHighlight(null); setRound(0);
     const res = await fetch("/api/scene", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ members: memberNames, theme }),
@@ -41,6 +47,31 @@ export default function Home() {
     });
     const { narration } = await res.json();
     setMsgs((m) => [...m, { id: `n${m.length}`, author: "旁白", avatar: "🎬", text: narration, kind: "narration" }]);
+  }
+
+  async function autoRound() {
+    if (!scene) return;
+    const last = msgs[msgs.length - 1]?.text ?? scene.scene.setup;
+    const actors = [aiMembers[round % aiMembers.length], aiMembers[(round + 1) % aiMembers.length]];
+    const said: string[] = [];
+    for (let i = 0; i < actors.length; i++) {
+      const a = actors[i];
+      const res = await fetch("/api/act", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: roleOf(a.name), sceneSetup: scene.scene.setup, last, seed: round * 2 + i }),
+      });
+      const { line } = await res.json();
+      said.push(`${a.name}：${line}`);
+      setMsgs((m) => [...m, { id: `act${m.length}`, author: a.name, avatar: a.avatar, text: line, kind: "member" }]);
+      setTranscript((t) => [...t, { member: a.name, text: line }]);
+    }
+    const nres = await fetch("/api/narrate", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sceneSetup: scene.scene.setup, membersSaid: said.join("；") }),
+    });
+    const { narration } = await nres.json();
+    setMsgs((m) => [...m, { id: `rn${m.length}`, author: "旁白", avatar: "🎬", text: narration, kind: "narration" }]);
+    setRound((r) => r + 1);
   }
 
   async function finish() {
@@ -64,6 +95,7 @@ export default function Home() {
       </div>
       {phase === "playing" && (
         <>
+          <button onClick={autoRound} className="mx-3 mt-2 rounded-full bg-emerald-600 py-1 text-sm text-white">▶️ AI 接着演一轮（第 {round + 1} 幕）</button>
           <button
             onClick={() => onSend("(我潜水，AI 替我演)")}
             className="mx-3 mt-2 rounded-full border border-zinc-700 py-1 text-sm text-zinc-300"

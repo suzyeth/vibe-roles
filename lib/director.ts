@@ -25,3 +25,9 @@ export function buildNarratePrompt(sceneSetup: string, membersSaid: string) {
   const user = `场景：${sceneSetup}\n成员刚才的发言：${membersSaid}`;
   return { system, user };
 }
+
+export function buildActPrompt(role: string, sceneSetup: string, last: string) {
+  const system = `你在玩一个群聊角色扮演。用你的角色身份，接着剧情冒一句简短台词(<=25字)，要有戏、Gen Z 语气。只输出台词本身，不要加引号或旁白。`;
+  const user = `场景：${sceneSetup}\n你的角色：${role}\n最近的剧情：${last}`;
+  return { system, user };
+}

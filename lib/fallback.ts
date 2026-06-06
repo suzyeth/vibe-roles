@@ -20,6 +20,11 @@ export function fallbackNarration(_history: string): string {
   return "剧情急转直下，所有人都把目光投向了门口……";
 }
 
+const ACT_LINES = ["这事儿绝对不是我干的！", "等等，我好像看到了什么…", "别看我，我只是路过的。", "我有一个大胆的想法。"];
+export function fallbackActLine(seed: number): string {
+  return ACT_LINES[((seed % ACT_LINES.length) + ACT_LINES.length) % ACT_LINES.length];
+}
+
 export function fallbackHighlight(transcript: { member: string; text: string }[]): Highlight {
   const best = transcript.reduce(
     (a, b) => (b.text.length > a.text.length ? b : a),

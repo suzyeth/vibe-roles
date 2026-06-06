@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { fallbackScene, fallbackNarration, fallbackHighlight } from "@/lib/fallback";
+import { fallbackScene, fallbackNarration, fallbackHighlight, fallbackActLine } from "@/lib/fallback";
 import { SceneSchema, HighlightSchema } from "@/lib/schema";
 
 describe("fallbackScene", () => {
@@ -15,6 +15,18 @@ describe("fallbackScene", () => {
 describe("fallbackNarration", () => {
   it("返回非空文本", () => {
     expect(fallbackNarration("历史").length).toBeGreaterThan(0);
+  });
+});
+
+describe("fallbackActLine", () => {
+  it("seed 0 返回第一句", () => {
+    expect(fallbackActLine(0)).toBe("这事儿绝对不是我干的！");
+  });
+  it("seed 4 回绕到第一句", () => {
+    expect(fallbackActLine(4)).toBe("这事儿绝对不是我干的！");
+  });
+  it("负数 seed 返回有效台词", () => {
+    expect(fallbackActLine(-1)).toBeDefined();
   });
 });
 
