@@ -8,15 +8,15 @@ describe("director prompts", () => {
     expect(system).toContain("JSON"); expect(user).toContain("Xiaomin"); expect(user).toContain("The Unread Beast");
   });
   it("buildRollPrompt includes label/fate/reactor and asks for JSON", () => {
-    const { system, user } = buildRollPrompt("silence", "Partial Progress", [{ type: "curse", title: "Food Metaphor", effect: "x", tone: "t", trigger: "next_round" }], "earlier", [{ name: "Kai", role: "Bard" }]);
+    const { system, user } = buildRollPrompt("silence", "Partial Progress", [{ type: "rule", title: "Food Metaphor", effect: "x", tone: "t", trigger: "next_round" }], "earlier", [{ name: "Kai", role: "Bard" }]);
     expect(system).toContain("JSON");
     expect(user).toContain("Partial Progress");
     expect(user).toContain("Food Metaphor");
     expect(user).toContain("Kai");
   });
   it("buildFateCardPrompt includes type and input, asks for JSON", () => {
-    const { system, user } = buildFateCardPrompt("curse", "everyone speaks in food metaphors");
-    expect(system).toContain("JSON"); expect(user).toContain("curse"); expect(user).toContain("food metaphors");
+    const { system, user } = buildFateCardPrompt("rule", "everyone speaks in food metaphors");
+    expect(system).toContain("JSON"); expect(user).toContain("rule"); expect(user).toContain("food metaphors");
   });
   it("buildQuestCardPrompt includes finalRoll", () => {
     const { user } = buildQuestCardPrompt("defeated the beast", 18, ["Food Metaphor"]);

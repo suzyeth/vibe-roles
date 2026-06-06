@@ -29,7 +29,7 @@ export function fallbackRoundResult(roll: number, _fate: FateCard[], reactors: {
   return { narration: NARR[rollLabel(roll)] ?? "The story rolls on…", reactions, advance: true };
 }
 const MOCK_FATE: FateCard[] = [
-  { type: "curse", title: "Food Metaphor Mode", effect: "All future dialogue must sound like dinner is a psychological condition.", tone: "chaotic but harmless", trigger: "next_round" },
+  { type: "rule", title: "Food Metaphor Mode", effect: "All future dialogue must sound like dinner is a psychological condition.", tone: "chaotic but harmless", trigger: "next_round" },
   { type: "character", title: "The Sunglasses Pigeon", effect: "Offers suspicious advice but demands chips.", tone: "chaotic but harmless", trigger: "roll_under_10" },
 ];
 /** Deterministic offline prologue derived from the quest (English). */

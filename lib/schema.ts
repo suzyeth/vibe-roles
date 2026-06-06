@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const FATE_TYPES = ["character", "object", "curse", "rule", "blessing"] as const;
+export const FATE_TYPES = ["event", "message", "character", "object", "rule", "condition"] as const;
 export const FateCardSchema = z.object({
   type: z.enum(FATE_TYPES),
   title: z.string().min(1),

@@ -5,7 +5,7 @@ import { FATE_TYPE_LABELS } from "@/data/quest";
 
 export default function InterferePage() {
   const params = useParams<{ id: string }>();
-  const [type, setType] = useState("curse");
+  const [type, setType] = useState(FATE_TYPE_LABELS[0]?.type ?? "event");
   const [input, setInput] = useState("");
   const [friend, setFriend] = useState("");
   const [done, setDone] = useState<null | { title: string; effect: string }>(null);

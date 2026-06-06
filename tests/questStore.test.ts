@@ -5,7 +5,7 @@ const quest = { scene: { theme: "t", setup: "s", tone: "x" }, players: [{ name: 
 
 describe("questStore", () => {
   it("create + get", () => { createQuest("q1", quest); expect(getQuest("q1")?.quest.goal).toBe("g"); });
-  it("addFateCard returns false for a missing id", () => { expect(addFateCard("nope", { type: "curse", title: "t", effect: "e", tone: "x", trigger: "next_round" })).toBe(false); });
+  it("addFateCard returns false for a missing id", () => { expect(addFateCard("nope", { type: "rule", title: "t", effect: "e", tone: "x", trigger: "next_round" })).toBe(false); });
   it("addFateCard appends + listFateCards", () => {
     createQuest("q2", quest);
     addFateCard("q2", { type: "object", title: "umbrella", effect: "e", tone: "x", trigger: "next_round" });

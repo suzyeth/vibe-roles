@@ -14,7 +14,7 @@ describe("QuestSchema", () => {
 
 describe("FateCardSchema", () => {
   it("accepts valid input and applies defaults", () => {
-    const c = FateCardSchema.parse({ type: "curse", title: "Food Metaphor", effect: "..." });
+    const c = FateCardSchema.parse({ type: "rule", title: "Food Metaphor", effect: "..." });
     expect(c.tone).toBe("chaotic but harmless"); expect(c.trigger).toBe("next_round");
   });
   it("rejects a non-whitelisted type", () => { expect(() => FateCardSchema.parse({ type: "explosion", title: "x", effect: "y" })).toThrow(); });

@@ -40,7 +40,7 @@ Rules: continue naturally from "Previously" for continuity; reactions may ONLY i
 
 export function buildFateCardPrompt(type: string, input: string) {
   const system = `Turn a friend's one-line input into a structured Fate Card. Output JSON ONLY:
-{"type":"character|object|curse|rule|blessing","title":"<=6 words","effect":"one-line effect","tone":"chaotic but harmless","trigger":"next_round|roll_under_10"}
+{"type":"event|message|character|object|rule|condition","title":"<=6 words","effect":"one-line effect","tone":"chaotic but harmless","trigger":"next_round|roll_under_10"}
 Rules: type must equal the given type; effect is safe, fun, weaveable by the host; filter out violence/explicit/hate/personal attacks.`;
   const user = `Type: ${type}\nFriend input: ${input}`;
   return { system, user };
