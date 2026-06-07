@@ -189,6 +189,8 @@ export default function PlayingScreen({ game }: { game: GameHook }) {
   // Doom-clock colour + icon escalate with tension.
   const tColor = state.tension > 70 ? '#EF4444' : state.tension > 40 ? '#F59E0B' : accentColor;
   const tIcon = state.tension > 70 ? '🔥' : '⚠️';
+  // Plain-language status so the % isn't abstract: higher = closer to a bad ending.
+  const tStatus = state.tension > 85 ? 'About to blow' : state.tension > 70 ? 'Critical' : state.tension > 40 ? 'Heating up' : 'Under control';
 
   // Decorative QR pattern for the invite sheet (illustrative, not a real code).
   const QR = ['101101', '011010', '110011', '101101', '010110', '101011'];
@@ -218,19 +220,11 @@ export default function PlayingScreen({ game }: { game: GameHook }) {
           <span className="text-xs font-semibold flex items-center gap-1" style={{ color: 'var(--zymix-text-secondary)' }}>
             {currentStory?.crisisMeter?.emoji ?? tIcon} {currentStory?.crisisMeter?.name ?? 'Tension'}
           </span>
-          <span className="text-xs font-extrabold tabular-nums flex items-center gap-1" style={{ color: tColor }}>
-            {state.lastTensionDelta !== 0 && (
-              <span className="text-[10px]" style={{ color: state.lastTensionDelta > 0 ? '#EF4444' : '#1DB954' }}>
-                {state.lastTensionDelta > 0 ? `▲${state.lastTensionDelta}` : `▼${-state.lastTensionDelta}`}
-              </span>
-            )}
-            {state.tension}%
-          </span>
+          <span className="text-xs font-bold" style={{ color: tColor }}>{tStatus}</span>
         </div>
         <div className="h-2.5 rounded-full overflow-hidden" style={{ background: 'var(--zymix-bg)' }}>
           <div className="h-full rounded-full transition-all duration-500" style={{ width: `${state.tension}%`, background: `linear-gradient(90deg, ${tColor}99, ${tColor})` }} />
         </div>
-        <div className="text-[10px] mt-1" style={{ color: 'var(--zymix-text-tertiary)' }}>Fails heat it up, wins cool it down — fill it and the night falls apart.</div>
       </div>
 
       {/* Fate Cards (friend interference) */}
