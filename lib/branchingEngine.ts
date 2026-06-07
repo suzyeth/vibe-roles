@@ -80,27 +80,16 @@ export function advance(
 }
 
 /**
- * Get role-specific choices for the current node and actor.
- * Returns role-specific choices if defined, otherwise falls back to node choices.
+ * Get the choices for the current node. Single source of truth = node.choices;
+ * `_actorName` is kept for API compatibility (the AI members don't fork the
+ * tree — only the protagonist's choice routes the story).
  */
 export function getRoleSpecificChoices(
   story: BranchingStory,
   nodeId: string,
-  actorName: string,
+  _actorName: string,
 ): BranchChoice[] {
-  const node = story.nodes[nodeId];
-  if (!node) return [];
-
-  // Check if the story has role-specific choices for this node
-  const roleChoicesKey = `roleChoices_${nodeId}`;
-  const roleChoices = (story as Record<string, unknown>)[roleChoicesKey] as Record<string, BranchChoice[]> | undefined;
-
-  if (roleChoices && roleChoices[actorName]) {
-    return roleChoices[actorName];
-  }
-
-  // Fall back to generic node choices
-  return node.choices;
+  return story.nodes[nodeId]?.choices ?? [];
 }
 
 /**
