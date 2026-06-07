@@ -1,5 +1,5 @@
 /**
- * testEngine.ts — pure logic for Test Mode (保底方案).
+ * testEngine.ts — pure logic for Test Mode (fallback safety net).
  *
  * Turns a pre-written {@link TestStory} into the same shapes the live GLM path
  * produces (Quest players, action options, RoundResult, QuestCard) — but with

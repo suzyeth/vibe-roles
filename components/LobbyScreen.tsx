@@ -1,44 +1,26 @@
 /**
- * LobbyScreen — 群聊死群状态 (cold/dead group chat)
+ * LobbyScreen — cold/dead group chat state
  * Zymix-native chat UI, themed via CSS tokens so it works in light AND dark.
  */
 export default function LobbyScreen({
   onStart,
-  lang,
-  testMode = false,
-  onToggleTestMode,
+  testMode = true,
 }: {
   onStart: () => void;
-  lang: 'en' | 'zh';
   testMode?: boolean;
-  onToggleTestMode?: () => void;
 }) {
   const TEXT = {
-    en: {
-      separator: '3 days ago',
-      quiet: 'No new messages for 3 days',
-      title: 'Roll Call',
-      subtitle: 'AI Group Drama · Mini App',
-      free: 'Free',
-      desc: 'Chat gone quiet? AI writes a 30-second drama for your group — everyone gets a role. No effort needed.',
-      btn: 'Start Roll Call',
-      note: 'Takes 2 minutes · Works best with 3–6 people',
-      testLabel: 'Test Mode',
-      testHint: 'Instant pre-written drama, no AI wait',
-    },
-    zh: {
-      separator: '3天前',
-      quiet: '这个群已经安静很久了',
-      title: 'Roll Call',
-      subtitle: 'AI群聊短剧 · Mini App',
-      free: '免费',
-      desc: '群聊死气沉沉？AI为你生成30秒短剧——每个人都有角色。无需费力。',
-      btn: '开始冒险',
-      note: '约2分钟 · 适合3-6人',
-      testLabel: '测试模式',
-      testHint: '即时写死剧本，不等 AI',
-    },
-  }[lang];
+    separator: '3 days ago',
+    quiet: 'No new messages for 3 days',
+    title: 'Roll Call',
+    subtitle: 'AI Group Drama · Mini App',
+    free: 'Free',
+    desc: 'Chat gone quiet? AI writes a 30-second drama for your group — everyone gets a role. No effort needed.',
+    btn: 'Start Roll Call',
+    note: 'Takes 2 minutes · Works best with 3–6 people',
+    testLabel: 'Test Mode',
+    testHint: 'Instant pre-written drama, no AI wait',
+  };
 
   return (
     <div className="flex flex-col" style={{ minHeight: 'calc(100vh - 56px)', background: 'var(--zymix-bg)' }}>
@@ -142,25 +124,17 @@ export default function LobbyScreen({
           {TEXT.desc}
         </p>
 
-        {/* Test Mode toggle — instant scripted demo, no AI wait */}
-        {onToggleTestMode && (
-          <button
-            onClick={onToggleTestMode}
-            className="w-full flex items-center justify-between mb-3 px-3 py-2 rounded-xl"
-            style={{ background: 'var(--zymix-bg)', border: '1px solid var(--zymix-border)' }}
-          >
-            <span className="flex flex-col items-start">
-              <span className="text-sm font-medium" style={{ color: 'var(--zymix-text-primary)' }}>🧪 {TEXT.testLabel}</span>
-              <span className="text-xs" style={{ color: 'var(--zymix-text-tertiary)' }}>{TEXT.testHint}</span>
-            </span>
-            <span
-              className="w-10 h-6 rounded-full flex items-center px-0.5 transition-colors"
-              style={{ background: testMode ? 'var(--zymix-green)' : 'var(--zymix-border)' }}
-            >
-              <span className="w-5 h-5 rounded-full bg-white transition-transform" style={{ transform: testMode ? 'translateX(16px)' : 'translateX(0)' }} />
-            </span>
-          </button>
-        )}
+        {/* Test Mode indicator (always enabled) */}
+        <div
+          className="w-full flex items-center justify-between mb-3 px-3 py-2 rounded-xl"
+          style={{ background: 'var(--zymix-bg)', border: '1px solid var(--zymix-border)' }}
+        >
+          <span className="flex flex-col items-start">
+            <span className="text-sm font-medium" style={{ color: 'var(--zymix-text-primary)' }}>🧪 {TEXT.testLabel}</span>
+            <span className="text-xs" style={{ color: 'var(--zymix-text-tertiary)' }}>{TEXT.testHint}</span>
+          </span>
+          <span className="text-xs font-semibold" style={{ color: 'var(--zymix-green)' }}>ON</span>
+        </div>
 
         {/* CTA Button */}
         <button onClick={onStart} className="btn-zymix-primary">

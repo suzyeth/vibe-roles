@@ -1,5 +1,5 @@
 /**
- * testStories.ts — pre-written DRAMA scripts for Test Mode (保底方案).
+ * testStories.ts — pre-written DRAMA scripts for Test Mode (fallback safety net).
  *
  * Why this exists: GLM can be slow. Test Mode runs the whole game off these
  * scripts — zero network, zero LLM, instant and deterministic — so a demo never
@@ -54,7 +54,7 @@ export interface TestStory {
 }
 
 export const TEST_STORIES: TestStory[] = [
-  // ─── 1. Social 修罗场 ──────────────────────────────────────────────────────
+  // ─── 1. Social battlefield ────────────────────────────────────────────────
   {
     key: "group-chat-trial",
     theme: "Group Chat on Trial",
@@ -127,7 +127,7 @@ export const TEST_STORIES: TestStory[] = [
     },
   },
 
-  // ─── 2. 网红塌房 / Influencer cancellation ─────────────────────────────────
+  // ─── 2. Influencer cancellation ──────────────────────────────────────────
   {
     key: "ring-light-goes-dark",
     theme: "The Ring Light Goes Dark",
@@ -200,7 +200,7 @@ export const TEST_STORIES: TestStory[] = [
     },
   },
 
-  // ─── 3. 震惊 / 密室恐怖 — Escape-room horror ───────────────────────────────
+  // ─── 3. Escape-room horror ───────────────────────────────────────────────
   {
     key: "honeycomb-escape",
     theme: "Locked In at Honeycomb",
@@ -273,7 +273,7 @@ export const TEST_STORIES: TestStory[] = [
     },
   },
 
-  // ─── 4. 狗血恋爱 / Melodrama romance ───────────────────────────────────────
+  // ─── 4. Melodrama romance ────────────────────────────────────────────────
   {
     key: "two-texts-one-chat",
     theme: "Two Texts, One Group Chat",

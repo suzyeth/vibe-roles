@@ -3,25 +3,25 @@ import { buildQuestPrompt, buildRollPrompt, buildFateCardPrompt, buildQuestCardP
 import type { Quest } from "@/lib/schema";
 
 describe("padWithNPCs", () => {
-  it("1人填充到3个（添加2个NPC）", () => {
+  it("pads 1 player up to 3 (adds 2 NPCs)", () => {
     const result = padWithNPCs(["Mia"]);
     expect(result).toHaveLength(3);
     expect(result[0]).toBe("Mia");
     expect(result).toContain("Mia");
   });
-  it("2人填充到3个（添加1个NPC）", () => {
+  it("pads 2 players up to 3 (adds 1 NPC)", () => {
     const result = padWithNPCs(["Mia", "Kai"]);
     expect(result).toHaveLength(3);
     expect(result).toContain("Mia");
     expect(result).toContain("Kai");
   });
-  it("3人及以上不填充", () => {
+  it("does not pad 3 or more players", () => {
     const result = padWithNPCs(["Mia", "Kai", "Momo"]);
     expect(result).toHaveLength(3);
     const more = padWithNPCs(["Mia", "Kai", "Momo", "Emma"]);
     expect(more).toHaveLength(4);
   });
-  it("空数组返回 You", () => {
+  it("empty array returns at least one entry", () => {
     const result = padWithNPCs([]);
     expect(result.length).toBeGreaterThanOrEqual(1);
   });

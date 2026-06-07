@@ -16,9 +16,9 @@ type GameHook = ReturnType<typeof useGameState>;
 
 const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 const FALLBACK_EMOJI = ['🎯', '🔍', '💡', '🔥', '🗝️', '✨'];
-// Universal fallback actions, shown as the grey "common" group under the
-// role-specific branches. They resolve along the node's baseline branch.
-const COMMON_ACTIONS = ['🔍 Look for another angle', '🤝 Rally the others', '🎲 Just wing it'];
+// AI teammates don't drive the branch, so they get short supportive side-actions
+// instead of the protagonist's options (which read weird coming from them).
+const NPC_FLAVOR = ['backs you up 💪', 'films the whole thing 🎥', 'digs for receipts 📸', 'tries to keep the peace 🕊️', 'panics quietly 😬', 'hypes you up 🙌', 'reads the room 👀', 'makes it worse, lovingly 🤡'];
 
 // ─── Animated D20 die ──────────────────────────────────────────────────────
 function D20Dice({ wobbling, dice }: { wobbling: boolean; dice: DiceRoll }) {
@@ -57,7 +57,27 @@ function TypingIndicator({ dm }: { dm: DM }) {
 }
 
 export default function PlayingScreen({ game }: { game: GameHook }) {
-  const { state, currentChoices, commonActions, resolveActorChoice, currentActor, getStoryRef, sendChat } = game;
+  const { state, currentChoices, commonActions, resolveActorChoice, currentActor, getStoryRef, sendChat, spendHelp } = game;
+
+  const TEXT = {
+    commonActions: ['🔍 Look for another angle', '🤝 Rally the others', '🎲 Just wing it'],
+    invite: '🔗 Invite a friend to twist the story (5 min)',
+    tension: '⚠️ Tension',
+    fateCard: 'Fate Card',
+    yourMove: `🎭 You · `,
+    yourMoveLabel: 'your move',
+    common: 'Common',
+    npcRolling: 'rolling the die…',
+    npcChoosing: 'choosing a move…',
+    rollHint: 'Roll the die',
+    actionHint: (label: string) => `"${label}" — roll to see how it goes`,
+    help: (left: number) => `🤝 Ask a teammate — advantage (${left} left)`,
+    placeholder: 'Say something to the group…',
+    paysOff: "'s move pays off.",
+    hitsSnag: "'s move hits a snag.",
+  };
+
+  const COMMON_ACTIONS = TEXT.commonActions;
   const [beatPhase, setBeatPhase] = useState<'choosing' | 'rolling' | 'resolving'>('choosing');
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [dice, setDice] = useState<DiceRoll | null>(null);
@@ -69,6 +89,7 @@ export default function PlayingScreen({ game }: { game: GameHook }) {
   const lastNodeRef = useRef<string>('');
   const lastActorIndexRef = useRef<number>(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const npcActionRef = useRef<string>('');
 
   const dm = dmFor(state.theme);
   const currentPlayer = currentActor();
@@ -115,7 +136,7 @@ export default function PlayingScreen({ game }: { game: GameHook }) {
     setBeatPhase('rolling');
   };
 
-  const performRoll = async (roll: number) => {
+  const performRoll = async (roll: number, overrideLabel?: string) => {
     if (selectedIndex == null) return;
     const d = toDiceRoll(roll);
     setDice(d);
@@ -126,26 +147,26 @@ export default function PlayingScreen({ game }: { game: GameHook }) {
     setDiceWobbling(false);
     await delay(750);
     setShowBigDice(false);
-    await resolveActorChoice(selectedIndex, roll);
+    await resolveActorChoice(selectedIndex, roll, overrideLabel);
     // The node-watch effect resets to 'choosing' when the next node/actor arrives;
     // an ending instead flips phase to 'ended' (this screen unmounts).
   };
 
-  // NPC auto-play — when it's not You's turn, auto-pick a branch (local random).
+  // NPC auto-play — pick a short role-flavored side-action (not a branch option).
   useEffect(() => {
     if (!state.ready || state.phase !== 'playing' || !currentPlayer || currentPlayer.name === 'You') return;
-    if (beatPhase !== 'choosing' || choices.length === 0) return;
-    const idx = Math.floor(Math.random() * choices.length);
-    const t = setTimeout(() => { setSelectedIndex(idx); setBeatPhase('rolling'); }, 850);
+    if (beatPhase !== 'choosing') return;
+    npcActionRef.current = NPC_FLAVOR[Math.floor(Math.random() * NPC_FLAVOR.length)];
+    const t = setTimeout(() => { setSelectedIndex(0); setBeatPhase('rolling'); }, 850);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.ready, state.phase, currentPlayer, beatPhase, choices.length, state.currentActorIndex, state.nodeId]);
+  }, [state.ready, state.phase, currentPlayer, beatPhase, state.currentActorIndex, state.nodeId]);
 
   // NPC auto-play — auto-roll once the NPC has picked.
   useEffect(() => {
     if (!state.ready || state.phase !== 'playing' || !currentPlayer || currentPlayer.name === 'You') return;
     if (beatPhase !== 'rolling' || selectedIndex == null) return;
-    const t = setTimeout(() => performRoll(rollNPCValue()), 850);
+    const t = setTimeout(() => performRoll(rollNPCValue(), npcActionRef.current), 850);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.ready, state.phase, currentPlayer, beatPhase, selectedIndex]);
@@ -159,22 +180,33 @@ export default function PlayingScreen({ game }: { game: GameHook }) {
   const footerStyle = { background: 'var(--zymix-surface)', borderTop: '1px solid var(--zymix-border)' };
 
   return (
-    <div className="flex flex-col" style={{ minHeight: 'calc(100vh - 56px)', background: 'var(--zymix-bg)' }}>
+    <div className="flex flex-col overflow-hidden" style={{ height: 'calc(100vh - 56px)', background: 'var(--zymix-bg)' }}>
       {/* Invite outsiders to drop a 5-minute twist into the story */}
       <button
         onClick={copyInvite}
-        className="mx-4 mt-3 flex items-center justify-center gap-2 rounded-full py-2 text-xs font-medium active:scale-[0.98] transition-transform"
+        className="mx-4 mt-3 flex-shrink-0 flex items-center justify-center gap-2 rounded-full py-2 text-xs font-medium active:scale-[0.98] transition-transform"
         style={{ background: 'var(--zymix-fate-light)', color: 'var(--zymix-fate)' }}
       >
-        🔗 Invite a friend to twist the story (5 min)
+        {TEXT.invite}
       </button>
+
+      {/* Doom clock — failure raises tension; 100% collapses the run */}
+      <div className="mx-4 mt-2 flex-shrink-0">
+        <div className="flex justify-between items-center mb-1">
+          <span className="text-xs font-medium" style={{ color: 'var(--zymix-text-tertiary)' }}>{TEXT.tension}</span>
+          <span className="text-xs font-bold" style={{ color: state.tension > 70 ? '#EF4444' : state.tension > 40 ? '#F59E0B' : 'var(--zymix-green)' }}>{state.tension}%</span>
+        </div>
+        <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--zymix-border)' }}>
+          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${state.tension}%`, background: state.tension > 70 ? '#EF4444' : state.tension > 40 ? '#F59E0B' : '#1DB954' }} />
+        </div>
+      </div>
 
       {/* Fate Cards (friend interference) */}
       {state.fateCards.length > 0 && (
         <div className="px-4 pb-2">
           {state.fateCards.map((card, i) => (
             <div key={i} className="mb-2 bubble-in" style={{ animationDelay: `${i * 100}ms`, background: 'var(--zymix-fate-light)', borderRadius: 'var(--radius-card)', padding: '14px 16px', borderLeft: '3px solid var(--zymix-fate)' }}>
-              <div className="text-xs" style={{ color: 'var(--zymix-fate)', fontWeight: '600', textTransform: 'uppercase' }}>Fate Card · {card.type}</div>
+              <div className="text-xs" style={{ color: 'var(--zymix-fate)', fontWeight: '600', textTransform: 'uppercase' }}>{TEXT.fateCard} · {card.type}</div>
               <div className="font-bold mt-1" style={{ color: 'var(--zymix-text-primary)' }}>{card.title}</div>
               <div className="text-sm" style={{ color: 'var(--zymix-text-secondary)' }}>{card.effect}</div>
             </div>
@@ -183,7 +215,7 @@ export default function PlayingScreen({ game }: { game: GameHook }) {
       )}
 
       {/* Messages */}
-      <div className="flex-1 px-4 flex flex-col gap-2 overflow-y-auto pb-4">
+      <div className="flex-1 min-h-0 px-4 flex flex-col gap-2 overflow-y-auto pb-4">
         {state.messages.map((msg) => {
           const isSelf = msg.kind === 'action' && msg.author === 'You';
           if (msg.kind === 'narration') {
@@ -222,7 +254,7 @@ export default function PlayingScreen({ game }: { game: GameHook }) {
                 {msg.dice && (
                   <div className="mt-1 flex items-center gap-1 text-xs font-medium" style={{ color: msg.dice.value >= 11 ? 'var(--zymix-green)' : '#F97316' }}>
                     <span>{msg.dice.value >= 11 ? '✅' : '⚠️'}</span>
-                    <span>{roleOf(msg.author)}{msg.dice.value >= 11 ? "'s move pays off." : "'s move hits a snag."}</span>
+                    <span>{roleOf(msg.author)}{msg.dice.value >= 11 ? TEXT.paysOff : TEXT.hitsSnag}</span>
                   </div>
                 )}
               </div>
@@ -247,7 +279,7 @@ export default function PlayingScreen({ game }: { game: GameHook }) {
           {/* Your turn — role branches (green) + common actions (grey) */}
           {beatPhase === 'choosing' && isHuman && choices.length > 0 && (
             <>
-              <div className="rc-label mb-2 px-0.5">🎭 You · {roleOf('You')} — your move</div>
+              <div className="rc-label mb-2 px-0.5">{TEXT.yourMove}{roleOf('You')} — {TEXT.yourMoveLabel}</div>
               <div className="flex flex-wrap gap-2 mb-3">
                 {choices.map((c, i) => (
                   <button key={i} onClick={() => handleChoose(i)} className="rc-chip rc-chip-special">
@@ -255,7 +287,7 @@ export default function PlayingScreen({ game }: { game: GameHook }) {
                   </button>
                 ))}
               </div>
-              <div className="rc-label mb-2 px-0.5">Common</div>
+              <div className="rc-label mb-2 px-0.5">{TEXT.common}</div>
               <div className="flex flex-wrap gap-2 mb-3.5">
                 {(commonActions().length ? commonActions() : COMMON_ACTIONS).map((label, i) => (
                   <button key={i} onClick={() => handleChoose(0)} className="rc-chip rc-chip-common">{label}</button>
@@ -268,7 +300,7 @@ export default function PlayingScreen({ game }: { game: GameHook }) {
           {!isHuman && currentPlayer && (beatPhase === 'choosing' || beatPhase === 'rolling') && (
             <div className="mb-3.5 flex items-center justify-center gap-2 text-sm" style={{ color: 'var(--zymix-text-secondary)' }}>
               <span className="text-lg">🎲</span>
-              <span>{currentPlayer.name} is {beatPhase === 'rolling' ? 'rolling the die…' : 'choosing a move…'}</span>
+              <span>{currentPlayer.name} is {beatPhase === 'rolling' ? TEXT.npcRolling : TEXT.npcChoosing}</span>
             </div>
           )}
 
@@ -276,9 +308,17 @@ export default function PlayingScreen({ game }: { game: GameHook }) {
           {beatPhase === 'rolling' && isHuman && (
             <div className="mb-3.5">
               <div className="mb-2 text-center text-xs" style={{ color: 'var(--zymix-text-tertiary)' }}>
-                {selectedIndex != null && choices[selectedIndex] ? `“${choices[selectedIndex].label}” — roll to see how it goes` : 'Roll the die'}
+                {selectedIndex != null && choices[selectedIndex] ? TEXT.actionHint(choices[selectedIndex].label) : TEXT.rollHint}
               </div>
-              <button onClick={() => performRoll(rollPlayerValue())} className="btn-zymix-primary">🎲 Roll the die</button>
+              <button onClick={() => performRoll(rollPlayerValue())} className="btn-zymix-primary">🎲 {TEXT.rollHint}</button>
+              {state.helpTokens > 0 && (
+                <button
+                  onClick={() => { if (spendHelp()) performRoll(Math.max(rollPlayerValue(), rollPlayerValue())); }}
+                  className="rc-chip rc-chip-common mt-2 w-full justify-center"
+                >
+                  {TEXT.help(state.helpTokens)}
+                </button>
+              )}
             </div>
           )}
 
@@ -290,7 +330,7 @@ export default function PlayingScreen({ game }: { game: GameHook }) {
               onChange={(e) => setCustomText(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') { sendChat(customText); setCustomText(''); } }}
               type="text"
-              placeholder="Say something to the group…"
+              placeholder={TEXT.placeholder}
               className="rc-composer-input"
             />
             <button onClick={() => { sendChat(customText); setCustomText(''); }} aria-label="Send message" className="rc-send-btn">

@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   try { body = await req.json(); } catch { /* malformed body → fall through to fallback */ }
   const { questId, members, theme } = body;
   let names: string[] = Array.isArray(members) ? (members as string[]) : [];
-  // DESIGN.md §7.1: 填充 NPC 确保至少 3 个角色
+  // DESIGN.md §7.1: pad with NPCs to guarantee at least 3 roles
   names = padWithNPCs(names);
   let quest: Quest;
   if (isOffline()) quest = fallbackQuest(names, theme);

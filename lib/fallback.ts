@@ -10,7 +10,7 @@ const VARIANTS: Record<string, FallbackVariant> = {
   "Dorm Kitchen Mystery": { setup: "A mysterious takeaway arrives in the dorm kitchen, addressed to someone who doesn't exist.", goal: "Uncover who placed the order and why.", roles: [{ role: "Flatmate Chef", ability: "Smells a lie a mile off" }, { role: "Hungry Gremlin", ability: "Always near the food" }, { role: "Clean Freak", ability: "Notices anything out of place" }, { role: "Night Snacker", ability: "Roams the kitchen at 3am" }, { role: "Suspicious Landlord", ability: "Has keys to everything" }] },
 };
 export function fallbackQuest(members: string[], theme?: string): Quest {
-  // DESIGN.md §7.1: 填充 NPC 确保至少 3 个角色
+  // DESIGN.md §7.1: pad with NPCs to guarantee at least 3 roles
   const names = members.length ? padWithNPCs(members) : ["You", "Ghost", "Shadow"];
   const originalMembers = members.length ? members : ["You"];
   const t = theme && VARIANTS[theme] ? theme : "The 404 Customer";

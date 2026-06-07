@@ -51,6 +51,23 @@ const ROAST = [
   'bro had ONE job',
 ];
 
+const clampTension = (n: number) => Math.max(0, Math.min(100, n));
+
+/**
+ * D20 tier → how it swings the doom clock + whether it leaves a mark.
+ * Crit success calms the room a lot; partials (6–10) succeed-at-a-cost and add
+ * tension; crit fail spikes it and scars you.
+ */
+function tierEffect(roll: number): { delta: number; mark: '' | 'boon' | 'scar' } {
+  const v = Math.max(1, Math.min(20, Math.floor(roll)));
+  if (v === 20) return { delta: -14, mark: 'boon' };
+  if (v >= 16) return { delta: -8, mark: '' };
+  if (v >= 11) return { delta: -5, mark: '' };
+  if (v >= 6) return { delta: 7, mark: '' };   // partial — at a cost
+  if (v >= 2) return { delta: 11, mark: '' };
+  return { delta: 16, mark: 'scar' };          // nat 1
+}
+
 export type GamePhase = 'lobby' | 'loading' | 'theme' | 'playing' | 'ended';
 
 export interface ActorResult {
@@ -92,7 +109,7 @@ export interface GameState {
   round: number;
   lastRoll: { roll: number; label: string } | null;
   fateCards: Array<{ type: string; title: string; effect: string }>;
-  questCard: { title: string; caption: string; best_interference: string; final_roll: number; cta: string; epilogue?: string; highlight?: string } | null;
+  questCard: { title: string; caption: string; best_interference: string; final_roll: number; cta: string; epilogue?: string; highlight?: string; marks?: Array<{ kind: 'boon' | 'scar'; text: string }> } | null;
   shareUrl: string;
 
   /** Team turn system: index of the current actor in the players array */
@@ -111,6 +128,13 @@ export interface GameState {
     criticalSuccess: number; // 20s
     criticalFailure: number; // 1s
   } | null;
+
+  /** DnD layer: doom clock 0–100 (failure raises it; 100 = bad ending). */
+  tension: number;
+  /** Teammate "ask for help" tokens — each grants one advantage roll. */
+  helpTokens: number;
+  /** Earned marks: nat-20 boons and nat-1 scars, shown on the ending card. */
+  marks: Array<{ kind: 'boon' | 'scar'; text: string }>;
 }
 
 const initialState: GameState = {
@@ -132,6 +156,9 @@ const initialState: GameState = {
   roundComplete: false,
   gameMoments: [],
   gameStats: null,
+  tension: 35,
+  helpTokens: 2,
+  marks: [],
 };
 
 export function useGameState() {
@@ -202,7 +229,7 @@ export function useGameState() {
    * Resolve one actor's choice + roll: post the action + dice, store the result,
    * then either move to the next actor or advance the story if everyone has acted.
    */
-  const resolveActorChoice = useCallback(async (index: number, roll: number) => {
+  const resolveActorChoice = useCallback(async (index: number, roll: number, actionLabel?: string) => {
     const story = storyRef.current;
     if (!story) return;
 
@@ -214,6 +241,19 @@ export function useGameState() {
     const i = Math.max(0, Math.min(index, node.choices.length - 1));
     const choice = node.choices[i];
     const d = toDiceRoll(roll);
+    const isYou = currentActor.name === 'You';
+    // NPCs don't reuse the protagonist's branch options (that reads weird) —
+    // they get a short, role-flavored side-action passed in as actionLabel.
+    const shownLabel = !isYou && actionLabel ? actionLabel : choice.label;
+
+    // DnD layer: tier swings the doom clock (You full weight, NPCs ~⅓), and a
+    // nat-20 / nat-1 on YOUR roll leaves a boon / scar.
+    const eff = tierEffect(d.value);
+    const tDelta = Math.round(eff.delta * (isYou ? 1 : 0.35));
+    const willTension = clampTension(state.tension + tDelta);
+    const newMark = isYou && eff.mark
+      ? { kind: eff.mark, text: eff.mark === 'boon' ? `🔥 ${choice.label} — nailed it (nat 20)` : `💀 ${choice.label} — backfired (nat 1)` }
+      : null;
 
     // 1) Record this actor's action + dice result
     const result: ActorResult = {
@@ -228,7 +268,7 @@ export function useGameState() {
     const moment: GameMoment = {
       round: state.round,
       actorName: currentActor.name,
-      action: choice.label,
+      action: shownLabel,
       roll: d.value,
       result: d.label,
     };
@@ -241,14 +281,36 @@ export function useGameState() {
           id: nextId(),
           author: currentActor.name,
           avatar: currentActor.name,
-          text: choice.label,
+          text: shownLabel,
           kind: 'action' as const,
           dice: { value: d.value, label: d.label, color: d.color, emoji: d.emoji },
         },
       ],
       actorResults: [...s.actorResults, result],
       gameMoments: [...s.gameMoments, moment],
+      tension: clampTension(s.tension + tDelta),
+      marks: newMark ? [...s.marks, newMark] : s.marks,
     }));
+
+    // Doom clock maxed → the run collapses into a bad ending right here.
+    if (willTension >= 100) {
+      await delay(900);
+      setState((s) => ({ ...s, narratorTyping: true }));
+      await delay(900);
+      const epi = 'The tension boiled over before anyone could pull it back — the group scattered, and the moment was lost for good.';
+      setState((s) => ({
+        ...s,
+        narratorTyping: false,
+        messages: [...s.messages, { id: nextId(), author: 'DM', avatar: '🎬', text: epi, kind: 'narration' as const }],
+      }));
+      await delay(1000);
+      setState((s) => ({
+        ...s,
+        questCard: { title: 'It All Fell Apart', caption: 'too much chaos, too fast', epilogue: epi, highlight: '', best_interference: '', final_roll: d.value, cta: story.cta, marks: s.marks },
+        phase: 'ended',
+      }));
+      return;
+    }
 
     // 2) Check if this was the last actor
     const isLastActor = state.currentActorIndex >= state.players.length - 1;
@@ -357,6 +419,7 @@ export function useGameState() {
           best_interference: `MVP: ${mvpName} (${mvpScore} total) • ${stats.criticalSuccess} nat20s • ${stats.criticalFailure} nat1s`,
           final_roll: youResult.roll,
           cta: story.cta,
+          marks: s.marks,
         },
         phase: 'ended',
       }));
@@ -401,6 +464,21 @@ export function useGameState() {
     }));
   }, []);
 
+  /** Spend a help token: a teammate jumps in (chat line) and you get advantage. */
+  const spendHelp = useCallback((): boolean => {
+    if (state.helpTokens <= 0) return false;
+    const others = state.players.filter((p) => p.name !== 'You');
+    const helper = others.length ? others[(others.length - state.helpTokens + others.length) % others.length] : null;
+    setState((s) => ({
+      ...s,
+      helpTokens: Math.max(0, s.helpTokens - 1),
+      messages: helper
+        ? [...s.messages, { id: nextId(), author: helper.name, avatar: helper.name, text: 'jumps in to help — advantage! 🤝', kind: 'member' as const }]
+        : s.messages,
+    }));
+    return true;
+  }, [state.helpTokens, state.players]);
+
   /** Free-text chat from "You" — shows as your bubble, does NOT advance the story. */
   const sendChat = useCallback((text: string) => {
     const t = text.trim();
@@ -425,5 +503,6 @@ export function useGameState() {
     getStoryRef,
     startNewRound,
     sendChat,
+    spendHelp,
   };
 }
