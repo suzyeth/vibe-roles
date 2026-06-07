@@ -11,6 +11,7 @@ import {
   type BranchingStory,
   type BranchNode,
   type BranchEnding,
+  type BranchChoice,
 } from "@/data/branchingStories";
 import type { Player } from "@/lib/schema";
 import { clampD20 } from "@/lib/dice";
@@ -76,4 +77,41 @@ export function advance(
   const choice = node.choices[i];
   const success = clampD20(roll) >= WIN_THRESHOLD;
   return { nextId: success ? choice.onSuccess : choice.onFail, success };
+}
+
+/**
+ * Get role-specific choices for the current node and actor.
+ * Returns role-specific choices if defined, otherwise falls back to node choices.
+ */
+export function getRoleSpecificChoices(
+  story: BranchingStory,
+  nodeId: string,
+  actorName: string,
+): BranchChoice[] {
+  const node = story.nodes[nodeId];
+  if (!node) return [];
+
+  // Check if the story has role-specific choices for this node
+  const roleChoicesKey = `roleChoices_${nodeId}`;
+  const roleChoices = (story as Record<string, unknown>)[roleChoicesKey] as Record<string, BranchChoice[]> | undefined;
+
+  if (roleChoices && roleChoices[actorName]) {
+    return roleChoices[actorName];
+  }
+
+  // Fall back to generic node choices
+  return node.choices;
+}
+
+/**
+ * Get choices for the current actor (role-specific or generic).
+ * This is the main function called by the UI.
+ */
+export function getChoicesForActor(
+  story: BranchingStory,
+  nodeId: string,
+  actorName: string,
+): Array<{ label: string; emoji?: string }> {
+  const choices = getRoleSpecificChoices(story, nodeId, actorName);
+  return choices.map((c) => ({ label: c.label, emoji: c.emoji }));
 }

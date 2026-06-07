@@ -3,7 +3,7 @@ import type { FateCard, Quest, Player } from "@/lib/schema";
 /** NPC 名字池 - 随机选取填充角色 */
 const NPC_NAMES = ["Ghost", "Shadow", "Echo", "Whisper", "Cipher", "Nova", "Rogue", "Spark"];
 /** NPC 角色池 - 随机分配给 NPC */
-const NPC_ROLES = [
+const _NPC_ROLES = [
   { role: "The Watcher", ability: "Sees things others miss" },
   { role: "The Trickster", ability: "Chaos follows every move" },
   { role: "The Oracle", ability: "Speaks in riddles that come true" },

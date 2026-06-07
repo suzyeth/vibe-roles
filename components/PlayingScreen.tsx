@@ -1,16 +1,16 @@
 /**
- * PlayingScreen — branching story play.
+ * PlayingScreen — branching story play with team-based turns.
  *
- * You are the protagonist: the DM narrates a scene (a chat bubble), you pick one
- * of its branches, roll a D20, and success/failure routes the story to a new
- * node — until it reaches a real ending. AI members chime in as flavour. Group-
- * chat feel: DM "typing…" bubble, animated D20, spring-in messages, per-player
- * accent colors, themed via CSS tokens (light + dark).
+ * The group takes turns: each member picks a branch, rolls a D20, and their
+ * choice + roll is recorded. After everyone has acted, the DM advances the
+ * story based on the team's collective decisions. Group-chat feel with multiple
+ * perspectives and role-specific choices.
  */
 import { useEffect, useRef, useState } from 'react';
 import type { useGameState } from '@/hooks/useGameState';
-import { toDiceRoll, rollPlayerValue, type DiceRoll } from '@/lib/dice';
+import { toDiceRoll, rollPlayerValue, rollNPCValue, type DiceRoll } from '@/lib/dice';
 import { accentFor, dmFor, type DM } from '@/lib/theme';
+import { getChoicesForActor } from '@/lib/branchingEngine';
 
 type GameHook = ReturnType<typeof useGameState>;
 
@@ -57,21 +57,30 @@ function TypingIndicator({ dm }: { dm: DM }) {
 }
 
 export default function PlayingScreen({ game }: { game: GameHook }) {
-  const { state, currentChoices, commonActions, resolveChoice } = game;
+  const { state, currentChoices, commonActions, resolveActorChoice, currentActor, getStoryRef, sendChat } = game;
   const [beatPhase, setBeatPhase] = useState<'choosing' | 'rolling' | 'resolving'>('choosing');
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [dice, setDice] = useState<DiceRoll | null>(null);
   const [diceWobbling, setDiceWobbling] = useState(false);
   const [showBigDice, setShowBigDice] = useState(false);
+  const [customText, setCustomText] = useState('');
 
   const endRef = useRef<HTMLDivElement>(null);
   const lastNodeRef = useRef<string>('');
+  const lastActorIndexRef = useRef<number>(0);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const dm = dmFor(state.theme);
-  const choices = currentChoices();
-  // The protagonist's in-story identity, so the chat shows WHO is deciding
-  // (their role) instead of a faceless "You".
-  const youRole = state.players.find((p) => p.name === 'You')?.role ?? 'You';
+  const currentPlayer = currentActor();
+  const isHuman = currentPlayer?.name === 'You';
+  const currentStory = getStoryRef();
+  const choices = (currentPlayer && currentStory) ? getChoicesForActor(
+    currentStory,
+    state.nodeId,
+    currentPlayer.name,
+  ) : currentChoices();
+
+  // Role of any player
   const roleOf = (name: string) => state.players.find((p) => p.name === name)?.role ?? name;
 
   // Auto-scroll to the latest message / indicator.
@@ -79,15 +88,27 @@ export default function PlayingScreen({ game }: { game: GameHook }) {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [state.messages.length, state.narratorTyping, diceWobbling, beatPhase]);
 
-  // When the story advances to a new node, open its choices.
+  // When the story advances to a new node or actor changes, reset choices.
   useEffect(() => {
     if (state.phase !== 'playing' || !state.nodeId) return;
-    if (state.nodeId === lastNodeRef.current) return;
-    lastNodeRef.current = state.nodeId;
-    setSelectedIndex(null);
-    setDice(null);
-    setBeatPhase('choosing');
-  }, [state.nodeId, state.phase]);
+    // Reset when node changes OR when starting a new round (actor index resets to 0)
+    const nodeChanged = state.nodeId !== lastNodeRef.current;
+    const roundStarted = state.currentActorIndex === 0 && lastActorIndexRef.current > 0;
+    const actorChanged = state.currentActorIndex !== lastActorIndexRef.current;
+
+    if (nodeChanged || roundStarted) {
+      lastNodeRef.current = state.nodeId;
+      setSelectedIndex(null);
+      setDice(null);
+      setBeatPhase('choosing');
+    }
+
+    if (actorChanged) {
+      lastActorIndexRef.current = state.currentActorIndex;
+      setSelectedIndex(null);
+      setBeatPhase('choosing');
+    }
+  }, [state.nodeId, state.currentActorIndex, state.phase]);
 
   const handleChoose = (i: number) => {
     setSelectedIndex(i);
@@ -105,10 +126,29 @@ export default function PlayingScreen({ game }: { game: GameHook }) {
     setDiceWobbling(false);
     await delay(750);
     setShowBigDice(false);
-    await resolveChoice(selectedIndex, roll);
-    // The node-watch effect resets to 'choosing' when the next node arrives;
+    await resolveActorChoice(selectedIndex, roll);
+    // The node-watch effect resets to 'choosing' when the next node/actor arrives;
     // an ending instead flips phase to 'ended' (this screen unmounts).
   };
+
+  // NPC auto-play — when it's not You's turn, auto-pick a branch (local random).
+  useEffect(() => {
+    if (!state.ready || state.phase !== 'playing' || !currentPlayer || currentPlayer.name === 'You') return;
+    if (beatPhase !== 'choosing' || choices.length === 0) return;
+    const idx = Math.floor(Math.random() * choices.length);
+    const t = setTimeout(() => { setSelectedIndex(idx); setBeatPhase('rolling'); }, 850);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.ready, state.phase, currentPlayer, beatPhase, choices.length, state.currentActorIndex, state.nodeId]);
+
+  // NPC auto-play — auto-roll once the NPC has picked.
+  useEffect(() => {
+    if (!state.ready || state.phase !== 'playing' || !currentPlayer || currentPlayer.name === 'You') return;
+    if (beatPhase !== 'rolling' || selectedIndex == null) return;
+    const t = setTimeout(() => performRoll(rollNPCValue()), 850);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.ready, state.phase, currentPlayer, beatPhase, selectedIndex]);
 
   const copyInvite = () => {
     if (!state.shareUrl) return;
@@ -169,7 +209,7 @@ export default function PlayingScreen({ game }: { game: GameHook }) {
                 </div>
               )}
               <div className={`flex flex-col gap-0.5 max-w-[72%] ${isSelf ? 'items-end' : 'items-start'}`}>
-                <span className="text-xs px-1 font-medium" style={{ color: accent }}>{isSelf ? `You · ${youRole}` : `${msg.author} · ${roleOf(msg.author)}`}</span>
+                <span className="text-xs px-1 font-medium" style={{ color: accent }}>{isSelf ? `You · ${roleOf('You')}` : `${msg.author} · ${roleOf(msg.author)}`}</span>
 
                 <div className={`${isSelf ? 'bubble-sent' : 'bubble-received'} text-sm`}>{msg.text}</div>
                 {msg.dice && (
@@ -201,51 +241,62 @@ export default function PlayingScreen({ game }: { game: GameHook }) {
         <div ref={endRef} />
       </div>
 
-      {/* Branch choices — role-specific (green) + common (grey) */}
-      {state.ready && state.phase === 'playing' && beatPhase === 'choosing' && choices.length > 0 && (
-        <div className="p-3" style={footerStyle}>
-          <div className="text-xs mb-1.5 px-1 font-medium" style={{ color: 'var(--zymix-text-tertiary)' }}>
-            🎭 You · {youRole} — your move
-          </div>
-          <div className="flex flex-wrap gap-2 mb-2.5">
-            {choices.map((c, i) => (
-              <button
-                key={i}
-                onClick={() => handleChoose(i)}
-                className="px-3 py-2 rounded-full text-sm font-medium transition-transform active:scale-95"
-                style={{ background: 'var(--zymix-green-light)', color: 'var(--zymix-green)', border: '1px solid var(--zymix-green)' }}
-              >
-                {(c.emoji ?? FALLBACK_EMOJI[i % FALLBACK_EMOJI.length])} {c.label}
-              </button>
-            ))}
-          </div>
-          <div className="text-xs mb-1.5 px-1 font-medium" style={{ color: 'var(--zymix-text-tertiary)' }}>
-            Common options
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {(commonActions().length ? commonActions() : COMMON_ACTIONS).map((label, i) => (
-              <button
-                key={i}
-                onClick={() => handleChoose(0)}
-                className="px-3 py-2 rounded-full text-sm font-medium transition-transform active:scale-95"
-                style={{ background: 'var(--zymix-bg)', color: 'var(--zymix-text-primary)', border: '1px solid var(--zymix-border)' }}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Bottom sheet: move UI (chips / NPC indicator / roll) + persistent chat composer */}
+      {state.ready && state.phase === 'playing' && (
+        <div className="rc-sheet px-4 pt-3.5 pb-3">
+          {/* Your turn — role branches (green) + common actions (grey) */}
+          {beatPhase === 'choosing' && isHuman && choices.length > 0 && (
+            <>
+              <div className="rc-label mb-2 px-0.5">🎭 You · {roleOf('You')} — your move</div>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {choices.map((c, i) => (
+                  <button key={i} onClick={() => handleChoose(i)} className="rc-chip rc-chip-special">
+                    {(c.emoji ?? FALLBACK_EMOJI[i % FALLBACK_EMOJI.length])} {c.label}
+                  </button>
+                ))}
+              </div>
+              <div className="rc-label mb-2 px-0.5">Common</div>
+              <div className="flex flex-wrap gap-2 mb-3.5">
+                {(commonActions().length ? commonActions() : COMMON_ACTIONS).map((label, i) => (
+                  <button key={i} onClick={() => handleChoose(0)} className="rc-chip rc-chip-common">{label}</button>
+                ))}
+              </div>
+            </>
+          )}
 
-      {/* Roll the die for the chosen branch */}
-      {beatPhase === 'rolling' && (
-        <div className="p-4" style={footerStyle}>
-          <div className="mb-2 text-center text-xs" style={{ color: 'var(--zymix-text-tertiary)' }}>
-            {selectedIndex != null && choices[selectedIndex] ? `“${choices[selectedIndex].label}” — roll to see how it goes` : 'Roll the die'}
+          {/* NPC turn — auto-play */}
+          {!isHuman && currentPlayer && (beatPhase === 'choosing' || beatPhase === 'rolling') && (
+            <div className="mb-3.5 flex items-center justify-center gap-2 text-sm" style={{ color: 'var(--zymix-text-secondary)' }}>
+              <span className="text-lg">🎲</span>
+              <span>{currentPlayer.name} is {beatPhase === 'rolling' ? 'rolling the die…' : 'choosing a move…'}</span>
+            </div>
+          )}
+
+          {/* Your roll */}
+          {beatPhase === 'rolling' && isHuman && (
+            <div className="mb-3.5">
+              <div className="mb-2 text-center text-xs" style={{ color: 'var(--zymix-text-tertiary)' }}>
+                {selectedIndex != null && choices[selectedIndex] ? `“${choices[selectedIndex].label}” — roll to see how it goes` : 'Roll the die'}
+              </div>
+              <button onClick={() => performRoll(rollPlayerValue())} className="btn-zymix-primary">🎲 Roll the die</button>
+            </div>
+          )}
+
+          {/* Persistent chat composer — type to chat (your bubble); does NOT advance the story */}
+          <div className="flex items-center gap-2">
+            <input
+              ref={inputRef}
+              value={customText}
+              onChange={(e) => setCustomText(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { sendChat(customText); setCustomText(''); } }}
+              type="text"
+              placeholder="Say something to the group…"
+              className="rc-composer-input"
+            />
+            <button onClick={() => { sendChat(customText); setCustomText(''); }} aria-label="Send message" className="rc-send-btn">
+              <svg width="16" height="16" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+            </button>
           </div>
-          <button onClick={() => performRoll(rollPlayerValue())} className="btn-zymix-primary">
-            🎲 Roll the die
-          </button>
         </div>
       )}
 

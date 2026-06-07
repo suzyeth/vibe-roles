@@ -63,6 +63,8 @@ export interface BranchingStory {
   start: string;
   nodes: Record<string, BranchNode>;
   endings: Record<string, BranchEnding>;
+  /** Optional: Role-specific choices per node. Format: roleChoices_<nodeId>: { actorName: choices[] } */
+  [key: string]: any; // Allow additional roleChoices_* properties
   cta: string;
 }
 
@@ -177,6 +179,175 @@ export const BRANCHING_STORIES: BranchingStory[] = [
           { label: "Let it fade out", emoji: "🫥", onSuccess: "fizzle", onFail: "fizzle" },
         ],
       },
+    },
+    /** Role-specific choices for the "calm" node */
+    roleChoices_calm: {
+      You: [
+        { label: "Quietly DM the suspect", emoji: "🕵️", onSuccess: "corner", onFail: "chaos" },
+        { label: "Call a flat-wide vote", emoji: "🗳️", onSuccess: "corner", onFail: "chaos" },
+      ],
+      Mia: [
+        { label: "DM them privately", emoji: "💬", onSuccess: "corner", onFail: "chaos" },
+        { label: "Story time on live", emoji: "📱", onSuccess: "corner", onFail: "chaos" },
+      ],
+      Kai: [
+        { label: "Check the metadata", emoji: "🔍", onSuccess: "corner", onFail: "chaos" },
+        { label: "Reply all in screenshots", emoji: "📸", onSuccess: "corner", onFail: "chaos" },
+      ],
+      Momo: [
+        { label: "Ask everyone to calm down", emoji: "😌", onSuccess: "corner", onFail: "chaos" },
+        { label: "Stay out of it", emoji: "🤐", onSuccess: "chaos", onFail: "chaos" },
+      ],
+    },
+    /** Role-specific choices for the "bold" node */
+    roleChoices_bold: {
+      You: [
+        { label: "Drop a counter-screenshot", emoji: "📸", onSuccess: "corner", onFail: "chaos" },
+        { label: "Name a suspect outright", emoji: "🎯", onSuccess: "chaos", onFail: "chaos" },
+      ],
+      Mia: [
+        { label: "Double down dramatically", emoji: "😎", onSuccess: "corner", onFail: "chaos" },
+        { label: "Post a deflecting selfie", emoji: "🤳", onSuccess: "corner", onFail: "chaos" },
+      ],
+      Kai: [
+        { label: "Post a thread exposing receipts", emoji: "🧵", onSuccess: "corner", onFail: "chaos" },
+        { label: "Tag them in a new post", emoji: "🏷️", onSuccess: "chaos", onFail: "chaos" },
+      ],
+      Momo: [
+        { label: "Try to mediate the drama", emoji: "🤝", onSuccess: "corner", onFail: "chaos" },
+        { label: "Stay silent and observe", emoji: "🤐", onSuccess: "chaos", onFail: "chaos" },
+      ],
+    },
+    /** Role-specific choices for the "messy" node */
+    roleChoices_messy: {
+      You: [
+        { label: "Damage control, fast", emoji: "🩹", onSuccess: "corner", onFail: "chaos" },
+        { label: "Go offline dramatically", emoji: "🚪", onSuccess: "chaos", onFail: "chaos" },
+      ],
+      Mia: [
+        { label: "Apologize on main chat", emoji: "😅", onSuccess: "corner", onFail: "chaos" },
+        { label: "Go offline, fake drama", emoji: "🎭", onSuccess: "chaos", onFail: "chaos" },
+      ],
+      Kai: [
+        { label: "Delete and pretend hacked", emoji: "🗑️", onSuccess: "corner", onFail: "chaos" },
+        { label: "Blame technical issues", emoji: "🔧", onSuccess: "chaos", onFail: "chaos" },
+      ],
+      Momo: [
+        { label: "Plea for de-escalation", emoji: "🙏", onSuccess: "corner", onFail: "chaos" },
+        { label: "Ghost the conversation", emoji: "👻", onSuccess: "chaos", onFail: "chaos" },
+      ],
+    },
+    /** Role-specific choices for bridge nodes */
+    roleChoices_bridge_cleared: {
+      You: [
+        { label: "Send it, end it clean", emoji: "🧾", onSuccess: "cleared", onFail: "truce" },
+        { label: "Hold, give them a chance", emoji: "🤝", onSuccess: "truce", onFail: "fizzle" },
+      ],
+      Mia: [
+        { label: "Post with receipts", emoji: "📁", onSuccess: "cleared", onFail: "truce" },
+        { label: "Offer a quiet truce", emoji: "🤝", onSuccess: "truce", onFail: "fizzle" },
+      ],
+      Kai: [
+        { label: "Full exposure, no half measures", emoji: "📂", onSuccess: "cleared", onFail: "truce" },
+        { label: "Leave it ambiguous", emoji: "❓", onSuccess: "truce", onFail: "fizzle" },
+      ],
+      Momo: [
+        { label: "Push for resolution", emoji: "🔨", onSuccess: "cleared", onFail: "truce" },
+        { label: "Let it fade naturally", emoji: "🍂", onSuccess: "truce", onFail: "fizzle" },
+      ],
+    },
+    roleChoices_bridge_truce: {
+      You: [
+        { label: "Send the truce", emoji: "🤝", onSuccess: "truce", onFail: "fizzle" },
+        { label: "Back away, stay unresolved", emoji: "🫥", onSuccess: "fizzle", onFail: "fizzle" },
+      ],
+      Mia: [
+        { label: "Accept the truce warmly", emoji: "😊", onSuccess: "truce", onFail: "fizzle" },
+        { label: "Counter-offer instead", emoji: "🔄", onSuccess: "fizzle", onFail: "fizzle" },
+      ],
+      Kai: [
+        { label: "Agree to move forward", emoji: "✅", onSuccess: "truce", onFail: "fizzle" },
+        { label: "Demand an apology first", emoji: "⚠️", onSuccess: "fizzle", onFail: "fizzle" },
+      ],
+      Momo: [
+        { label: "Support the peace deal", emoji: "🕊️", onSuccess: "truce", onFail: "fizzle" },
+        { label: "Stay neutral, observe", emoji: "⚖️", onSuccess: "fizzle", onFail: "fizzle" },
+      ],
+    },
+    roleChoices_bridge_fizzle: {
+      You: [
+        { label: "Try one last save", emoji: "😅", onSuccess: "truce", onFail: "fizzle" },
+        { label: "Let it fade out", emoji: "🫥", onSuccess: "fizzle", onFail: "fizzle" },
+      ],
+      Mia: [
+        { label: "Make one final plea", emoji: "🥺", onSuccess: "truce", onFail: "fizzle" },
+        { label: "Disappear silently", emoji: "👻", onSuccess: "fizzle", onFail: "fizzle" },
+      ],
+      Kai: [
+        { label: "Archive everything for later", emoji: "💾", onSuccess: "truce", onFail: "fizzle" },
+        { label: "Delete the chat history", emoji: "🗑️", onSuccess: "fizzle", onFail: "fizzle" },
+      ],
+      Momo: [
+        { label: "One last mediation attempt", emoji: "🤝", onSuccess: "truce", onFail: "fizzle" },
+        { label: "Walk away for good", emoji: "🚪", onSuccess: "fizzle", onFail: "fizzle" },
+      ],
+    },
+    /** Role-specific choices for the "corner" node */
+    roleChoices_corner: {
+      You: [
+        { label: "Post the final receipt", emoji: "🧾", onSuccess: "bridge_cleared", onFail: "bridge_fizzle" },
+        { label: "Offer them a truce", emoji: "🤝", onSuccess: "bridge_truce", onFail: "bridge_fizzle" },
+      ],
+      Mia: [
+        { label: "Post a sad story", emoji: "😢", onSuccess: "bridge_truce", onFail: "bridge_fizzle" },
+        { label: "Go live for justice", emoji: "📱", onSuccess: "bridge_cleared", onFail: "bridge_fizzle" },
+      ],
+      Kai: [
+        { label: "Drop the full receipt folder", emoji: "📁", onSuccess: "bridge_cleared", onFail: "bridge_fizzle" },
+        { label: "Ask for proof first", emoji: "🔍", onSuccess: "bridge_truce", onFail: "bridge_fizzle" },
+      ],
+      Momo: [
+        { label: "Propose a group truce", emoji: "🕊️", onSuccess: "bridge_truce", onFail: "bridge_fizzle" },
+        { label: "Stay silent, let it pass", emoji: "🤐", onSuccess: "bridge_fizzle", onFail: "bridge_fizzle" },
+      ],
+    },
+    /** Role-specific choices for the "chaos" node */
+    roleChoices_chaos: {
+      You: [
+        { label: "Salvage it with one joke", emoji: "😂", onSuccess: "bridge_truce", onFail: "bridge_fizzle" },
+        { label: "Burn the whole thing down", emoji: "🔥", onSuccess: "bridge_fizzle", onFail: "bridge_fizzle" },
+      ],
+      Mia: [
+        { label: "Defuse with a selfie", emoji: "🤳", onSuccess: "bridge_truce", onFail: "bridge_fizzle" },
+        { label: "Fan the flames for content", emoji: "🔥", onSuccess: "bridge_fizzle", onFail: "bridge_fizzle" },
+      ],
+      Kai: [
+        { label: "Clear the chat, restart", emoji: "♻️", onSuccess: "bridge_truce", onFail: "bridge_fizzle" },
+        { label: "Pin the blame elsewhere", emoji: "📍", onSuccess: "bridge_fizzle", onFail: "bridge_fizzle" },
+      ],
+      Momo: [
+        { label: "Everyone calm down pls", emoji: "😓", onSuccess: "bridge_truce", onFail: "bridge_fizzle" },
+        { label: "Leave the chat dramatically", emoji: "🚪", onSuccess: "bridge_fizzle", onFail: "bridge_fizzle" },
+      ],
+    },
+    /** Role-specific choices for the "open" node */
+    roleChoices_open: {
+      You: [
+        { label: "Stay calm, ask for proof", emoji: "🧊", onSuccess: "calm", onFail: "messy" },
+        { label: "Clap back immediately", emoji: "🔥", onSuccess: "bold", onFail: "messy" },
+      ],
+      Mia: [
+        { label: "Cry on cue for sympathy", emoji: "😢", onSuccess: "calm", onFail: "messy" },
+        { label: "Go live from the chat", emoji: "📱", onSuccess: "bold", onFail: "messy" },
+      ],
+      Kai: [
+        { label: "Post the old screenshots", emoji: "📸", onSuccess: "calm", onFail: "messy" },
+        { label: "Tag everyone for receipts", emoji: "🏷️", onSuccess: "bold", onFail: "messy" },
+      ],
+      Momo: [
+        { label: "Type 'guys can we not'", emoji: "🤐", onSuccess: "calm", onFail: "messy" },
+        { label: "Try to mediate", emoji: "🤝", onSuccess: "bold", onFail: "messy" },
+      ],
     },
     endings: {
       cleared: {
@@ -340,6 +511,61 @@ export const BRANCHING_STORIES: BranchingStory[] = [
       },
     },
     common: ["📊 Check the live numbers", "🎬 Post a softer clip", "🙊 Mute the comments"],
+    /** Role-specific choices for Story 2 */
+    roleChoices_open: {
+      You: [
+        { label: "Push her live to own it", emoji: "🎤", onSuccess: "live", onFail: "messy" },
+        { label: "Post a Notes-app apology", emoji: "📝", onSuccess: "apology", onFail: "messy" },
+      ],
+      Mia: [
+        { label: "Go live and cry on cue", emoji: "😢", onSuccess: "live", onFail: "messy" },
+        { label: "Pre-record a sincere apology", emoji: "🎬", onSuccess: "apology", onFail: "messy" },
+      ],
+      Kai: [
+        { label: "Cut to raw footage immediately", emoji: "🎬", onSuccess: "live", onFail: "messy" },
+        { label: "Release a prepared statement", emoji: "📄", onSuccess: "apology", onFail: "messy" },
+      ],
+      Momo: [
+        { label: "Spin the narrative positively", emoji: "🔄", onSuccess: "apology", onFail: "messy" },
+        { label: "Issue a formal brand statement", emoji: "📋", onSuccess: "apology", onFail: "messy" },
+      ],
+    },
+    roleChoices_corner: {
+      You: [
+        { label: "Post the proof", emoji: "🧾", onSuccess: "bridge_uncancelled", onFail: "bridge_smaller" },
+        { label: "Soft-launch the comeback", emoji: "🚀", onSuccess: "bridge_comeback", onFail: "bridge_smaller" },
+      ],
+      Mia: [
+        { label: "Rebrand as 'vulnerable moment'", emoji: "💖", onSuccess: "bridge_comeback", onFail: "bridge_smaller" },
+        { label: "Go mega-viral with the drama", emoji: "🔥", onSuccess: "bridge_uncancelled", onFail: "bridge_smaller" },
+      ],
+      Kai: [
+        { label: "Release the raw receipts", emoji: "📂", onSuccess: "bridge_uncancelled", onFail: "bridge_smaller" },
+        { label: "Edit to downplay the leak", emoji: "✂️", onSuccess: "bridge_comeback", onFail: "bridge_smaller" },
+      ],
+      Momo: [
+        { label: "Negotiate with brand quietly", emoji: "🤝", onSuccess: "bridge_comeback", onFail: "bridge_smaller" },
+        { label: "Send damage control email", emoji: "📧", onSuccess: "bridge_smaller", onFail: "bridge_smaller" },
+      ],
+    },
+    roleChoices_chaos: {
+      You: [
+        { label: "Pivot niche + thank the haters", emoji: "🌱", onSuccess: "bridge_comeback", onFail: "bridge_smaller" },
+        { label: "Do a full tell-all", emoji: "🎙️", onSuccess: "bridge_smaller", onFail: "bridge_smaller" },
+      ],
+      Mia: [
+        { label: "Pivot to authenticity", emoji: "💯", onSuccess: "bridge_comeback", onFail: "bridge_smaller" },
+        { label: "Lean into the chaos for content", emoji: "🔥", onSuccess: "bridge_smaller", onFail: "bridge_smaller" },
+      ],
+      Kai: [
+        { label: "Release an edited timeline", emoji: "✂️", onSuccess: "bridge_comeback", onFail: "bridge_smaller" },
+        { label: "Publish the full uncut story", emoji: "📰", onSuccess: "bridge_smaller", onFail: "bridge_smaller" },
+      ],
+      Momo: [
+        { label: "Quietly reach out to brands", emoji: "📧", onSuccess: "bridge_comeback", onFail: "bridge_smaller" },
+        { label: "Distance from the brand", emoji: "🚫", onSuccess: "bridge_smaller", onFail: "bridge_smaller" },
+      ],
+    },
     cta: "Start your own creator saga on Zymix",
   },
 

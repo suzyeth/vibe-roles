@@ -44,3 +44,6 @@ next-env.d.ts
 
 # browse screenshots
 .shots/
+
+# local launcher with secrets
+start-glm.bat

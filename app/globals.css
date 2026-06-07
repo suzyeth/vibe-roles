@@ -253,3 +253,76 @@ body {
 /* Safe area */
 .pb-safe { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
 .pt-safe { padding-top: max(0px, env(safe-area-inset-top)); }
+
+/* ── Choice / chat composer (polished) ─────────────────────────────────────── */
+.rc-sheet {
+  background: var(--zymix-surface);
+  border-top: 1px solid var(--zymix-divider);
+  box-shadow: 0 -6px 24px rgba(0,0,0,0.06);
+  border-radius: 18px 18px 0 0;
+}
+.rc-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--zymix-text-tertiary);
+}
+.rc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 15px;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.25;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.18s ease, filter 0.18s ease, border-color 0.18s ease;
+}
+.rc-chip:hover { filter: brightness(1.04); }
+.rc-chip:active { transform: scale(0.96); }
+.rc-chip-special {
+  background: var(--zymix-green-light);
+  color: var(--zymix-green);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(29,185,84,0.20);
+}
+.rc-chip-common {
+  background: var(--zymix-surface);
+  color: var(--zymix-text-secondary);
+  border-color: var(--zymix-border);
+  box-shadow: var(--shadow-card);
+}
+.rc-chip-common:hover { color: var(--zymix-text-primary); border-color: var(--zymix-text-tertiary); }
+.rc-composer-input {
+  flex: 1;
+  border-radius: 9999px;
+  padding: 11px 16px;
+  font-size: 14px;
+  background: var(--zymix-bg);
+  color: var(--zymix-text-primary);
+  border: 1px solid var(--zymix-border);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.rc-composer-input::placeholder { color: var(--zymix-text-tertiary); }
+.rc-composer-input:focus {
+  border-color: var(--zymix-green);
+  box-shadow: 0 0 0 3px rgba(29,185,84,0.13);
+}
+.rc-send-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 9999px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--zymix-green);
+  box-shadow: 0 2px 8px rgba(29,185,84,0.32);
+  transition: transform 0.1s ease, filter 0.15s ease;
+}
+.rc-send-btn:hover { filter: brightness(1.05); }
+.rc-send-btn:active { transform: scale(0.9); }
