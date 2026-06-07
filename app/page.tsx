@@ -92,10 +92,7 @@ export default function Home() {
       {/* Main content area */}
       <div className="flex-1" style={{ background: 'var(--zymix-bg)' }}>
         {state.phase === 'lobby' && (
-          <LobbyScreen
-            onStart={handleStart}
-            testMode={true}
-          />
+          <LobbyScreen onStart={handleStart} />
         )}
         {state.phase === 'theme' && (
           <ThemeScreen

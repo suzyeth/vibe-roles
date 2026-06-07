@@ -30,6 +30,21 @@ export interface BranchChoice {
   onFail: string;
 }
 
+export interface RoleEvent {
+  /** DM line announcing the event before the reroute. */
+  line: string;
+  /** Node or ending id to reroute to. */
+  target: string;
+  /** One-line lasting consequence, shown on the ending card if this was the
+   *  run's pivotal event (boon = triumphant, chaos = rueful). */
+  coda: string;
+}
+
+export interface RoleEvents {
+  boon: RoleEvent;
+  chaos: RoleEvent;
+}
+
 export interface BranchNode {
   id: string;
   /** The cohesive scene narration shown as ONE block when this node opens. */
@@ -44,6 +59,8 @@ export interface BranchEnding {
   scene: string;
   title: string;
   caption: string;
+  /** Outcome mood — themes the ending card (win = green, mixed = purple, down = slate). */
+  tone: 'win' | 'mixed' | 'down';
 }
 
 export interface BranchingStory {
@@ -51,6 +68,8 @@ export interface BranchingStory {
   theme: string;
   emoji: string;
   tone: string;
+  /** Story-specific accent colour (hex) — themes the DM avatar/name + tension bar. */
+  accent: string;
   setup: string;
   goal: string;
   roles: Record<string, { role: string; ability: string; detail: string }>;
@@ -66,7 +85,18 @@ export interface BranchingStory {
   start: string;
   nodes: Record<string, BranchNode>;
   endings: Record<string, BranchEnding>;
+  /** Story-specific examples of how an invited friend's "twist" changes the plot,
+   *  shown in the invite sheet. */
+  twists: { icon: string; title: string; detail: string }[];
   cta: string;
+  /** Short goal text for the persistent header chip (full text stays in `goal`/`intro`). */
+  goalShort: string;
+  /** Story-named tension meter shown during play. */
+  crisisMeter: { name: string; emoji: string };
+  /** Teammate role events keyed by member name; a strong/weak roll fires one. */
+  roleEvents: Record<string, RoleEvents>;
+  /** Fallback role event for members without a named entry. */
+  defaultRoleEvent: RoleEvents;
 }
 
 export const BRANCHING_STORIES: BranchingStory[] = [
@@ -76,6 +106,7 @@ export const BRANCHING_STORIES: BranchingStory[] = [
     theme: "Group Chat on Trial",
     emoji: "📱",
     tone: "chaotic but harmless",
+    accent: "#7C3AED",
     setup:
       "Someone screenshotted the private flat chat into the whole year group. 47 unread, a poll with your name on it, and a leaker hiding in plain sight.",
     goal: "Clear your name and unmask the leaker before the chat folds for good.",
@@ -183,6 +214,33 @@ export const BRANCHING_STORIES: BranchingStory[] = [
           { label: "Log off, let it burn", emoji: "🔥", onSuccess: "fizzle", onFail: "fizzle" },
         ],
       },
+      kai_receipt: {
+        id: "kai_receipt",
+        scene:
+          "Kai pastes the original, uncropped screenshot — timestamps, sender, the lot — straight from a folder literally named 'evidence'. The chat goes dead silent as everyone does the maths. The leaker's story just fell apart in real time.",
+        choices: [
+          { label: "Let the receipts speak", emoji: "🧾", onSuccess: "corner", onFail: "bridge_cleared" },
+          { label: "Add your own caption", emoji: "✍️", onSuccess: "bridge_cleared", onFail: "chaos" },
+        ],
+      },
+      mia_meltdown: {
+        id: "mia_meltdown",
+        scene:
+          "Mia's tear-streaked Story hits 300 views in a minute and the comments pivot hard — sympathy, outrage at the leaker, a meme already forming. The narrative is suddenly yours to lose.",
+        choices: [
+          { label: "Ride the sympathy wave", emoji: "🌊", onSuccess: "bridge_cleared", onFail: "messy" },
+          { label: "Redirect it at the leaker", emoji: "🎯", onSuccess: "corner", onFail: "chaos" },
+        ],
+      },
+      momo_truce: {
+        id: "momo_truce",
+        scene:
+          "Momo's billionth 'guys, can we actually not' lands for once — the all-caps stops, people put their phones down for a second. In the lull, the leaker looks rattled and exposed.",
+        choices: [
+          { label: "Use the calm to corner them", emoji: "🕊️", onSuccess: "corner", onFail: "bridge_truce" },
+          { label: "Call for a clean vote", emoji: "🗳️", onSuccess: "bridge_cleared", onFail: "chaos" },
+        ],
+      },
     },
     endings: {
       cleared: {
@@ -191,6 +249,7 @@ export const BRANCHING_STORIES: BranchingStory[] = [
           "You post the final receipt with no caption. The leaker types… stops… goes offline. Forty-seven people exhale at once — you're cleared, and the chat will be telling this story for weeks.",
         title: "Name Cleared",
         caption: "receipts up, leaker down",
+        tone: "win",
       },
       truce: {
         id: "truce",
@@ -198,6 +257,7 @@ export const BRANCHING_STORIES: BranchingStory[] = [
           "Nobody fully wins, but one well-timed line breaks the tension and the flat decides it'd rather stay friends than be right. Messy peace, but peace.",
         title: "Messy Peace",
         caption: "the flat survived, barely",
+        tone: "mixed",
       },
       fizzle: {
         id: "fizzle",
@@ -205,10 +265,37 @@ export const BRANCHING_STORIES: BranchingStory[] = [
           "Nobody admits anything, half the group mutes the chat, and yet somehow everyone's still here at 3am sending memes. Unresolved, toxic, weirdly loyal.",
         title: "Left On Read",
         caption: "no verdict, just vibes",
+        tone: "down",
       },
     },
     common: ["📸 Pull up a screenshot", "🗳️ Ask the chat to weigh in", "🤐 Say nothing, let it cook"],
+    twists: [
+      { icon: "📸", title: "Leak a new screenshot", detail: "reroute who the chat thinks is guilty" },
+      { icon: "🎭", title: "Add a mutual from another flat", detail: "a surprise witness joins the chat" },
+      { icon: "🗳️", title: "Start a public poll", detail: "the whole year group votes on your fate" },
+      { icon: "✨", title: "Resurface an old receipt", detail: "fuse a buried Year-9 screenshot into it" },
+    ],
     cta: "Start your own group drama on Zymix",
+    goalShort: "Clear your name & unmask the leaker",
+    crisisMeter: { name: "Group Chat Meltdown", emoji: "🔥" },
+    roleEvents: {
+      Kai: {
+        boon: { line: "Kai drops a screenshot from a folder literally named 'evidence' — the timestamps don't lie.", target: "kai_receipt", coda: "And in the end it was Kai's receipts folder that cleared your name." },
+        chaos: { line: "Kai pastes the WRONG screenshot — your pettiest drafts — and the chat inhales.", target: "messy", coda: "And it was Kai fumbling the wrong screenshot that nearly buried you." },
+      },
+      Mia: {
+        boon: { line: "Mia bursts into tears on camera and posts it to her Story — somehow the whole year group is on your side now.", target: "mia_meltdown", coda: "And it was Mia's on-cue breakdown, filmed in 4K, that turned the crowd." },
+        chaos: { line: "Mia's 'storytime' goes off-script and names three innocent people; it's chaos now.", target: "chaos", coda: "And it was Mia's off-script storytime that nearly torched it." },
+      },
+      Momo: {
+        boon: { line: "Momo types one 'guys, can we actually not' that — miraculously — everyone listens to.", target: "momo_truce", coda: "And somehow it was Momo's billionth 'can we not' that finally landed." },
+        chaos: { line: "Momo tries to mediate and accidentally confirms the worst version of events.", target: "messy", coda: "And it was Momo's peacemaking that accidentally lit the fuse." },
+      },
+    },
+    defaultRoleEvent: {
+      boon: { line: "A quiet lurker finally types — and drops exactly the receipt you needed.", target: "kai_receipt", coda: "And it was the quiet one who turned out to have the receipts." },
+      chaos: { line: "A lurker screenshots everything to another chat and the mess doubles.", target: "chaos", coda: "And it was a silent lurker who quietly made it all worse." },
+    },
   },
 
   // ─── 2. The Ring Light Goes Dark ───────────────────────────────────────────
@@ -217,6 +304,7 @@ export const BRANCHING_STORIES: BranchingStory[] = [
     theme: "The Ring Light Goes Dark",
     emoji: "💡",
     tone: "chaotic but harmless",
+    accent: "#EC4899",
     setup:
       "Your flatmate's 200k-follower brunch empire is collapsing live on stream. The comments smell blood and the brand deals are pulling out.",
     goal: "Save the channel (or its dignity) before brunch cancels it for good.",
@@ -324,6 +412,33 @@ export const BRANCHING_STORIES: BranchingStory[] = [
           { label: "Make peace with smaller", emoji: "📉", onSuccess: "smaller", onFail: "smaller" },
         ],
       },
+      kai_cut: {
+        id: "kai_cut",
+        scene:
+          "Kai drops the unedited raw file side-by-side with the 'leak' — the splice is obvious, the receipts undeniable. The tea pages start quietly deleting.",
+        choices: [
+          { label: "Post the side-by-side", emoji: "🧾", onSuccess: "bridge_uncancelled", onFail: "corner" },
+          { label: "Save it, soft-launch instead", emoji: "🚀", onSuccess: "corner", onFail: "chaos" },
+        ],
+      },
+      mia_live: {
+        id: "mia_live",
+        scene:
+          "Mia's unscripted live peaks — raw, messy, weirdly endearing — and the sentiment flips in real time. Forty thousand are watching her be human.",
+        choices: [
+          { label: "Pin the apology, ride it", emoji: "📌", onSuccess: "bridge_comeback", onFail: "messy" },
+          { label: "Announce a charity stream", emoji: "💚", onSuccess: "bridge_uncancelled", onFail: "chaos" },
+        ],
+      },
+      momo_cheque: {
+        id: "momo_cheque",
+        scene:
+          "Momo posts a calm, corporate 'we stand by our creator' — and suddenly the brand's exit becomes a vote of confidence. The other sponsors un-mute.",
+        choices: [
+          { label: "Sign it live", emoji: "🧾", onSuccess: "bridge_uncancelled", onFail: "corner" },
+          { label: "Leverage it for a bigger deal", emoji: "📈", onSuccess: "bridge_comeback", onFail: "chaos" },
+        ],
+      },
     },
     endings: {
       uncancelled: {
@@ -332,6 +447,7 @@ export const BRANCHING_STORIES: BranchingStory[] = [
           "You post the proof clean, the comments apologise in bulk, and the brand quietly re-signs the cheque. The ring light glows back on like nothing ever happened.",
         title: "Un-Cancelled",
         caption: "the ring light flickers back on",
+        tone: "win",
       },
       comeback: {
         id: "comeback",
@@ -339,6 +455,7 @@ export const BRANCHING_STORIES: BranchingStory[] = [
           "The comeback stream peaks at 40k live and a bigger creator duets her supportively. She's trending — the good kind, for once.",
         title: "Comeback Arc",
         caption: "trending on purpose this time",
+        tone: "win",
       },
       smaller: {
         id: "smaller",
@@ -346,10 +463,37 @@ export const BRANCHING_STORIES: BranchingStory[] = [
           "Followers dip by twelve thousand, but the ones who stayed are unhinged in the best way. Smaller, feral, loyal.",
         title: "Smaller But Feral",
         caption: "lost the numbers, kept the diehards",
+        tone: "mixed",
       },
     },
     common: ["📊 Check the live numbers", "🎬 Post a softer clip", "🙊 Mute the comments"],
+    twists: [
+      { icon: "🎙️", title: "Drop a rival's diss video", detail: "reroute the comeback into a feud" },
+      { icon: "🎭", title: "Bring in a bigger creator", detail: "surprise collab — or a live pile-on" },
+      { icon: "🔥", title: "Leak the brand's exit email", detail: "the stakes spike on stream" },
+      { icon: "✨", title: "Pivot to a new niche", detail: "fuse a fresh content angle into the arc" },
+    ],
     cta: "Start your own creator saga on Zymix",
+    goalShort: "Save the channel before brunch cancels it",
+    crisisMeter: { name: "Cancel Meter", emoji: "📉" },
+    roleEvents: {
+      Kai: {
+        boon: { line: "Kai digs up the raw timeline and finds the clip that proves the 'leak' was edited.", target: "kai_cut", coda: "And it was Kai, who knows where every cut is buried, who proved the leak was faked." },
+        chaos: { line: "Kai accidentally uploads the bloopers reel — the mean outtakes — to the main.", target: "messy", coda: "And it was Kai posting the cursed bloopers that deepened the hole." },
+      },
+      Mia: {
+        boon: { line: "Mia goes live, cries and contours simultaneously, and the comments melt.", target: "mia_live", coda: "And it was Mia crying in HD that brought the followers back." },
+        chaos: { line: "Mia subtweets the brand mid-meltdown and the cheque visibly trembles.", target: "chaos", coda: "And it was Mia's subtweet that nearly cancelled it for good." },
+      },
+      Momo: {
+        boon: { line: "Momo, still holding the cheque, publicly re-confirms the deal — on camera.", target: "momo_cheque", coda: "And it was Momo keeping the cheque on the table that saved the channel." },
+        chaos: { line: "Momo forwards the brand's exit email to the wrong chat. Oops.", target: "chaos", coda: "And it was Momo leaking the exit email that spiked the panic." },
+      },
+    },
+    defaultRoleEvent: {
+      boon: { line: "Even a hater turns — posts an 'okay this was actually fine' that resets the room.", target: "kai_cut", coda: "And it was a reformed hater whose comment turned the tide." },
+      chaos: { line: "A hater pins a brutal supercut and it spreads.", target: "chaos", coda: "And it was one hater's supercut that nearly sank it." },
+    },
   },
 
   // ─── 3. Locked In at Honeycomb ─────────────────────────────────────────────
@@ -358,6 +502,7 @@ export const BRANCHING_STORIES: BranchingStory[] = [
     theme: "Locked In at Honeycomb",
     emoji: "🔒",
     tone: "tense but harmless",
+    accent: "#F59E0B",
     setup:
       "The 60-minute escape room hit zero ten minutes ago. The staff aren't answering. The countdown just... restarted. The walls feel closer.",
     goal: "Find the real exit before the room resets one more time.",
@@ -456,6 +601,33 @@ export const BRANCHING_STORIES: BranchingStory[] = [
           { label: "Sit down, let it reset", emoji: "🪑", onSuccess: "stuck", onFail: "stuck" },
         ],
       },
+      kai_lock: {
+        id: "kai_lock",
+        scene:
+          "Kai lines up the symbols nobody else noticed and the bolt thunks back. A door you hadn't seen swings inward onto a cold service corridor.",
+        choices: [
+          { label: "Follow the corridor out", emoji: "🚪", onSuccess: "bridge_out", onFail: "keys" },
+          { label: "Grab the master keys first", emoji: "🗝️", onSuccess: "keys", onFail: "loop" },
+        ],
+      },
+      mia_hears: {
+        id: "mia_hears",
+        scene:
+          "Everyone shuts up. Under the fake countdown there's traffic — a bus, real rain, the outside world right behind a painted-over panel.",
+        choices: [
+          { label: "Break through the panel", emoji: "🧱", onSuccess: "bridge_out", onFail: "loop" },
+          { label: "Find the seam and pry it", emoji: "💨", onSuccess: "keys", onFail: "trapped" },
+        ],
+      },
+      momo_torch: {
+        id: "momo_torch",
+        scene:
+          "The dying torch beam glints off a recessed hatch in the floor, half under the rug. It wasn't there last loop. It's there now.",
+        choices: [
+          { label: "Drop through the hatch", emoji: "🌀", onSuccess: "bridge_out", onFail: "loop" },
+          { label: "Check it for a trick first", emoji: "🔦", onSuccess: "keys", onFail: "trapped" },
+        ],
+      },
     },
     endings: {
       out: {
@@ -464,6 +636,7 @@ export const BRANCHING_STORIES: BranchingStory[] = [
           "You haul the last door open and there it is — streetlights, drizzle, the ordinary kind of cold. You actually made it out of Honeycomb.",
         title: "Out of Honeycomb",
         caption: "five stars, would not return",
+        tone: "win",
       },
       haunted: {
         id: "haunted",
@@ -471,6 +644,7 @@ export const BRANCHING_STORIES: BranchingStory[] = [
           "You're out, soaked and laughing too loudly — but someone keeps glancing back at the door like it might start counting again.",
         title: "Out, Mostly",
         caption: "nobody's looking at the door",
+        tone: "mixed",
       },
       stuck: {
         id: "stuck",
@@ -478,10 +652,37 @@ export const BRANCHING_STORIES: BranchingStory[] = [
           "The countdown resets one last time and the lights rearrange the room around you. Honeycomb isn't quite done with you yet.",
         title: "Still Inside",
         caption: "the room kept the receipts",
+        tone: "down",
       },
     },
     common: ["🔦 Sweep the room", "📱 Check for a phone signal", "🧍 Regroup with the others"],
+    twists: [
+      { icon: "🧱", title: "Move a wall", detail: "reroute where the only exit is" },
+      { icon: "🎭", title: "Send in a 'staff member'", detail: "a new face — rescue, or part of the trap?" },
+      { icon: "⏱️", title: "Restart the countdown", detail: "the room resets harder, stakes climb" },
+      { icon: "🗝️", title: "Unlock a hidden room", detail: "fuse a whole new path into the maze" },
+    ],
     cta: "Start your own escape on Zymix",
+    goalShort: "Find the real exit before the room resets",
+    crisisMeter: { name: "Room Reset", emoji: "⏱️" },
+    roleEvents: {
+      Kai: {
+        boon: { line: "Kai goes quiet, then clicks the impossible lock open on the first real try.", target: "kai_lock", coda: "And it was Kai cracking the master lock that got everyone out." },
+        chaos: { line: "Kai over-thinks the lock, re-enters the code, and the room resets around you.", target: "loop", coda: "And it was Kai outsmarting himself that triggered another reset." },
+      },
+      Mia: {
+        boon: { line: "Mia freezes — 'shut UP, listen' — and points at the one wall with traffic behind it.", target: "mia_hears", coda: "And it was Mia hearing the night bus through the wall that found the way out." },
+        chaos: { line: "Mia screams and knocks the candle — the only clue — into the dark.", target: "trapped", coda: "And it was Mia's scream that cost you the one clue." },
+      },
+      Momo: {
+        boon: { line: "Momo spends the final 4% of battery on one sweep — and the torch catches a hatch.", target: "momo_torch", coda: "And it was Momo's last 4% of phone battery that lit the way out." },
+        chaos: { line: "Momo's phone dies mid-step and you lose the way back in the black.", target: "loop", coda: "And it was Momo's battery dying at 0% that lost you the path." },
+      },
+    },
+    defaultRoleEvent: {
+      boon: { line: "The one who wandered off reappears — already one room ahead, holding the way out.", target: "kai_lock", coda: "And it was the wanderer, always one room ahead, who'd already found the exit." },
+      chaos: { line: "Someone wanders off again and the door re-locks behind them.", target: "loop", coda: "And it was the wanderer vanishing again that reset the whole thing." },
+    },
   },
 
   // ─── 4. Two Texts, One Group Chat ──────────────────────────────────────────
@@ -490,6 +691,7 @@ export const BRANCHING_STORIES: BranchingStory[] = [
     theme: "Two Texts, One Group Chat",
     emoji: "💔",
     tone: "chaotic but harmless",
+    accent: "#F43F5E",
     setup:
       "You sent 'I think I like you' to the wrong person in the group chat. It's ticked blue. Three people are typing.",
     goal: "Survive the love triangle without losing the friendship or the situationship.",
@@ -597,6 +799,33 @@ export const BRANCHING_STORIES: BranchingStory[] = [
           { label: "Leave it gloriously undefined", emoji: "❓", onSuccess: "complicated", onFail: "complicated" },
         ],
       },
+      kai_replies: {
+        id: "kai_replies",
+        scene:
+          "Three dots from Kai, for a long time. Then a paragraph — genuinely, no 'haha' in sight. The whole chat holds its breath.",
+        choices: [
+          { label: "Answer it honestly", emoji: "💗", onSuccess: "bridge_official", onFail: "triangle" },
+          { label: "Take it to DMs", emoji: "📩", onSuccess: "close", onFail: "spiral" },
+        ],
+      },
+      mia_blessing: {
+        id: "mia_blessing",
+        scene:
+          "Mia's 'honestly? good for them x' lands with zero shade, and the chat exhales. The triangle just lost a corner — cleanly, kindly.",
+        choices: [
+          { label: "Thank her, move forward", emoji: "🕊️", onSuccess: "bridge_official", onFail: "close" },
+          { label: "Make the move now", emoji: "💘", onSuccess: "close", onFail: "triangle" },
+        ],
+      },
+      momo_wingman: {
+        id: "momo_wingman",
+        scene:
+          "Momo slides you a one-line script and a 'trust me'. It's perfect — the kind of thing only someone who's known you for years could write.",
+        choices: [
+          { label: "Send it word for word", emoji: "💌", onSuccess: "bridge_official", onFail: "close" },
+          { label: "Make it your own", emoji: "✍️", onSuccess: "close", onFail: "triangle" },
+        ],
+      },
     },
     endings: {
       official: {
@@ -605,6 +834,7 @@ export const BRANCHING_STORIES: BranchingStory[] = [
           "You make it official, the group chat completely loses it, and even the ex types 'cute x' and means it. Hard launch, 200 likes, friendship intact — a genuinely rare W.",
         title: "Hard Launch",
         caption: "feelings caught, friends kept",
+        tone: "win",
       },
       friends: {
         id: "friends",
@@ -612,6 +842,7 @@ export const BRANCHING_STORIES: BranchingStory[] = [
           "You pick peace over being right, and somehow that's the most romantic thing you've done all night. No label, but the friendship's bulletproof.",
         title: "Chose Peace",
         caption: "no label, all heart",
+        tone: "mixed",
       },
       complicated: {
         id: "complicated",
@@ -619,10 +850,37 @@ export const BRANCHING_STORIES: BranchingStory[] = [
           "It's unlabelled, unresolved, and everyone's still in the chat at 2am typing 'haha'. Could honestly be worse.",
         title: "Read 23:59",
         caption: "complicated, but online",
+        tone: "down",
       },
     },
     common: ["📱 Re-read the messages", "👀 See who's typing", "🫥 Send a vague 'haha'"],
+    twists: [
+      { icon: "📸", title: "Send a fake screenshot", detail: "reroute who knows what about who" },
+      { icon: "🎭", title: "Add the ex's new crush", detail: "the triangle grows another corner" },
+      { icon: "🔥", title: "Leak the DMs to the gc", detail: "the stakes go fully nuclear" },
+      { icon: "✨", title: "Resurface an old voice note", detail: "fuse a new feelings thread into it" },
+    ],
     cta: "Start your own situationship saga on Zymix",
+    goalShort: "Survive the triangle, keep the friendship",
+    crisisMeter: { name: "Drama Meter", emoji: "💔" },
+    roleEvents: {
+      Kai: {
+        boon: { line: "Kai — who only ever sends 'haha' — types a full, terrifying, real sentence.", target: "kai_replies", coda: "And it was Kai breaking the 'haha' streak with actual words that made it real." },
+        chaos: { line: "Kai replies 'haha' to your feelings. Just 'haha'. The spiral begins.", target: "spiral", coda: "And it was Kai's single 'haha' that sent it all spiralling." },
+      },
+      Mia: {
+        boon: { line: "Mia, the ex, posts 'honestly? good for them x' — and means it.", target: "mia_blessing", coda: "And it was the ex's blessing that cleared the runway." },
+        chaos: { line: "Mia, the ex, screenshots it to her own chat and the triangle grows a corner.", target: "triangle", coda: "And it was the ex's screenshot that widened the triangle." },
+      },
+      Momo: {
+        boon: { line: "Momo, who knew before you did, quietly tells you exactly what to say.", target: "momo_wingman", coda: "And it was Momo, who knew all along, who wingmanned it home." },
+        chaos: { line: "Momo accidentally tells the wrong person, and now everyone knows.", target: "spiral", coda: "And it was Momo's slip that made it everyone's business." },
+      },
+    },
+    defaultRoleEvent: {
+      boon: { line: "The witness, popcorn down for once, says the one true thing that helps.", target: "kai_replies", coda: "And it was the quiet witness who finally said the useful thing." },
+      chaos: { line: "The witness narrates the whole thing to another chat, live.", target: "triangle", coda: "And it was the witness live-tweeting it that blew it up." },
+    },
   },
 ];
 

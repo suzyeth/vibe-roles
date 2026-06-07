@@ -20,7 +20,10 @@ import {
   getEnding,
   isEnding,
   advance,
+  selectTeammateEvent,
+  pickPivotalEvent,
 } from '@/lib/branchingEngine';
+import type { LoggedEvent } from '@/lib/branchingEngine';
 import type { BranchingStory } from '@/data/branchingStories';
 
 const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -50,6 +53,37 @@ const ROAST = [
   "i'm looking away",
   'bro had ONE job',
 ];
+
+/** One DM line that makes You's choice + roll legible before the next scene. */
+function causalBridge(
+  choiceLabel: string,
+  roll: number,
+  swing?: { actorName: string; kind: 'boon' | 'chaos' },
+): string {
+  const landed = roll >= 11 ? 'and it lands' : 'and it slips';
+  let line = `You went with "${choiceLabel}" (${roll}) — ${landed}.`;
+  if (swing) line += ` Then ${swing.actorName} ${swing.kind === 'boon' ? 'swings it your way' : 'sends it sideways'}.`;
+  return line;
+}
+
+/** Ending card shows at most two turning points: the pivotal event first, then the
+ *  next most-recent distinct one. Dedupes repeated event lines so reruns of the
+ *  same teammate beat don't flood the card. */
+function topEvents(
+  log: LoggedEvent[],
+): Array<{ actorName: string; role: string; kind: 'boon' | 'chaos'; line: string }> {
+  const pivotal = pickPivotalEvent(log);
+  const seen = new Set<string>();
+  const out: LoggedEvent[] = [];
+  if (pivotal) { out.push(pivotal); seen.add(pivotal.line); }
+  for (const e of [...log].reverse()) {
+    if (out.length >= 2) break;
+    if (seen.has(e.line)) continue;
+    seen.add(e.line);
+    out.push(e);
+  }
+  return out.slice(0, 2).map((e) => ({ actorName: e.actorName, role: e.role, kind: e.kind, line: e.line }));
+}
 
 const clampTension = (n: number) => Math.max(0, Math.min(100, n));
 
@@ -109,7 +143,7 @@ export interface GameState {
   round: number;
   lastRoll: { roll: number; label: string } | null;
   fateCards: Array<{ type: string; title: string; effect: string }>;
-  questCard: { title: string; caption: string; best_interference: string; final_roll: number; cta: string; epilogue?: string; highlight?: string; marks?: Array<{ kind: 'boon' | 'scar'; text: string }> } | null;
+  questCard: { title: string; caption: string; best_interference: string; final_roll: number; cta: string; epilogue?: string; highlight?: string; marks?: Array<{ kind: 'boon' | 'scar'; text: string }>; tone?: 'win' | 'mixed' | 'down'; theme?: string; events?: Array<{ actorName: string; role: string; kind: 'boon' | 'chaos'; line: string }>; pivotal?: { actorName: string; kind: 'boon' | 'chaos'; coda: string } | null } | null;
   shareUrl: string;
 
   /** Team turn system: index of the current actor in the players array */
@@ -135,6 +169,11 @@ export interface GameState {
   helpTokens: number;
   /** Earned marks: nat-20 boons and nat-1 scars, shown on the ending card. */
   marks: Array<{ kind: 'boon' | 'scar'; text: string }>;
+
+  /** Teammate events that fired this run (for the ending card recap). */
+  eventLog: LoggedEvent[];
+  /** Last meaningful tension change (from You's action), for meter microcopy. */
+  lastTensionDelta: number;
 }
 
 const initialState: GameState = {
@@ -159,6 +198,8 @@ const initialState: GameState = {
   tension: 35,
   helpTokens: 2,
   marks: [],
+  eventLog: [],
+  lastTensionDelta: 0,
 };
 
 export function useGameState() {
@@ -289,6 +330,7 @@ export function useGameState() {
       actorResults: [...s.actorResults, result],
       gameMoments: [...s.gameMoments, moment],
       tension: clampTension(s.tension + tDelta),
+      lastTensionDelta: isYou ? tDelta : s.lastTensionDelta,
       marks: newMark ? [...s.marks, newMark] : s.marks,
     }));
 
@@ -306,7 +348,7 @@ export function useGameState() {
       await delay(1000);
       setState((s) => ({
         ...s,
-        questCard: { title: 'It All Fell Apart', caption: 'too much chaos, too fast', epilogue: epi, highlight: '', best_interference: '', final_roll: d.value, cta: story.cta, marks: s.marks },
+        questCard: { title: 'It All Fell Apart', caption: 'too much chaos, too fast', epilogue: epi, highlight: '', best_interference: '', final_roll: d.value, cta: story.cta, marks: s.marks, tone: 'down', theme: story.theme, events: s.eventLog.map((e) => ({ actorName: e.actorName, role: e.role, kind: e.kind, line: e.line })), pivotal: (() => { const p = pickPivotalEvent(s.eventLog); return p ? { actorName: p.actorName, kind: p.kind, coda: p.coda } : null; })() },
         phase: 'ended',
       }));
       return;
@@ -336,18 +378,62 @@ export function useGameState() {
     story: BranchingStory,
     lastResult: ActorResult,
   ) => {
-    // For now, use the protagonist's ("You") choice to determine the branch
-    // TODO: Implement more sophisticated team result aggregation
+    // You's choice sets the baseline branch; a teammate event can reroute it.
     const youResult = state.actorResults.find((r) => r.actorName === 'You') ?? lastResult;
 
     const node = getNode(story, state.nodeId);
     if (!node) return;
 
-    const { nextId: nextNodeId } = advance(story, state.nodeId, youResult.choiceIndex, youResult.roll);
+    // Teammate (non-You) rolls → pick at most one event for the round.
+    const roleOf = (name: string) => state.players.find((p) => p.name === name)?.role ?? name;
+    const teammateRolls = state.actorResults
+      .filter((r) => r.actorName !== 'You')
+      .map((r) => ({ name: r.actorName, role: roleOf(r.actorName), roll: r.roll }));
+    const selected = selectTeammateEvent(story, teammateRolls);
+
+    const { nextId: nextNodeId } = advance(
+      story,
+      state.nodeId,
+      youResult.choiceIndex,
+      youResult.roll,
+      selected?.event.target,
+    );
 
     await delay(300);
     setState((s) => ({ ...s, narratorTyping: true }));
     await delay(900);
+
+    // Causal bridge — every turn — then the event line if one fired.
+    const bridge = causalBridge(
+      youResult.choiceLabel,
+      youResult.roll,
+      selected ? { actorName: selected.actorName, kind: selected.kind } : undefined,
+    );
+    setState((s) => ({
+      ...s,
+      messages: [...s.messages, { id: nextId(), author: 'DM', avatar: '🎬', text: bridge, kind: 'narration' as const }],
+    }));
+    let loggedEvents = state.eventLog;
+    if (selected) {
+      const entry: LoggedEvent = {
+        round: state.round,
+        actorName: selected.actorName,
+        role: selected.role,
+        kind: selected.kind,
+        line: selected.event.line,
+        coda: selected.event.coda,
+        fromNode: state.nodeId,
+        toNode: selected.event.target,
+      };
+      loggedEvents = [...state.eventLog, entry];
+      await delay(250);
+      setState((s) => ({
+        ...s,
+        eventLog: loggedEvents,
+        messages: [...s.messages, { id: nextId(), author: 'DM', avatar: '🎬', text: selected.event.line, kind: 'narration' as const }],
+      }));
+      await delay(250);
+    }
 
     // Prevent abrupt endings by enforcing minimum rounds
     let finalNodeId = nextNodeId;
@@ -411,16 +497,24 @@ export function useGameState() {
       await delay(1100);
       setState((s) => ({
         ...s,
-        questCard: {
-          title: ending.title,
-          caption: ending.caption,
-          epilogue: ending.scene,
-          highlight: highlight || journeyHighlights,
-          best_interference: `MVP: ${mvpName} (${mvpScore} total) • ${stats.criticalSuccess} nat20s • ${stats.criticalFailure} nat1s`,
-          final_roll: youResult.roll,
-          cta: story.cta,
-          marks: s.marks,
-        },
+        questCard: (() => {
+          const pivotal = pickPivotalEvent(loggedEvents);
+          const epilogue = pivotal ? `${ending.scene} ${pivotal.coda}` : ending.scene;
+          return {
+            title: ending.title,
+            caption: ending.caption,
+            epilogue,
+            highlight: highlight || journeyHighlights,
+            best_interference: `${pivotal ? `Swung by ${pivotal.actorName} • ` : ''}MVP: ${mvpName} (${mvpScore} total) • ${stats.criticalSuccess} nat20s • ${stats.criticalFailure} nat1s`,
+            final_roll: youResult.roll,
+            cta: story.cta,
+            marks: s.marks,
+            tone: ending.tone,
+            theme: story.theme,
+            events: loggedEvents.map((e) => ({ actorName: e.actorName, role: e.role, kind: e.kind, line: e.line })),
+            pivotal: pivotal ? { actorName: pivotal.actorName, kind: pivotal.kind, coda: pivotal.coda } : null,
+          };
+        })(),
         phase: 'ended',
       }));
     } else {
@@ -437,7 +531,7 @@ export function useGameState() {
         roundComplete: false,
       }));
     }
-  }, [state.nodeId, state.actorResults, state.round]);
+  }, [state.nodeId, state.actorResults, state.round, state.players, state.eventLog]);
 
   const resetGame = useCallback(() => {
     storyRef.current = null;

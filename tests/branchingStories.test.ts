@@ -12,6 +12,19 @@ describe("branching stories — structural integrity", () => {
         expect(nodeIds.has(story.start)).toBe(true);
       });
 
+      it("has a hex accent colour", () => {
+        expect(story.accent).toMatch(/^#[0-9a-fA-F]{6}$/);
+      });
+
+      it("has themed twist examples for the invite sheet", () => {
+        expect(story.twists.length).toBeGreaterThanOrEqual(3);
+        for (const tw of story.twists) {
+          expect(tw.icon, "twist icon").toBeTruthy();
+          expect(tw.title, "twist title").toBeTruthy();
+          expect(tw.detail, "twist detail").toBeTruthy();
+        }
+      });
+
       it("every node has exactly 2 choices with valid targets", () => {
         for (const [id, node] of Object.entries(story.nodes)) {
           expect(node.id, `node ${id} id mismatch`).toBe(id);
@@ -28,9 +41,15 @@ describe("branching stories — structural integrity", () => {
         expect(leftover).toEqual([]);
       });
 
-      it("every node is reachable from start", () => {
+      it("every node is reachable from start (or via a teammate event)", () => {
         const seen = new Set<string>();
-        const stack = [story.start];
+        // Teammate-event nodes are entered via the event-reroute mechanism, not the
+        // choice graph — seed the traversal with those entry points too.
+        const eventTargets = [
+          ...Object.values(story.roleEvents),
+          story.defaultRoleEvent,
+        ].flatMap((re) => [re.boon.target, re.chaos.target]);
+        const stack = [story.start, ...eventTargets];
         while (stack.length) {
           const id = stack.pop()!;
           if (seen.has(id) || endingIds.has(id)) continue;

@@ -20,7 +20,9 @@
   --zymix-green-light: #E8F8EE;
   --zymix-green-dark: #17a347;
   --zymix-bubble-sent: #1DB954;
-  --zymix-bubble-received: #FFFFFF;
+  /* Received bubbles stay near-white but a touch softer than pure-white cards,
+   * so they read as bubbles and still lift off the grey page bg below. */
+  --zymix-bubble-received: #FCFCFD;
 
   /* Fate / interference accent (purple) */
   --zymix-fate: #7C3AED;
@@ -32,11 +34,12 @@
   --zymix-text-tertiary: #999999;
   --zymix-text-on-green: #FFFFFF;
 
-  /* Surfaces */
-  --zymix-bg: #F5F5F5;
+  /* Surfaces — page bg is a clear grey so every white element (cards, buttons,
+   * sheets, bubbles) lifts off it; borders are firm enough to read as edges. */
+  --zymix-bg: #E6E8EC;
   --zymix-surface: #FFFFFF;
-  --zymix-divider: #F0F0F0;
-  --zymix-border: #E8E8E8;
+  --zymix-divider: #DCDFE5;
+  --zymix-border: #CFD4DC;
 
   /* Radius */
   --radius-bubble: 18px;
@@ -99,7 +102,8 @@ body {
     box-shadow: 0 2px 8px rgba(29,185,84,0.25);
   }
 
-  /* Chat Bubble — Received (left, white) */
+  /* Chat Bubble — Received (left). Hairline border + a slightly firmer shadow
+   * so a near-white bubble still reads clearly on the light-grey canvas. */
   .bubble-received {
     background: var(--zymix-bubble-received);
     color: var(--zymix-text-primary);
@@ -109,7 +113,8 @@ body {
     font-size: 15px;
     line-height: 1.4;
     word-break: break-word;
-    box-shadow: var(--shadow-card);
+    border: 1px solid var(--zymix-border);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
   }
 
   /* Bottom Sheet (Mini App style) */
@@ -257,9 +262,18 @@ body {
 /* ── Choice / chat composer (polished) ─────────────────────────────────────── */
 .rc-sheet {
   background: var(--zymix-surface);
-  border-top: 1px solid var(--zymix-divider);
-  box-shadow: 0 -6px 24px rgba(0,0,0,0.06);
-  border-radius: 18px 18px 0 0;
+  /* No hard border line — the white sheet already sits on the grey canvas; a
+   * soft upward shadow gives a gentle lift instead of a harsh seam. */
+  box-shadow: 0 -10px 28px -12px rgba(0,0,0,0.12);
+  border-radius: 20px 20px 0 0;
+}
+/* Little grabber bar that signals a draggable bottom sheet. */
+.rc-sheet-grabber {
+  width: 38px;
+  height: 4px;
+  border-radius: 9999px;
+  background: var(--zymix-border);
+  margin: 2px auto 12px;
 }
 .rc-label {
   font-size: 11px;
@@ -272,28 +286,32 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 9px 15px;
+  padding: 10px 16px;
   border-radius: 9999px;
   font-size: 14px;
   font-weight: 500;
   line-height: 1.25;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: transform 0.1s ease, box-shadow 0.18s ease, filter 0.18s ease, border-color 0.18s ease;
+  transition: transform 0.1s ease, box-shadow 0.18s ease, filter 0.18s ease, border-color 0.18s ease, background 0.18s ease;
 }
-.rc-chip:hover { filter: brightness(1.04); }
+.rc-chip:hover { filter: brightness(1.02); }
 .rc-chip:active { transform: scale(0.96); }
+/* Primary "your move" branches — pale green fill + solid green outline so they
+ * clearly read as the main tappable actions. */
 .rc-chip-special {
   background: var(--zymix-green-light);
-  color: var(--zymix-green);
+  color: var(--zymix-green-dark);
   font-weight: 600;
-  box-shadow: 0 1px 3px rgba(29,185,84,0.20);
+  border-color: var(--zymix-green);
+  box-shadow: 0 1px 4px rgba(29,185,84,0.22);
 }
+.rc-chip-special:hover { background: var(--zymix-green); color: #fff; border-color: var(--zymix-green); }
+/* Secondary "common" actions — a grey pill that stands off the white sheet. */
 .rc-chip-common {
-  background: var(--zymix-surface);
+  background: var(--zymix-bg);
   color: var(--zymix-text-secondary);
   border-color: var(--zymix-border);
-  box-shadow: var(--shadow-card);
 }
 .rc-chip-common:hover { color: var(--zymix-text-primary); border-color: var(--zymix-text-tertiary); }
 .rc-composer-input {

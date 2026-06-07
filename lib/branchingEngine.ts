@@ -12,6 +12,7 @@ import {
   type BranchNode,
   type BranchEnding,
   type BranchChoice,
+  type RoleEvent,
 } from "@/data/branchingStories";
 import type { Player } from "@/lib/schema";
 import { clampD20 } from "@/lib/dice";
@@ -70,12 +71,14 @@ export function advance(
   nodeId: string,
   choiceIndex: number,
   roll: number,
+  eventTarget?: string,
 ): { nextId: string; success: boolean } {
   const node = story.nodes[nodeId];
   if (!node) return { nextId: nodeId, success: false };
   const i = Math.max(0, Math.min(Math.floor(choiceIndex), node.choices.length - 1));
   const choice = node.choices[i];
   const success = clampD20(roll) >= WIN_THRESHOLD;
+  if (eventTarget) return { nextId: eventTarget, success };
   return { nextId: success ? choice.onSuccess : choice.onFail, success };
 }
 
@@ -103,4 +106,75 @@ export function getChoicesForActor(
 ): Array<{ label: string; emoji?: string }> {
   const choices = getRoleSpecificChoices(story, nodeId, actorName);
   return choices.map((c) => ({ label: c.label, emoji: c.emoji }));
+}
+
+/** A teammate roll considered for event selection. */
+export interface TeammateRoll {
+  name: string;
+  role: string;
+  roll: number;
+}
+
+/** The event chosen for a round (or null if none fired). */
+export interface SelectedTeammateEvent {
+  actorName: string;
+  role: string;
+  kind: "boon" | "chaos";
+  event: RoleEvent;
+}
+
+/** A teammate roll at/above this fires that member's boon event. */
+export const BOON_THRESHOLD = 15;
+/** A teammate roll at/below this fires that member's chaos event (if no boon). */
+export const CHAOS_THRESHOLD = 6;
+
+/**
+ * Pick at most one teammate event for the round from the teammates' rolls.
+ * Boon (highest roll >= BOON_THRESHOLD) wins; else chaos (lowest <= CHAOS_THRESHOLD);
+ * else null. The member's `roleEvents[name]` resolves the event, falling back to
+ * `defaultRoleEvent` for unknown members.
+ */
+export function selectTeammateEvent(
+  story: BranchingStory,
+  rolls: TeammateRoll[],
+): SelectedTeammateEvent | null {
+  const eventsFor = (name: string) => story.roleEvents[name] ?? story.defaultRoleEvent;
+
+  const boons = rolls.filter((r) => clampD20(r.roll) >= BOON_THRESHOLD);
+  if (boons.length) {
+    const top = boons.reduce((b, r) => (r.roll > b.roll ? r : b));
+    return { actorName: top.name, role: top.role, kind: "boon", event: eventsFor(top.name).boon };
+  }
+
+  const chaoses = rolls.filter((r) => clampD20(r.roll) <= CHAOS_THRESHOLD);
+  if (chaoses.length) {
+    const low = chaoses.reduce((b, r) => (r.roll < b.roll ? r : b));
+    return { actorName: low.name, role: low.role, kind: "chaos", event: eventsFor(low.name).chaos };
+  }
+
+  return null;
+}
+
+/** A teammate event that actually fired during a run (for the ending card). */
+export interface LoggedEvent {
+  round: number;
+  actorName: string;
+  role: string;
+  kind: "boon" | "chaos";
+  line: string;
+  coda: string;
+  fromNode: string;
+  toNode: string;
+}
+
+/**
+ * The single most impactful event of a run: a boon beats a chaos; among the same
+ * kind the latest one wins (closest to the ending it led into). Null if empty.
+ */
+export function pickPivotalEvent(log: LoggedEvent[]): LoggedEvent | null {
+  if (!log.length) return null;
+  const latest = (arr: LoggedEvent[]) => arr.reduce((b, e) => (e.round >= b.round ? e : b));
+  const boons = log.filter((e) => e.kind === "boon");
+  if (boons.length) return latest(boons);
+  return latest(log);
 }
