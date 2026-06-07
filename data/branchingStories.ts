@@ -55,6 +55,10 @@ export interface BranchingStory {
   intro: string;
   /** Global gossip pool — AI members rotate through these as flavour. */
   reactions: string[];
+  /** Story-themed universal actions — the grey "common" option group, shown
+   *  alongside each node's role-specific branches. They resolve along the
+   *  node's baseline branch. */
+  common: string[];
   /** Where the story begins. */
   start: string;
   nodes: Record<string, BranchNode>;
@@ -133,8 +137,8 @@ export const BRANCHING_STORIES: BranchingStory[] = [
         scene:
           "A cropped screenshot gives the leaker away — cropping, as everyone now agrees, IS lying. You've got them cornered; the whole chat is watching what you do with it.",
         choices: [
-          { label: "Post the final receipt", emoji: "🧾", onSuccess: "cleared", onFail: "fizzle" },
-          { label: "Offer them a truce", emoji: "🤝", onSuccess: "truce", onFail: "fizzle" },
+          { label: "Post the final receipt", emoji: "🧾", onSuccess: "bridge_cleared", onFail: "bridge_fizzle" },
+          { label: "Offer them a truce", emoji: "🤝", onSuccess: "bridge_truce", onFail: "bridge_fizzle" },
         ],
       },
       chaos: {
@@ -142,8 +146,35 @@ export const BRANCHING_STORIES: BranchingStory[] = [
         scene:
           "It's fully feral now — three side-chats, a screenshot of a screenshot, and nobody sober enough to stop it. There's one narrow window to turn the mood before the flat splits for good.",
         choices: [
-          { label: "Salvage it with one joke", emoji: "😂", onSuccess: "truce", onFail: "fizzle" },
-          { label: "Burn the whole thing down", emoji: "🔥", onSuccess: "fizzle", onFail: "fizzle" },
+          { label: "Salvage it with one joke", emoji: "😂", onSuccess: "bridge_truce", onFail: "bridge_fizzle" },
+          { label: "Burn the whole thing down", emoji: "🔥", onSuccess: "bridge_fizzle", onFail: "bridge_fizzle" },
+        ],
+      },
+      bridge_cleared: {
+        id: "bridge_cleared",
+        scene:
+          "The final receipt is ready — one post ends it. But as your thumb hovers over send, you pause. This isn't just about winning anymore. It's about what kind of flat you want when the dust settles.",
+        choices: [
+          { label: "Send it, end it clean", emoji: "🧾", onSuccess: "cleared", onFail: "truce" },
+          { label: "Hold, give them a chance", emoji: "🤝", onSuccess: "truce", onFail: "fizzle" },
+        ],
+      },
+      bridge_truce: {
+        id: "bridge_truce",
+        scene:
+          "The truce message is typed out — one click could end the war. But part of you wonders if peace is worth the price of letting it slide. The group chat waits, not breathing.",
+        choices: [
+          { label: "Send the truce", emoji: "🤝", onSuccess: "truce", onFail: "fizzle" },
+          { label: "Back away, stay unresolved", emoji: "🫥", onSuccess: "fizzle", onFail: "fizzle" },
+        ],
+      },
+      bridge_fizzle: {
+        id: "bridge_fizzle",
+        scene:
+          "The chat's a mess and nobody's winning. You could walk away right now — just mute, disappear, let it all drift into nothing. Or you could try one last time to pull something from the wreckage.",
+        choices: [
+          { label: "Try one last save", emoji: "😅", onSuccess: "truce", onFail: "fizzle" },
+          { label: "Let it fade out", emoji: "🫥", onSuccess: "fizzle", onFail: "fizzle" },
         ],
       },
     },
@@ -170,6 +201,7 @@ export const BRANCHING_STORIES: BranchingStory[] = [
         caption: "no verdict, just vibes",
       },
     },
+    common: ["📸 Pull up a screenshot", "🗳️ Ask the chat to weigh in", "🤐 Say nothing, let it cook"],
     cta: "Start your own group drama on Zymix",
   },
 
@@ -243,8 +275,8 @@ export const BRANCHING_STORIES: BranchingStory[] = [
         scene:
           "You trace the original 'leak' to a rival tea page and you've got the receipts. One clean post could flip the entire narrative in your favour.",
         choices: [
-          { label: "Post the proof", emoji: "🧾", onSuccess: "uncancelled", onFail: "smaller" },
-          { label: "Soft-launch the comeback", emoji: "🚀", onSuccess: "comeback", onFail: "smaller" },
+          { label: "Post the proof", emoji: "🧾", onSuccess: "bridge_uncancelled", onFail: "bridge_smaller" },
+          { label: "Soft-launch the comeback", emoji: "🚀", onSuccess: "bridge_comeback", onFail: "bridge_smaller" },
         ],
       },
       chaos: {
@@ -252,8 +284,35 @@ export const BRANCHING_STORIES: BranchingStory[] = [
         scene:
           "The lore is expanding faster than the follower count is shrinking. There's one pivot left before the brand walks for good.",
         choices: [
-          { label: "Pivot niche + thank the haters", emoji: "🌱", onSuccess: "comeback", onFail: "smaller" },
-          { label: "Do a full tell-all", emoji: "🎙️", onSuccess: "smaller", onFail: "smaller" },
+          { label: "Pivot niche + thank the haters", emoji: "🌱", onSuccess: "bridge_comeback", onFail: "bridge_smaller" },
+          { label: "Do a full tell-all", emoji: "🎙️", onSuccess: "bridge_smaller", onFail: "bridge_smaller" },
+        ],
+      },
+      bridge_uncancelled: {
+        id: "bridge_uncancelled",
+        scene:
+          "The proof is loaded — one tweet and the narrative flips. But as you stare at the post button, you realise what comes after. The follow-up. The expectations. Can you actually deliver?",
+        choices: [
+          { label: "Post it, own the moment", emoji: "🧾", onSuccess: "uncancelled", onFail: "comeback" },
+          { label: "Hold back, rebuild slowly", emoji: "🌱", onSuccess: "comeback", onFail: "smaller" },
+        ],
+      },
+      bridge_comeback: {
+        id: "bridge_comeback",
+        scene:
+          "The comeback stream is queued, the thumbnail's perfect. But something in you hesitates. Is this the real you, or just what they want to see?",
+        choices: [
+          { label: "Go live, be the moment", emoji: "🎬", onSuccess: "comeback", onFail: "smaller" },
+          { label: "Cancel, stay real", emoji: "🔒", onSuccess: "smaller", onFail: "smaller" },
+        ],
+      },
+      bridge_smaller: {
+        id: "bridge_smaller",
+        scene:
+          "The follower count keeps dropping. You could chase the numbers again — pivot, collab, perform. Or you could accept smaller and make it mean something.",
+        choices: [
+          { label: "Fight for the comeback", emoji: "⚔️", onSuccess: "comeback", onFail: "smaller" },
+          { label: "Embrace the decline", emoji: "📉", onSuccess: "smaller", onFail: "smaller" },
         ],
       },
     },
@@ -280,6 +339,7 @@ export const BRANCHING_STORIES: BranchingStory[] = [
         caption: "lost the numbers, kept the diehards",
       },
     },
+    common: ["📊 Check the live numbers", "🎬 Post a softer clip", "🙊 Mute the comments"],
     cta: "Start your own creator saga on Zymix",
   },
 
@@ -344,8 +404,8 @@ export const BRANCHING_STORIES: BranchingStory[] = [
         scene:
           "The vent drops you into the empty staff room — no people, but the master keys are right there on the hook, swinging slightly.",
         choices: [
-          { label: "Try the final lock", emoji: "🗝️", onSuccess: "out", onFail: "haunted" },
-          { label: "Trace the wiring first", emoji: "🔌", onSuccess: "out", onFail: "haunted" },
+          { label: "Try the final lock", emoji: "🗝️", onSuccess: "bridge_out", onFail: "bridge_haunted" },
+          { label: "Trace the wiring first", emoji: "🔌", onSuccess: "bridge_out", onFail: "bridge_haunted" },
         ],
       },
       loop: {
@@ -353,8 +413,35 @@ export const BRANCHING_STORIES: BranchingStory[] = [
         scene:
           "The door swings open onto the very first room again, the candle still lit exactly as you left it. You've been here before. Keep your nerve.",
         choices: [
-          { label: "Keep nerve, find the hatch", emoji: "🧊", onSuccess: "out", onFail: "stuck" },
-          { label: "Smash straight through the wall", emoji: "🧱", onSuccess: "haunted", onFail: "stuck" },
+          { label: "Keep nerve, find the hatch", emoji: "🧊", onSuccess: "bridge_out", onFail: "bridge_stuck" },
+          { label: "Smash straight through the wall", emoji: "🧱", onSuccess: "bridge_haunted", onFail: "bridge_stuck" },
+        ],
+      },
+      bridge_out: {
+        id: "bridge_out",
+        scene:
+          "The final door clicks under your hand. You can see the streetlights through the glass. But something makes you pause — what if this is another loop?",
+        choices: [
+          { label: "Push through, trust it's real", emoji: "🚪", onSuccess: "out", onFail: "haunted" },
+          { label: "Wait, listen for the room", emoji: "👂", onSuccess: "haunted", onFail: "stuck" },
+        ],
+      },
+      bridge_haunted: {
+        id: "bridge_haunted",
+        scene:
+          "You're inches from freedom, but your hands won't stop shaking. The room's reset itself three times. How do you know this door leads anywhere?",
+        choices: [
+          { label: "Trust your gut, walk out", emoji: "🚶", onSuccess: "haunted", onFail: "stuck" },
+          { label: "Stay inside, refuse to leave", emoji: "🏠", onSuccess: "stuck", onFail: "stuck" },
+        ],
+      },
+      bridge_stuck: {
+        id: "bridge_stuck",
+        scene:
+          "The timer's hit triple digits and the walls are definitely closer. You've been here so long you've started forgetting what outside looks like. Maybe that's the point.",
+        choices: [
+          { label: "One final escape attempt", emoji: "💪", onSuccess: "out", onFail: "stuck" },
+          { label: "Accept it, sit down", emoji: "🪑", onSuccess: "stuck", onFail: "stuck" },
         ],
       },
     },
@@ -381,6 +468,7 @@ export const BRANCHING_STORIES: BranchingStory[] = [
         caption: "the room kept the receipts",
       },
     },
+    common: ["🔦 Sweep the room", "📱 Check for a phone signal", "🧍 Regroup with the others"],
     cta: "Start your own escape on Zymix",
   },
 
@@ -454,8 +542,8 @@ export const BRANCHING_STORIES: BranchingStory[] = [
         scene:
           "Off the record, the feeling's mutual — a hand brush, a held glance, a silence that says everything. It's giving.",
         choices: [
-          { label: "Make it official", emoji: "💍", onSuccess: "official", onFail: "complicated" },
-          { label: "Soft-launch it", emoji: "📸", onSuccess: "official", onFail: "complicated" },
+          { label: "Make it official", emoji: "💍", onSuccess: "bridge_official", onFail: "bridge_complicated" },
+          { label: "Soft-launch it", emoji: "📸", onSuccess: "bridge_official", onFail: "bridge_complicated" },
         ],
       },
       triangle: {
@@ -463,8 +551,35 @@ export const BRANCHING_STORIES: BranchingStory[] = [
         scene:
           "Screenshots are flying between three group chats and your love life is officially a spectator sport. One move left to land this.",
         choices: [
-          { label: "Pick peace, stay real friends", emoji: "🕊️", onSuccess: "friends", onFail: "complicated" },
-          { label: "Let the gc hold a vote", emoji: "🗳️", onSuccess: "complicated", onFail: "complicated" },
+          { label: "Pick peace, stay real friends", emoji: "🕊️", onSuccess: "bridge_friends", onFail: "bridge_complicated" },
+          { label: "Let the gc hold a vote", emoji: "🗳️", onSuccess: "bridge_complicated", onFail: "bridge_complicated" },
+        ],
+      },
+      bridge_official: {
+        id: "bridge_official",
+        scene:
+          "The 'official' post is drafted, caption and everything. But as you stare at the button, you realise — once you post this, there's no going back. The chat, the friendship, the situationship — everything changes.",
+        choices: [
+          { label: "Post it, go all in", emoji: "💍", onSuccess: "official", onFail: "complicated" },
+          { label: "Delete, keep it vague", emoji: "🫥", onSuccess: "complicated", onFail: "complicated" },
+        ],
+      },
+      bridge_friends: {
+        id: "bridge_friends",
+        scene:
+          "You could choose peace — stay friends, pretend the feelings never happened. But the situationship keeps typing 'haha' and part of you wonders if you're settling.",
+        choices: [
+          { label: "Choose friendship, for real", emoji: "🕊️", onSuccess: "friends", onFail: "complicated" },
+          { label: "Risk it, admit the feelings", emoji: "💘", onSuccess: "official", onFail: "complicated" },
+        ],
+      },
+      bridge_complicated: {
+        id: "bridge_complicated",
+        scene:
+          "Three group chats, five screenshots, and nobody knows what's real anymore. You could end it now — call it, label it, or delete it. Or you could let it stay beautifully messy.",
+        choices: [
+          { label: "Define it, end the ambiguity", emoji: "🏷️", onSuccess: "official", onFail: "friends" },
+          { label: "Leave it undefined", emoji: "❓", onSuccess: "complicated", onFail: "complicated" },
         ],
       },
     },
@@ -491,6 +606,7 @@ export const BRANCHING_STORIES: BranchingStory[] = [
         caption: "complicated, but online",
       },
     },
+    common: ["📱 Re-read the messages", "👀 See who's typing", "🫥 Send a vague 'haha'"],
     cta: "Start your own situationship saga on Zymix",
   },
 ];

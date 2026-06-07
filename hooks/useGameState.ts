@@ -25,9 +25,31 @@ import type { BranchingStory } from '@/data/branchingStories';
 
 const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
+/** Minimum rounds before allowing the story to end — prevents abrupt endings. */
+const MIN_ROUNDS_BEFORE_ENDING = 3;
+
 // Put the human ("You") first so the table reads You-led.
 const youFirst = <T extends { name: string }>(ps: T[]): T[] =>
   [...ps.filter((p) => p.name === 'You'), ...ps.filter((p) => p.name !== 'You')];
+
+// One teammate reacts each turn — tuned to the roll so it's responsive, not
+// random filler. One line, rotating member, so the group is present but not spammy.
+const CHEER = [
+  'okay that actually worked 👏',
+  'carrying us fr',
+  'no bc that was clean',
+  'we move 🙌',
+  'lowkey iconic',
+  "see, this is why you're here",
+];
+const ROAST = [
+  'this is going great 💀',
+  'we are so cooked',
+  'who let them cook',
+  'not like this 😭',
+  "i'm looking away",
+  'bro had ONE job',
+];
 
 export type GamePhase = 'lobby' | 'loading' | 'theme' | 'playing' | 'ended';
 
@@ -126,6 +148,9 @@ export function useGameState() {
     setState((s) => ({ ...s, ready: true }));
   }, [setPhase]);
 
+  /** Story-themed universal actions for the grey "common" option group. */
+  const commonActions = useCallback((): string[] => storyRef.current?.common ?? [], []);
+
   /** The current node's choices (label + emoji) for the protagonist. */
   const currentChoices = useCallback((): Array<{ label: string; emoji?: string }> => {
     const story = storyRef.current;
@@ -154,17 +179,34 @@ export function useGameState() {
       messages: [...s.messages, { id: nextId(), author: 'You', avatar: '🎲', text: choice.label, kind: 'action' as const, dice: { value: d.value, label: d.label, color: d.color, emoji: d.emoji } }],
     }));
 
-    // (No per-turn member chatter — it read as fragmented, repetitive filler.
-    //  The group is represented by the player cards instead.)
+    // 2) One teammate chimes in, reacting to how the roll went (rotating member).
+    const others = state.players.filter((p) => p.name !== 'You');
+    if (others.length) {
+      const who = others[state.round % others.length];
+      const pool = d.value >= 11 ? CHEER : ROAST;
+      const line = pool[state.round % pool.length];
+      await delay(500);
+      setState((s) => ({
+        ...s,
+        messages: [...s.messages, { id: nextId(), author: who.name, avatar: who.name, text: line, kind: 'member' as const }],
+      }));
+    }
 
-    // 2) DM "types", then narrates the next scene (or the ending).
+    // 3) DM "types", then narrates the next scene (or the ending).
     const { nextId: nextNodeId } = advance(story, state.nodeId, i, roll);
     await delay(300);
     setState((s) => ({ ...s, narratorTyping: true }));
     await delay(900);
 
-    if (isEnding(story, nextNodeId)) {
-      const ending = getEnding(story, nextNodeId)!;
+    // Prevent abrupt endings by enforcing minimum rounds
+    let finalNodeId = nextNodeId;
+    if (isEnding(story, nextNodeId) && state.round < MIN_ROUNDS_BEFORE_ENDING) {
+      // Route to a bridge node instead of ending directly
+      finalNodeId = `bridge_${nextNodeId}`;
+    }
+
+    if (isEnding(story, finalNodeId)) {
+      const ending = getEnding(story, finalNodeId)!;
       setState((s) => ({
         ...s,
         narratorTyping: false,
@@ -179,11 +221,11 @@ export function useGameState() {
         phase: 'ended',
       }));
     } else {
-      const next = getNode(story, nextNodeId);
+      const next = getNode(story, finalNodeId);
       setState((s) => ({
         ...s,
         narratorTyping: false,
-        nodeId: nextNodeId,
+        nodeId: finalNodeId,
         messages: [...s.messages, { id: nextId(), author: 'DM', avatar: '🎬', text: next?.scene ?? '…', kind: 'narration' as const }],
         lastRoll: { roll: d.value, label: d.label },
         round: s.round + 1,
@@ -203,6 +245,7 @@ export function useGameState() {
     setPhase,
     startQuest,
     currentChoices,
+    commonActions,
     resolveChoice,
     resetGame,
   };

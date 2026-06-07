@@ -57,7 +57,7 @@ function TypingIndicator({ dm }: { dm: DM }) {
 }
 
 export default function PlayingScreen({ game }: { game: GameHook }) {
-  const { state, currentChoices, resolveChoice } = game;
+  const { state, currentChoices, commonActions, resolveChoice } = game;
   const [beatPhase, setBeatPhase] = useState<'choosing' | 'rolling' | 'resolving'>('choosing');
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [dice, setDice] = useState<DiceRoll | null>(null);
@@ -128,20 +128,6 @@ export default function PlayingScreen({ game }: { game: GameHook }) {
       >
         🔗 Invite a friend to twist the story (5 min)
       </button>
-
-      {/* Player cards — each tinted with its owner's accent color */}
-      <div className="px-4 py-3 flex gap-2 overflow-x-auto">
-        {state.players.map((p, i) => {
-          const accent = accentFor(p.name, state.players);
-          return (
-            <div key={p.name} className="role-card flex-shrink-0 bubble-in" style={{ animationDelay: `${i * 60}ms`, background: 'var(--zymix-surface)', borderLeftColor: accent }}>
-              <div className="text-xs font-semibold" style={{ color: accent }}>{p.name}</div>
-              <div className="font-bold" style={{ color: 'var(--zymix-text-primary)' }}>{p.role}</div>
-              <div className="text-xs" style={{ color: 'var(--zymix-text-tertiary)' }}>{p.ability}</div>
-            </div>
-          );
-        })}
-      </div>
 
       {/* Fate Cards (friend interference) */}
       {state.fateCards.length > 0 && (
@@ -237,7 +223,7 @@ export default function PlayingScreen({ game }: { game: GameHook }) {
             Common options
           </div>
           <div className="flex flex-wrap gap-2">
-            {COMMON_ACTIONS.map((label, i) => (
+            {(commonActions().length ? commonActions() : COMMON_ACTIONS).map((label, i) => (
               <button
                 key={i}
                 onClick={() => handleChoose(0)}
