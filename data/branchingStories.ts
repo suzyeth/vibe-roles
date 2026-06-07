@@ -1,19 +1,23 @@
 /**
  * branchingStories.ts — story-tree scripts for the branching game model.
  *
- * Unlike the flat per-round `testStories` (one good/bad line per round), a
- * branching story is a graph of NODES. The human ("You") is the protagonist:
- * at each node they pick a choice, roll a D20, and the success/fail of that
- * roll routes to a different next node — so choices genuinely shape the path
- * and the run reads as one connected story. AI members are flavour (reactions),
+ * A branching story is a graph of NODES. The human ("You") is the protagonist:
+ * at each node they pick one of two choices, roll a D20, and the success/fail of
+ * that roll routes to a DIFFERENT next node — so both *which* choice you pick and
+ * *how* you roll genuinely change the path. AI members are flavour (reactions);
  * they don't fork the tree.
  *
- * Authoring shape (kept tight so it's writable for all 4 themes):
- *  - ~6 story nodes + ~3 endings per story.
- *  - Each node: one cohesive scene (2-3 sentences) + 2 choices.
- *  - Each choice routes onSuccess (roll 11+) / onFail (roll 10-) to a node id.
+ * Design rules (kept tight so it stays writable for all 4 themes):
+ *  - ~9 nodes + 3 endings per story; each run is ~4-5 of your decisions.
+ *  - Each node: one cohesive scene (2-3 sentences) + exactly 2 choices.
+ *  - Real divergence: a node's two choices lead to different success targets,
+ *    and (except for a deliberate "give up / burn it down" option) each choice's
+ *    onSuccess and onFail differ, so the dice always matter.
+ *  - choices[0] is the level-headed/baseline branch: the grey "common" actions in
+ *    the UI all resolve along it, so it should read as the safe default.
  *  - A node id that exists in `endings` terminates the story.
  *
+ * Single source of truth: the UI shows and the engine routes by `node.choices`.
  * English copy, UK Gen-Z flavour, "chaotic but harmless" — matches the app.
  */
 
@@ -30,7 +34,7 @@ export interface BranchNode {
   id: string;
   /** The cohesive scene narration shown as ONE block when this node opens. */
   scene: string;
-  /** 2-3 choices for the protagonist. */
+  /** Exactly 2 choices for the protagonist. */
   choices: BranchChoice[];
 }
 
@@ -56,20 +60,17 @@ export interface BranchingStory {
   /** Global gossip pool — AI members rotate through these as flavour. */
   reactions: string[];
   /** Story-themed universal actions — the grey "common" option group, shown
-   *  alongside each node's role-specific branches. They resolve along the
-   *  node's baseline branch. */
+   *  alongside each node's branches. They resolve along choices[0]. */
   common: string[];
   /** Where the story begins. */
   start: string;
   nodes: Record<string, BranchNode>;
   endings: Record<string, BranchEnding>;
-  /** Optional: Role-specific choices per node. Format: roleChoices_<nodeId>: { actorName: choices[] } */
-  [key: string]: any; // Allow additional roleChoices_* properties
   cta: string;
 }
 
 export const BRANCHING_STORIES: BranchingStory[] = [
-  // ─── 1. Group Chat on Trial (template) ─────────────────────────────────────
+  // ─── 1. Group Chat on Trial ────────────────────────────────────────────────
   {
     key: "group-chat-trial",
     theme: "Group Chat on Trial",
@@ -95,6 +96,9 @@ export const BRANCHING_STORIES: BranchingStory[] = [
       "this is going on my Story",
       "it's giving guilty",
       "i said what i said x",
+      "log OFF babes it's 4am",
+      "the gc is FED rn",
+      "praying for you bestie 🙏",
     ],
     start: "open",
     nodes: {
@@ -104,7 +108,7 @@ export const BRANCHING_STORIES: BranchingStory[] = [
           "The accusation lands and forty-seven people go quiet at once, waiting to see how you'll react. Every second you don't reply, the silence types your guilt for you.",
         choices: [
           { label: "Stay calm, ask for proof", emoji: "🧊", onSuccess: "calm", onFail: "messy" },
-          { label: "Clap back immediately", emoji: "🔥", onSuccess: "bold", onFail: "messy" },
+          { label: "Clap back in all caps", emoji: "🔥", onSuccess: "bold", onFail: "chaos" },
         ],
       },
       calm: {
@@ -112,8 +116,8 @@ export const BRANCHING_STORIES: BranchingStory[] = [
         scene:
           "Your composure throws the room — people expected a meltdown and got a shrug. A few lurkers quietly switch to your side, and the real leaker starts to look twitchy.",
         choices: [
-          { label: "Quietly DM the suspect", emoji: "🕵️", onSuccess: "corner", onFail: "chaos" },
-          { label: "Call a flat-wide vote", emoji: "🗳️", onSuccess: "corner", onFail: "chaos" },
+          { label: "Quietly DM the suspect", emoji: "🕵️", onSuccess: "corner", onFail: "bridge_truce" },
+          { label: "Call a flat-wide vote", emoji: "🗳️", onSuccess: "bridge_cleared", onFail: "chaos" },
         ],
       },
       bold: {
@@ -121,8 +125,8 @@ export const BRANCHING_STORIES: BranchingStory[] = [
         scene:
           "You came in loud and the chat is electric — half horrified, half here for it. It's working, but you're one wrong word from becoming the villain of your own story.",
         choices: [
-          { label: "Drop a counter-screenshot", emoji: "📸", onSuccess: "corner", onFail: "chaos" },
-          { label: "Name a suspect outright", emoji: "🎯", onSuccess: "chaos", onFail: "chaos" },
+          { label: "Drop a counter-screenshot", emoji: "📸", onSuccess: "corner", onFail: "messy" },
+          { label: "Name the leaker outright", emoji: "🎯", onSuccess: "bridge_cleared", onFail: "chaos" },
         ],
       },
       messy: {
@@ -130,17 +134,8 @@ export const BRANCHING_STORIES: BranchingStory[] = [
         scene:
           "It got away from you — paragraphs, a typo everyone screenshotted, and now two people are allied against you. The chat smells blood and it's pointed your way.",
         choices: [
-          { label: "Damage control, fast", emoji: "🩹", onSuccess: "corner", onFail: "chaos" },
-          { label: "Go offline dramatically", emoji: "🚪", onSuccess: "chaos", onFail: "chaos" },
-        ],
-      },
-      corner: {
-        id: "corner",
-        scene:
-          "A cropped screenshot gives the leaker away — cropping, as everyone now agrees, IS lying. You've got them cornered; the whole chat is watching what you do with it.",
-        choices: [
-          { label: "Post the final receipt", emoji: "🧾", onSuccess: "bridge_cleared", onFail: "bridge_fizzle" },
-          { label: "Offer them a truce", emoji: "🤝", onSuccess: "bridge_truce", onFail: "bridge_fizzle" },
+          { label: "Damage control, fast", emoji: "🩹", onSuccess: "corner", onFail: "bridge_fizzle" },
+          { label: "Rage-type a full paragraph", emoji: "🧱", onSuccess: "chaos", onFail: "bridge_fizzle" },
         ],
       },
       chaos: {
@@ -149,205 +144,45 @@ export const BRANCHING_STORIES: BranchingStory[] = [
           "It's fully feral now — three side-chats, a screenshot of a screenshot, and nobody sober enough to stop it. There's one narrow window to turn the mood before the flat splits for good.",
         choices: [
           { label: "Salvage it with one joke", emoji: "😂", onSuccess: "bridge_truce", onFail: "bridge_fizzle" },
-          { label: "Burn the whole thing down", emoji: "🔥", onSuccess: "bridge_fizzle", onFail: "bridge_fizzle" },
+          { label: "Expose everyone's gc sins", emoji: "🧨", onSuccess: "bridge_cleared", onFail: "bridge_fizzle" },
+        ],
+      },
+      corner: {
+        id: "corner",
+        scene:
+          "A cropped screenshot gives the leaker away — cropping, as everyone now agrees, IS lying. You've got them cornered; the whole chat is watching what you do with it.",
+        choices: [
+          { label: "Post the final receipt", emoji: "🧾", onSuccess: "cleared", onFail: "truce" },
+          { label: "Offer them a quiet exit", emoji: "🤝", onSuccess: "truce", onFail: "fizzle" },
         ],
       },
       bridge_cleared: {
         id: "bridge_cleared",
         scene:
-          "The final receipt is ready — one post ends it. But as your thumb hovers over send, you pause. This isn't just about winning anymore. It's about what kind of flat you want when the dust settles.",
+          "It's gone fully public — the whole year group is in the chat now, screenshots stacked three deep, the leaker's last message still showing 'typing…' then nothing. One move decides how tonight gets remembered.",
         choices: [
-          { label: "Send it, end it clean", emoji: "🧾", onSuccess: "cleared", onFail: "truce" },
-          { label: "Hold, give them a chance", emoji: "🤝", onSuccess: "truce", onFail: "fizzle" },
+          { label: "Name them with the full thread", emoji: "🧾", onSuccess: "cleared", onFail: "fizzle" },
+          { label: "Give them ten seconds to confess", emoji: "⏱️", onSuccess: "truce", onFail: "fizzle" },
         ],
       },
       bridge_truce: {
         id: "bridge_truce",
         scene:
-          "The truce message is typed out — one click could end the war. But part of you wonders if peace is worth the price of letting it slide. The group chat waits, not breathing.",
+          "The suspect slides into your DMs — a paragraph, a real apology, no audience this time. The main chat still wants blood, but this part is just between you two now.",
         choices: [
-          { label: "Send the truce", emoji: "🤝", onSuccess: "truce", onFail: "fizzle" },
-          { label: "Back away, stay unresolved", emoji: "🫥", onSuccess: "fizzle", onFail: "fizzle" },
+          { label: "Accept it, post that it's sorted", emoji: "🕊️", onSuccess: "truce", onFail: "fizzle" },
+          { label: "Screenshot the apology as proof", emoji: "📸", onSuccess: "cleared", onFail: "fizzle" },
         ],
       },
       bridge_fizzle: {
         id: "bridge_fizzle",
         scene:
-          "The chat's a mess and nobody's winning. You could walk away right now — just mute, disappear, let it all drift into nothing. Or you could try one last time to pull something from the wreckage.",
+          "Three people have already left, two side-chats have spawned, and someone just posted a screenshot of a screenshot of a screenshot. The flat chat is one message from total collapse.",
         choices: [
-          { label: "Try one last save", emoji: "😅", onSuccess: "truce", onFail: "fizzle" },
-          { label: "Let it fade out", emoji: "🫥", onSuccess: "fizzle", onFail: "fizzle" },
+          { label: "One last line to hold it together", emoji: "😅", onSuccess: "truce", onFail: "fizzle" },
+          { label: "Log off, let it burn", emoji: "🔥", onSuccess: "fizzle", onFail: "fizzle" },
         ],
       },
-    },
-    /** Role-specific choices for the "calm" node */
-    roleChoices_calm: {
-      You: [
-        { label: "Quietly DM the suspect", emoji: "🕵️", onSuccess: "corner", onFail: "chaos" },
-        { label: "Call a flat-wide vote", emoji: "🗳️", onSuccess: "corner", onFail: "chaos" },
-      ],
-      Mia: [
-        { label: "DM them privately", emoji: "💬", onSuccess: "corner", onFail: "chaos" },
-        { label: "Story time on live", emoji: "📱", onSuccess: "corner", onFail: "chaos" },
-      ],
-      Kai: [
-        { label: "Check the metadata", emoji: "🔍", onSuccess: "corner", onFail: "chaos" },
-        { label: "Reply all in screenshots", emoji: "📸", onSuccess: "corner", onFail: "chaos" },
-      ],
-      Momo: [
-        { label: "Ask everyone to calm down", emoji: "😌", onSuccess: "corner", onFail: "chaos" },
-        { label: "Stay out of it", emoji: "🤐", onSuccess: "chaos", onFail: "chaos" },
-      ],
-    },
-    /** Role-specific choices for the "bold" node */
-    roleChoices_bold: {
-      You: [
-        { label: "Drop a counter-screenshot", emoji: "📸", onSuccess: "corner", onFail: "chaos" },
-        { label: "Name a suspect outright", emoji: "🎯", onSuccess: "chaos", onFail: "chaos" },
-      ],
-      Mia: [
-        { label: "Double down dramatically", emoji: "😎", onSuccess: "corner", onFail: "chaos" },
-        { label: "Post a deflecting selfie", emoji: "🤳", onSuccess: "corner", onFail: "chaos" },
-      ],
-      Kai: [
-        { label: "Post a thread exposing receipts", emoji: "🧵", onSuccess: "corner", onFail: "chaos" },
-        { label: "Tag them in a new post", emoji: "🏷️", onSuccess: "chaos", onFail: "chaos" },
-      ],
-      Momo: [
-        { label: "Try to mediate the drama", emoji: "🤝", onSuccess: "corner", onFail: "chaos" },
-        { label: "Stay silent and observe", emoji: "🤐", onSuccess: "chaos", onFail: "chaos" },
-      ],
-    },
-    /** Role-specific choices for the "messy" node */
-    roleChoices_messy: {
-      You: [
-        { label: "Damage control, fast", emoji: "🩹", onSuccess: "corner", onFail: "chaos" },
-        { label: "Go offline dramatically", emoji: "🚪", onSuccess: "chaos", onFail: "chaos" },
-      ],
-      Mia: [
-        { label: "Apologize on main chat", emoji: "😅", onSuccess: "corner", onFail: "chaos" },
-        { label: "Go offline, fake drama", emoji: "🎭", onSuccess: "chaos", onFail: "chaos" },
-      ],
-      Kai: [
-        { label: "Delete and pretend hacked", emoji: "🗑️", onSuccess: "corner", onFail: "chaos" },
-        { label: "Blame technical issues", emoji: "🔧", onSuccess: "chaos", onFail: "chaos" },
-      ],
-      Momo: [
-        { label: "Plea for de-escalation", emoji: "🙏", onSuccess: "corner", onFail: "chaos" },
-        { label: "Ghost the conversation", emoji: "👻", onSuccess: "chaos", onFail: "chaos" },
-      ],
-    },
-    /** Role-specific choices for bridge nodes */
-    roleChoices_bridge_cleared: {
-      You: [
-        { label: "Send it, end it clean", emoji: "🧾", onSuccess: "cleared", onFail: "truce" },
-        { label: "Hold, give them a chance", emoji: "🤝", onSuccess: "truce", onFail: "fizzle" },
-      ],
-      Mia: [
-        { label: "Post with receipts", emoji: "📁", onSuccess: "cleared", onFail: "truce" },
-        { label: "Offer a quiet truce", emoji: "🤝", onSuccess: "truce", onFail: "fizzle" },
-      ],
-      Kai: [
-        { label: "Full exposure, no half measures", emoji: "📂", onSuccess: "cleared", onFail: "truce" },
-        { label: "Leave it ambiguous", emoji: "❓", onSuccess: "truce", onFail: "fizzle" },
-      ],
-      Momo: [
-        { label: "Push for resolution", emoji: "🔨", onSuccess: "cleared", onFail: "truce" },
-        { label: "Let it fade naturally", emoji: "🍂", onSuccess: "truce", onFail: "fizzle" },
-      ],
-    },
-    roleChoices_bridge_truce: {
-      You: [
-        { label: "Send the truce", emoji: "🤝", onSuccess: "truce", onFail: "fizzle" },
-        { label: "Back away, stay unresolved", emoji: "🫥", onSuccess: "fizzle", onFail: "fizzle" },
-      ],
-      Mia: [
-        { label: "Accept the truce warmly", emoji: "😊", onSuccess: "truce", onFail: "fizzle" },
-        { label: "Counter-offer instead", emoji: "🔄", onSuccess: "fizzle", onFail: "fizzle" },
-      ],
-      Kai: [
-        { label: "Agree to move forward", emoji: "✅", onSuccess: "truce", onFail: "fizzle" },
-        { label: "Demand an apology first", emoji: "⚠️", onSuccess: "fizzle", onFail: "fizzle" },
-      ],
-      Momo: [
-        { label: "Support the peace deal", emoji: "🕊️", onSuccess: "truce", onFail: "fizzle" },
-        { label: "Stay neutral, observe", emoji: "⚖️", onSuccess: "fizzle", onFail: "fizzle" },
-      ],
-    },
-    roleChoices_bridge_fizzle: {
-      You: [
-        { label: "Try one last save", emoji: "😅", onSuccess: "truce", onFail: "fizzle" },
-        { label: "Let it fade out", emoji: "🫥", onSuccess: "fizzle", onFail: "fizzle" },
-      ],
-      Mia: [
-        { label: "Make one final plea", emoji: "🥺", onSuccess: "truce", onFail: "fizzle" },
-        { label: "Disappear silently", emoji: "👻", onSuccess: "fizzle", onFail: "fizzle" },
-      ],
-      Kai: [
-        { label: "Archive everything for later", emoji: "💾", onSuccess: "truce", onFail: "fizzle" },
-        { label: "Delete the chat history", emoji: "🗑️", onSuccess: "fizzle", onFail: "fizzle" },
-      ],
-      Momo: [
-        { label: "One last mediation attempt", emoji: "🤝", onSuccess: "truce", onFail: "fizzle" },
-        { label: "Walk away for good", emoji: "🚪", onSuccess: "fizzle", onFail: "fizzle" },
-      ],
-    },
-    /** Role-specific choices for the "corner" node */
-    roleChoices_corner: {
-      You: [
-        { label: "Post the final receipt", emoji: "🧾", onSuccess: "bridge_cleared", onFail: "bridge_fizzle" },
-        { label: "Offer them a truce", emoji: "🤝", onSuccess: "bridge_truce", onFail: "bridge_fizzle" },
-      ],
-      Mia: [
-        { label: "Post a sad story", emoji: "😢", onSuccess: "bridge_truce", onFail: "bridge_fizzle" },
-        { label: "Go live for justice", emoji: "📱", onSuccess: "bridge_cleared", onFail: "bridge_fizzle" },
-      ],
-      Kai: [
-        { label: "Drop the full receipt folder", emoji: "📁", onSuccess: "bridge_cleared", onFail: "bridge_fizzle" },
-        { label: "Ask for proof first", emoji: "🔍", onSuccess: "bridge_truce", onFail: "bridge_fizzle" },
-      ],
-      Momo: [
-        { label: "Propose a group truce", emoji: "🕊️", onSuccess: "bridge_truce", onFail: "bridge_fizzle" },
-        { label: "Stay silent, let it pass", emoji: "🤐", onSuccess: "bridge_fizzle", onFail: "bridge_fizzle" },
-      ],
-    },
-    /** Role-specific choices for the "chaos" node */
-    roleChoices_chaos: {
-      You: [
-        { label: "Salvage it with one joke", emoji: "😂", onSuccess: "bridge_truce", onFail: "bridge_fizzle" },
-        { label: "Burn the whole thing down", emoji: "🔥", onSuccess: "bridge_fizzle", onFail: "bridge_fizzle" },
-      ],
-      Mia: [
-        { label: "Defuse with a selfie", emoji: "🤳", onSuccess: "bridge_truce", onFail: "bridge_fizzle" },
-        { label: "Fan the flames for content", emoji: "🔥", onSuccess: "bridge_fizzle", onFail: "bridge_fizzle" },
-      ],
-      Kai: [
-        { label: "Clear the chat, restart", emoji: "♻️", onSuccess: "bridge_truce", onFail: "bridge_fizzle" },
-        { label: "Pin the blame elsewhere", emoji: "📍", onSuccess: "bridge_fizzle", onFail: "bridge_fizzle" },
-      ],
-      Momo: [
-        { label: "Everyone calm down pls", emoji: "😓", onSuccess: "bridge_truce", onFail: "bridge_fizzle" },
-        { label: "Leave the chat dramatically", emoji: "🚪", onSuccess: "bridge_fizzle", onFail: "bridge_fizzle" },
-      ],
-    },
-    /** Role-specific choices for the "open" node */
-    roleChoices_open: {
-      You: [
-        { label: "Stay calm, ask for proof", emoji: "🧊", onSuccess: "calm", onFail: "messy" },
-        { label: "Clap back immediately", emoji: "🔥", onSuccess: "bold", onFail: "messy" },
-      ],
-      Mia: [
-        { label: "Cry on cue for sympathy", emoji: "😢", onSuccess: "calm", onFail: "messy" },
-        { label: "Go live from the chat", emoji: "📱", onSuccess: "bold", onFail: "messy" },
-      ],
-      Kai: [
-        { label: "Post the old screenshots", emoji: "📸", onSuccess: "calm", onFail: "messy" },
-        { label: "Tag everyone for receipts", emoji: "🏷️", onSuccess: "bold", onFail: "messy" },
-      ],
-      Momo: [
-        { label: "Type 'guys can we not'", emoji: "🤐", onSuccess: "calm", onFail: "messy" },
-        { label: "Try to mediate", emoji: "🤝", onSuccess: "bold", onFail: "messy" },
-      ],
     },
     endings: {
       cleared: {
@@ -402,6 +237,9 @@ export const BRANCHING_STORIES: BranchingStory[] = [
       "screen recording for the tea page",
       "it's giving cancelled",
       "we love an accountability arc x",
+      "monetisation switched OFF",
+      "PR team in absolute shambles",
+      "the algorithm is watching 👀",
     ],
     start: "open",
     nodes: {
@@ -410,8 +248,17 @@ export const BRANCHING_STORIES: BranchingStory[] = [
         scene:
           "The comments are scrolling faster than anyone can read and a brand rep is typing the word 'unfortunately'. You've got about ten seconds to decide how this meltdown gets remembered.",
         choices: [
-          { label: "Push her live to own it", emoji: "🎤", onSuccess: "live", onFail: "messy" },
-          { label: "Post a Notes-app apology", emoji: "📝", onSuccess: "apology", onFail: "messy" },
+          { label: "Post a measured Notes-app apology", emoji: "📝", onSuccess: "apology", onFail: "messy" },
+          { label: "Push her live to own it raw", emoji: "🎤", onSuccess: "live", onFail: "chaos" },
+        ],
+      },
+      apology: {
+        id: "apology",
+        scene:
+          "The apology lands… mostly. The tea pages are squinting at it, but the diehards have started rallying in the replies and a few brands quietly un-mute their DMs.",
+        choices: [
+          { label: "Drop a docu-style storytime", emoji: "🎬", onSuccess: "corner", onFail: "bridge_smaller" },
+          { label: "Collab with a bigger creator", emoji: "🤝", onSuccess: "bridge_comeback", onFail: "chaos" },
         ],
       },
       live: {
@@ -419,17 +266,8 @@ export const BRANCHING_STORIES: BranchingStory[] = [
         scene:
           "She owns the whole thing in thirty unscripted seconds and — plot twist — the comments actually soften. The momentum is briefly, miraculously, yours.",
         choices: [
-          { label: "Pull up the analytics live", emoji: "📊", onSuccess: "corner", onFail: "chaos" },
-          { label: "Announce a charity stream", emoji: "💚", onSuccess: "corner", onFail: "chaos" },
-        ],
-      },
-      apology: {
-        id: "apology",
-        scene:
-          "The apology lands… mostly. The tea pages are squinting at it, but the diehards have started rallying in the replies.",
-        choices: [
-          { label: "Drop a docu-style storytime", emoji: "🎬", onSuccess: "corner", onFail: "chaos" },
-          { label: "Collab with a bigger creator", emoji: "🤝", onSuccess: "corner", onFail: "chaos" },
+          { label: "Pull the analytics up live", emoji: "📊", onSuccess: "corner", onFail: "messy" },
+          { label: "Announce a charity stream", emoji: "💚", onSuccess: "bridge_comeback", onFail: "chaos" },
         ],
       },
       messy: {
@@ -437,17 +275,8 @@ export const BRANCHING_STORIES: BranchingStory[] = [
         scene:
           "Two fonts. TWO. The screenshot is already a tea-page countdown and the editor — who has every raw file — is giving you a very particular look.",
         choices: [
-          { label: "Damage-control livestream", emoji: "🩹", onSuccess: "corner", onFail: "chaos" },
-          { label: "Turn the comments off", emoji: "🙊", onSuccess: "chaos", onFail: "chaos" },
-        ],
-      },
-      corner: {
-        id: "corner",
-        scene:
-          "You trace the original 'leak' to a rival tea page and you've got the receipts. One clean post could flip the entire narrative in your favour.",
-        choices: [
-          { label: "Post the proof", emoji: "🧾", onSuccess: "bridge_uncancelled", onFail: "bridge_smaller" },
-          { label: "Soft-launch the comeback", emoji: "🚀", onSuccess: "bridge_comeback", onFail: "bridge_smaller" },
+          { label: "Damage-control livestream", emoji: "🩹", onSuccess: "corner", onFail: "bridge_smaller" },
+          { label: "Turn the comments off", emoji: "🙊", onSuccess: "chaos", onFail: "bridge_smaller" },
         ],
       },
       chaos: {
@@ -455,35 +284,44 @@ export const BRANCHING_STORIES: BranchingStory[] = [
         scene:
           "The lore is expanding faster than the follower count is shrinking. There's one pivot left before the brand walks for good.",
         choices: [
-          { label: "Pivot niche + thank the haters", emoji: "🌱", onSuccess: "bridge_comeback", onFail: "bridge_smaller" },
-          { label: "Do a full tell-all", emoji: "🎙️", onSuccess: "bridge_smaller", onFail: "bridge_smaller" },
+          { label: "Pivot niche, thank the haters", emoji: "🌱", onSuccess: "bridge_comeback", onFail: "bridge_smaller" },
+          { label: "Go full unfiltered tell-all", emoji: "🎙️", onSuccess: "bridge_uncancelled", onFail: "bridge_smaller" },
+        ],
+      },
+      corner: {
+        id: "corner",
+        scene:
+          "You trace the original 'leak' to a rival tea page and you've got the receipts. One clean post could flip the entire narrative in your favour.",
+        choices: [
+          { label: "Post the proof clean", emoji: "🧾", onSuccess: "uncancelled", onFail: "comeback" },
+          { label: "Soft-launch the comeback instead", emoji: "🚀", onSuccess: "comeback", onFail: "smaller" },
         ],
       },
       bridge_uncancelled: {
         id: "bridge_uncancelled",
         scene:
-          "The proof is loaded — one tweet and the narrative flips. But as you stare at the post button, you realise what comes after. The follow-up. The expectations. Can you actually deliver?",
+          "The proof goes up and the narrative flips in real time — the rival tea page sets itself to private, the pile-on becomes a pile of apologies, and the brand rep starts typing again.",
         choices: [
-          { label: "Post it, own the moment", emoji: "🧾", onSuccess: "uncancelled", onFail: "comeback" },
-          { label: "Hold back, rebuild slowly", emoji: "🌱", onSuccess: "comeback", onFail: "smaller" },
+          { label: "Re-sign the brand deal on camera", emoji: "🧾", onSuccess: "uncancelled", onFail: "comeback" },
+          { label: "Spin it into a redemption series", emoji: "🎬", onSuccess: "comeback", onFail: "smaller" },
         ],
       },
       bridge_comeback: {
         id: "bridge_comeback",
         scene:
-          "The comeback stream is queued, the thumbnail's perfect. But something in you hesitates. Is this the real you, or just what they want to see?",
+          "Forty thousand are already waiting in the pre-live lobby and a bigger creator just DM'd to duet. The thumbnail's perfect. This is the moment — if it's the real her on screen.",
         choices: [
-          { label: "Go live, be the moment", emoji: "🎬", onSuccess: "comeback", onFail: "smaller" },
-          { label: "Cancel, stay real", emoji: "🔒", onSuccess: "smaller", onFail: "smaller" },
+          { label: "Go live, raw and real", emoji: "🎬", onSuccess: "comeback", onFail: "smaller" },
+          { label: "Reveal the rival's receipts mid-stream", emoji: "🧾", onSuccess: "uncancelled", onFail: "smaller" },
         ],
       },
       bridge_smaller: {
         id: "bridge_smaller",
         scene:
-          "The follower count keeps dropping. You could chase the numbers again — pivot, collab, perform. Or you could accept smaller and make it mean something.",
+          "Twelve thousand gone and counting. The brand's gone quiet for good — but the comments still left are unhinged in the best way, the ones who actually watch to the end.",
         choices: [
-          { label: "Fight for the comeback", emoji: "⚔️", onSuccess: "comeback", onFail: "smaller" },
-          { label: "Embrace the decline", emoji: "📉", onSuccess: "smaller", onFail: "smaller" },
+          { label: "Double down on the diehards", emoji: "💚", onSuccess: "comeback", onFail: "smaller" },
+          { label: "Make peace with smaller", emoji: "📉", onSuccess: "smaller", onFail: "smaller" },
         ],
       },
     },
@@ -511,61 +349,6 @@ export const BRANCHING_STORIES: BranchingStory[] = [
       },
     },
     common: ["📊 Check the live numbers", "🎬 Post a softer clip", "🙊 Mute the comments"],
-    /** Role-specific choices for Story 2 */
-    roleChoices_open: {
-      You: [
-        { label: "Push her live to own it", emoji: "🎤", onSuccess: "live", onFail: "messy" },
-        { label: "Post a Notes-app apology", emoji: "📝", onSuccess: "apology", onFail: "messy" },
-      ],
-      Mia: [
-        { label: "Go live and cry on cue", emoji: "😢", onSuccess: "live", onFail: "messy" },
-        { label: "Pre-record a sincere apology", emoji: "🎬", onSuccess: "apology", onFail: "messy" },
-      ],
-      Kai: [
-        { label: "Cut to raw footage immediately", emoji: "🎬", onSuccess: "live", onFail: "messy" },
-        { label: "Release a prepared statement", emoji: "📄", onSuccess: "apology", onFail: "messy" },
-      ],
-      Momo: [
-        { label: "Spin the narrative positively", emoji: "🔄", onSuccess: "apology", onFail: "messy" },
-        { label: "Issue a formal brand statement", emoji: "📋", onSuccess: "apology", onFail: "messy" },
-      ],
-    },
-    roleChoices_corner: {
-      You: [
-        { label: "Post the proof", emoji: "🧾", onSuccess: "bridge_uncancelled", onFail: "bridge_smaller" },
-        { label: "Soft-launch the comeback", emoji: "🚀", onSuccess: "bridge_comeback", onFail: "bridge_smaller" },
-      ],
-      Mia: [
-        { label: "Rebrand as 'vulnerable moment'", emoji: "💖", onSuccess: "bridge_comeback", onFail: "bridge_smaller" },
-        { label: "Go mega-viral with the drama", emoji: "🔥", onSuccess: "bridge_uncancelled", onFail: "bridge_smaller" },
-      ],
-      Kai: [
-        { label: "Release the raw receipts", emoji: "📂", onSuccess: "bridge_uncancelled", onFail: "bridge_smaller" },
-        { label: "Edit to downplay the leak", emoji: "✂️", onSuccess: "bridge_comeback", onFail: "bridge_smaller" },
-      ],
-      Momo: [
-        { label: "Negotiate with brand quietly", emoji: "🤝", onSuccess: "bridge_comeback", onFail: "bridge_smaller" },
-        { label: "Send damage control email", emoji: "📧", onSuccess: "bridge_smaller", onFail: "bridge_smaller" },
-      ],
-    },
-    roleChoices_chaos: {
-      You: [
-        { label: "Pivot niche + thank the haters", emoji: "🌱", onSuccess: "bridge_comeback", onFail: "bridge_smaller" },
-        { label: "Do a full tell-all", emoji: "🎙️", onSuccess: "bridge_smaller", onFail: "bridge_smaller" },
-      ],
-      Mia: [
-        { label: "Pivot to authenticity", emoji: "💯", onSuccess: "bridge_comeback", onFail: "bridge_smaller" },
-        { label: "Lean into the chaos for content", emoji: "🔥", onSuccess: "bridge_smaller", onFail: "bridge_smaller" },
-      ],
-      Kai: [
-        { label: "Release an edited timeline", emoji: "✂️", onSuccess: "bridge_comeback", onFail: "bridge_smaller" },
-        { label: "Publish the full uncut story", emoji: "📰", onSuccess: "bridge_smaller", onFail: "bridge_smaller" },
-      ],
-      Momo: [
-        { label: "Quietly reach out to brands", emoji: "📧", onSuccess: "bridge_comeback", onFail: "bridge_smaller" },
-        { label: "Distance from the brand", emoji: "🚫", onSuccess: "bridge_smaller", onFail: "bridge_smaller" },
-      ],
-    },
     cta: "Start your own creator saga on Zymix",
   },
 
@@ -595,6 +378,9 @@ export const BRANCHING_STORIES: BranchingStory[] = [
       "do NOT split up",
       "guys the torch is at 4%",
       "i'm filming for evidence x",
+      "i'm calling my mum",
+      "the walls literally MOVED",
+      "five stars, no refund 💀",
     ],
     start: "open",
     nodes: {
@@ -603,8 +389,8 @@ export const BRANCHING_STORIES: BranchingStory[] = [
         scene:
           "The intercom just plays your own knock back at you, a half-second late. Everyone's looking at you to decide the next move before the timer ticks up again.",
         choices: [
-          { label: "Search for a hidden latch", emoji: "🔦", onSuccess: "draft", onFail: "trapped" },
           { label: "Read the clue on the wall", emoji: "📜", onSuccess: "draft", onFail: "trapped" },
+          { label: "Force the door with everything", emoji: "🔦", onSuccess: "trapped", onFail: "loop" },
         ],
       },
       draft: {
@@ -612,8 +398,8 @@ export const BRANCHING_STORIES: BranchingStory[] = [
         scene:
           "Behind the bookcase: a thin draft of cold, outside air and a seam the set designers definitely never painted. A way out — maybe.",
         choices: [
-          { label: "Smash the two-way mirror", emoji: "🪞", onSuccess: "keys", onFail: "loop" },
           { label: "Follow the cold draft", emoji: "💨", onSuccess: "keys", onFail: "loop" },
+          { label: "Smash the two-way mirror", emoji: "🪞", onSuccess: "keys", onFail: "trapped" },
         ],
       },
       trapped: {
@@ -622,7 +408,7 @@ export const BRANCHING_STORIES: BranchingStory[] = [
           "The keypad takes your code, beeps approvingly, then silently changes it. The room is learning your moves and playing them back at you.",
         choices: [
           { label: "Crawl through the vent", emoji: "🌀", onSuccess: "keys", onFail: "loop" },
-          { label: "Reset the puzzle on purpose", emoji: "♻️", onSuccess: "loop", onFail: "loop" },
+          { label: "Reset the puzzle on purpose", emoji: "♻️", onSuccess: "draft", onFail: "loop" },
         ],
       },
       keys: {
@@ -631,7 +417,7 @@ export const BRANCHING_STORIES: BranchingStory[] = [
           "The vent drops you into the empty staff room — no people, but the master keys are right there on the hook, swinging slightly.",
         choices: [
           { label: "Try the final lock", emoji: "🗝️", onSuccess: "bridge_out", onFail: "bridge_haunted" },
-          { label: "Trace the wiring first", emoji: "🔌", onSuccess: "bridge_out", onFail: "bridge_haunted" },
+          { label: "Trace the wiring behind the door", emoji: "🔌", onSuccess: "bridge_out", onFail: "bridge_stuck" },
         ],
       },
       loop: {
@@ -639,35 +425,35 @@ export const BRANCHING_STORIES: BranchingStory[] = [
         scene:
           "The door swings open onto the very first room again, the candle still lit exactly as you left it. You've been here before. Keep your nerve.",
         choices: [
-          { label: "Keep nerve, find the hatch", emoji: "🧊", onSuccess: "bridge_out", onFail: "bridge_stuck" },
+          { label: "Keep your nerve, find the hatch", emoji: "🧊", onSuccess: "keys", onFail: "bridge_stuck" },
           { label: "Smash straight through the wall", emoji: "🧱", onSuccess: "bridge_haunted", onFail: "bridge_stuck" },
         ],
       },
       bridge_out: {
         id: "bridge_out",
         scene:
-          "The final door clicks under your hand. You can see the streetlights through the glass. But something makes you pause — what if this is another loop?",
+          "The last door gives — and there's actual rain on actual tarmac through the gap, a night bus hissing past. After three resets your body doesn't quite trust it, but the cold air is real.",
         choices: [
-          { label: "Push through, trust it's real", emoji: "🚪", onSuccess: "out", onFail: "haunted" },
-          { label: "Wait, listen for the room", emoji: "👂", onSuccess: "haunted", onFail: "stuck" },
+          { label: "Walk out into the rain", emoji: "🚪", onSuccess: "out", onFail: "haunted" },
+          { label: "Wedge it, count everyone out first", emoji: "🧮", onSuccess: "out", onFail: "stuck" },
         ],
       },
       bridge_haunted: {
         id: "bridge_haunted",
         scene:
-          "You're inches from freedom, but your hands won't stop shaking. The room's reset itself three times. How do you know this door leads anywhere?",
+          "You spill onto the pavement, soaked and laughing too hard — then the intercom behind you crackles your own knock back, half a second late. The door hasn't finished with someone.",
         choices: [
-          { label: "Trust your gut, walk out", emoji: "🚶", onSuccess: "haunted", onFail: "stuck" },
-          { label: "Stay inside, refuse to leave", emoji: "🏠", onSuccess: "stuck", onFail: "stuck" },
+          { label: "Drag everyone clear, don't look back", emoji: "🏃", onSuccess: "haunted", onFail: "stuck" },
+          { label: "Go back for the one who wandered off", emoji: "🔦", onSuccess: "out", onFail: "stuck" },
         ],
       },
       bridge_stuck: {
         id: "bridge_stuck",
         scene:
-          "The timer's hit triple digits and the walls are definitely closer. You've been here so long you've started forgetting what outside looks like. Maybe that's the point.",
+          "The timer rolls into triple digits and the walls have quietly swapped places — the bookcase is where the door was. You've been here long enough to stop being sure which room is even first.",
         choices: [
-          { label: "One final escape attempt", emoji: "💪", onSuccess: "out", onFail: "stuck" },
-          { label: "Accept it, sit down", emoji: "🪑", onSuccess: "stuck", onFail: "stuck" },
+          { label: "One clear-headed escape attempt", emoji: "💪", onSuccess: "out", onFail: "stuck" },
+          { label: "Sit down, let it reset", emoji: "🪑", onSuccess: "stuck", onFail: "stuck" },
         ],
       },
     },
@@ -724,6 +510,9 @@ export const BRANCHING_STORIES: BranchingStory[] = [
       "screenshot sent to the gc gc",
       "this is better than telly",
       "delulu is the solulu",
+      "they VIEWED it. they viewed it.",
+      "the gc is in SHAMBLES",
+      "no thoughts just three dots",
     ],
     start: "open",
     nodes: {
@@ -732,8 +521,8 @@ export const BRANCHING_STORIES: BranchingStory[] = [
         scene:
           "Three dots from the ex. Three dots from the situationship. Three dots from your best friend. Everyone's waiting to see whether you commit or crumble.",
         choices: [
-          { label: "Double down romantically", emoji: "💘", onSuccess: "bold", onFail: "spiral" },
           { label: "Claim it was a typo", emoji: "🙈", onSuccess: "typo", onFail: "spiral" },
+          { label: "Double down romantically", emoji: "💘", onSuccess: "bold", onFail: "triangle" },
         ],
       },
       bold: {
@@ -742,7 +531,7 @@ export const BRANCHING_STORIES: BranchingStory[] = [
           "You double down with one devastating line and the situationship — who only ever sends 'haha' — replies with a full sentence. Real, terrifying movement.",
         choices: [
           { label: "Ask the best friend for intel", emoji: "🕵️", onSuccess: "close", onFail: "triangle" },
-          { label: "Plan a 'casual' hangout", emoji: "☕", onSuccess: "close", onFail: "triangle" },
+          { label: "Plan a 'casual' hangout", emoji: "☕", onSuccess: "close", onFail: "spiral" },
         ],
       },
       typo: {
@@ -751,7 +540,7 @@ export const BRANCHING_STORIES: BranchingStory[] = [
           "Nobody believes 'typo, ignore that lol', and the ex reacts with the laughing emoji — which somehow feels deeply personal.",
         choices: [
           { label: "Make it a group joke", emoji: "😂", onSuccess: "close", onFail: "triangle" },
-          { label: "Go mysteriously quiet", emoji: "🌫️", onSuccess: "triangle", onFail: "triangle" },
+          { label: "Go mysteriously quiet", emoji: "🌫️", onSuccess: "spiral", onFail: "triangle" },
         ],
       },
       spiral: {
@@ -759,8 +548,8 @@ export const BRANCHING_STORIES: BranchingStory[] = [
         scene:
           "The ex slides into your DMs 'just to check you're okay'. Now there are two situationships and one extremely tense group chat.",
         choices: [
-          { label: "Define the relationship", emoji: "🗣️", onSuccess: "close", onFail: "triangle" },
-          { label: "Big romantic gesture", emoji: "🎁", onSuccess: "triangle", onFail: "triangle" },
+          { label: "Define the relationship now", emoji: "🗣️", onSuccess: "close", onFail: "triangle" },
+          { label: "Big romantic gesture", emoji: "🎁", onSuccess: "bridge_official", onFail: "triangle" },
         ],
       },
       close: {
@@ -768,8 +557,8 @@ export const BRANCHING_STORIES: BranchingStory[] = [
         scene:
           "Off the record, the feeling's mutual — a hand brush, a held glance, a silence that says everything. It's giving.",
         choices: [
-          { label: "Make it official", emoji: "💍", onSuccess: "bridge_official", onFail: "bridge_complicated" },
           { label: "Soft-launch it", emoji: "📸", onSuccess: "bridge_official", onFail: "bridge_complicated" },
+          { label: "Make it official outright", emoji: "💍", onSuccess: "bridge_official", onFail: "triangle" },
         ],
       },
       triangle: {
@@ -784,28 +573,28 @@ export const BRANCHING_STORIES: BranchingStory[] = [
       bridge_official: {
         id: "bridge_official",
         scene:
-          "The 'official' post is drafted, caption and everything. But as you stare at the button, you realise — once you post this, there's no going back. The chat, the friendship, the situationship — everything changes.",
+          "The soft-launch goes up — a blurry hand, a caption that says nothing and everything. The ex views it first. Then the situationship comments a single 🫶 and the group chat detonates.",
         choices: [
-          { label: "Post it, go all in", emoji: "💍", onSuccess: "official", onFail: "complicated" },
-          { label: "Delete, keep it vague", emoji: "🫥", onSuccess: "complicated", onFail: "complicated" },
+          { label: "Hard-launch it, names and all", emoji: "💍", onSuccess: "official", onFail: "complicated" },
+          { label: "Keep it soft, let them guess", emoji: "🫥", onSuccess: "official", onFail: "friends" },
         ],
       },
       bridge_friends: {
         id: "bridge_friends",
         scene:
-          "You could choose peace — stay friends, pretend the feelings never happened. But the situationship keeps typing 'haha' and part of you wonders if you're settling.",
+          "Best friend pulls you aside: 'You don't have to perform this for the chat.' The situationship's still typing 'haha'. For once the room's quiet enough to actually choose.",
         choices: [
-          { label: "Choose friendship, for real", emoji: "🕊️", onSuccess: "friends", onFail: "complicated" },
-          { label: "Risk it, admit the feelings", emoji: "💘", onSuccess: "official", onFail: "complicated" },
+          { label: "Choose the friendship, mean it", emoji: "🕊️", onSuccess: "friends", onFail: "complicated" },
+          { label: "Say the feelings out loud anyway", emoji: "💘", onSuccess: "official", onFail: "complicated" },
         ],
       },
       bridge_complicated: {
         id: "bridge_complicated",
         scene:
-          "Three group chats, five screenshots, and nobody knows what's real anymore. You could end it now — call it, label it, or delete it. Or you could let it stay beautifully messy.",
+          "Three chats, five screenshots, and a poll someone made called 'are they / aren't they'. You could end the ambiguity with one word — or let it stay exactly this unhinged.",
         choices: [
-          { label: "Define it, end the ambiguity", emoji: "🏷️", onSuccess: "official", onFail: "friends" },
-          { label: "Leave it undefined", emoji: "❓", onSuccess: "complicated", onFail: "complicated" },
+          { label: "Put a label on it", emoji: "🏷️", onSuccess: "official", onFail: "friends" },
+          { label: "Leave it gloriously undefined", emoji: "❓", onSuccess: "complicated", onFail: "complicated" },
         ],
       },
     },
