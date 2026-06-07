@@ -195,14 +195,6 @@ export default function PlayingScreen({ game }: { game: GameHook }) {
 
   return (
     <div className="flex flex-col overflow-hidden" style={{ height: 'calc(100vh - 56px)', background: 'var(--zymix-bg)' }}>
-      {/* Persistent goal — what this run is for */}
-      {currentStory?.goalShort && (
-        <div className="mx-4 mt-3 flex-shrink-0 flex items-center gap-2 rounded-2xl px-3 py-2" style={{ background: 'var(--zymix-green-light)' }}>
-          <span className="text-sm flex-shrink-0">🎯</span>
-          <span className="text-xs font-semibold truncate" style={{ color: 'var(--zymix-green)' }}>{currentStory.goalShort}</span>
-        </div>
-      )}
-
       {/* Invite outsiders to drop a twist into the story (details live in the sheet) */}
       <button
         onClick={() => setShowInvite(true)}
@@ -214,8 +206,14 @@ export default function PlayingScreen({ game }: { game: GameHook }) {
         <span className="text-base font-bold flex-shrink-0" style={{ color: 'var(--zymix-fate)' }}>›</span>
       </button>
 
-      {/* Crisis meter — story-named; failure raises it; 100% collapses the run */}
+      {/* Goal + crisis meter, merged — what you're chasing + how close to disaster */}
       <div className="mx-4 mt-2 flex-shrink-0 rounded-2xl px-3.5 py-2.5" style={{ background: 'var(--zymix-surface)', border: '1px solid var(--zymix-border)' }}>
+        {currentStory?.goalShort && (
+          <div className="flex items-center gap-1.5 mb-2 pb-2" style={{ borderBottom: '1px solid var(--zymix-divider)' }}>
+            <span className="text-sm flex-shrink-0">🎯</span>
+            <span className="text-xs font-semibold truncate" style={{ color: 'var(--zymix-green)' }}>{currentStory.goalShort}</span>
+          </div>
+        )}
         <div className="flex justify-between items-center mb-1.5">
           <span className="text-xs font-semibold flex items-center gap-1" style={{ color: 'var(--zymix-text-secondary)' }}>
             {currentStory?.crisisMeter?.emoji ?? tIcon} {currentStory?.crisisMeter?.name ?? 'Tension'}
