@@ -1,5 +1,5 @@
 /**
- * ThemeScreen — 选择剧情 (themed for light + dark)
+ * ThemeScreen — pick your story (themed for light + dark)
  *
  * Shows the actual playable storylines (emoji + title + one-line hook) instead
  * of bare theme names, so picking a vibe really maps to the story that runs.
@@ -7,13 +7,10 @@
 import { useState } from 'react';
 import { TEST_STORIES } from '@/data/testStories';
 
-export default function ThemeScreen({ onSelect, lang }: { onSelect: (theme: string) => void; lang: 'en' | 'zh' }) {
+export default function ThemeScreen({ onSelect }: { onSelect: (theme: string) => void }) {
   const [selected, setSelected] = useState<string | null>(null);
 
-  const TEXT = {
-    en: { step: 'Step 1 of 3', title: 'Pick your story 🎭', desc: 'AI writes the script. You just show up.', random: '🎲 Surprise me' },
-    zh: { step: '步骤 1/3', title: '选择剧情 🎭', desc: 'AI 来写剧本，你只需到场。', random: '🎲 随机来一个' },
-  }[lang];
+  const TEXT = { step: 'Step 1 of 3', title: 'Pick your story 🎭', desc: 'AI writes the script. You just show up.', random: '🎲 Surprise me' };
 
   const handleSelect = (theme: string) => {
     setSelected(theme);

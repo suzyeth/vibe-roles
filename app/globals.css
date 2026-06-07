@@ -66,7 +66,7 @@ html[data-theme="dark"] {
 }
 
 body {
-  background-color: var(--zymix-bg);
+  background-color: #1A1A1A;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   color: var(--zymix-text-primary);

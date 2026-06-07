@@ -10,7 +10,6 @@ import { PRESET_MEMBERS } from '@/data/members';
 export default function Home() {
   const game = useGameState();
   const { state, startQuest } = game;
-  const [lang, setLang] = useState<'en' | 'zh'>('zh');
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
   // Restore saved theme on mount; apply to <html data-theme> + persist on change.
@@ -38,7 +37,7 @@ export default function Home() {
   const handleShare = () => {
     if (state.shareUrl) {
       navigator.clipboard.writeText(state.shareUrl);
-      alert('链接已复制！');
+      alert('Link copied!');
     }
   };
 
@@ -77,7 +76,7 @@ export default function Home() {
           <span className="text-xs font-semibold" style={{ color: 'var(--zymix-green)' }}>Roll Call</span>
         </div>
 
-        {/* Right: theme + language toggles */}
+        {/* Right: theme toggle */}
         <div className="flex items-center gap-2">
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -87,13 +86,6 @@ export default function Home() {
           >
             {theme === 'dark' ? '☀️' : '🌙'}
           </button>
-          <button
-            onClick={() => setLang(lang === 'en' ? 'zh' : 'en')}
-            className="w-8 h-8 flex items-center justify-center rounded-full text-xs font-semibold"
-            style={{ background: 'var(--zymix-bg)', color: 'var(--zymix-text-secondary)' }}
-          >
-            {lang.toUpperCase()}
-          </button>
         </div>
       </div>
 
@@ -102,22 +94,19 @@ export default function Home() {
         {state.phase === 'lobby' && (
           <LobbyScreen
             onStart={handleStart}
-            lang={lang}
-            testMode={game.testMode}
-            onToggleTestMode={() => game.setTestMode(!game.testMode)}
+            testMode={true}
           />
         )}
         {state.phase === 'theme' && (
           <ThemeScreen
             onSelect={handleSelectTheme}
-            lang={lang}
           />
         )}
         {state.phase === 'loading' && (
           <div className="flex items-center justify-center h-full" style={{ color: 'var(--zymix-text-tertiary)' }}>
             <div className="text-center">
               <div className="text-3xl mb-2">🎲</div>
-              <div className="text-sm">{lang === 'zh' ? '正在生成冒险…' : 'Rolling up your quest…'}</div>
+              <div className="text-sm">Rolling up your quest…</div>
             </div>
           </div>
         )}

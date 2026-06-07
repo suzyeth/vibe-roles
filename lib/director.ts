@@ -1,8 +1,8 @@
 import type { FateCard, Quest, Player } from "@/lib/schema";
 
-/** NPC 名字池 - 随机选取填充角色 */
+/** NPC name pool — randomly picked to fill out the roster */
 const NPC_NAMES = ["Ghost", "Shadow", "Echo", "Whisper", "Cipher", "Nova", "Rogue", "Spark"];
-/** NPC 角色池 - 随机分配给 NPC */
+/** NPC role pool — randomly assigned to NPCs */
 const _NPC_ROLES = [
   { role: "The Watcher", ability: "Sees things others miss" },
   { role: "The Trickster", ability: "Chaos follows every move" },
@@ -15,10 +15,10 @@ const _NPC_ROLES = [
 ];
 
 /**
- * 填充 NPC 确保至少有 3 个角色（DESIGN.md §7.1）
- * - 1 人: 添加 2 NPCs (Solo 模式)
- * - 2 人: 添加 1 NPC
- * - 3+ 人: 不添加
+ * Pad with NPCs to guarantee at least 3 roles (DESIGN.md §7.1)
+ * - 1 player: add 2 NPCs (Solo mode)
+ * - 2 players: add 1 NPC
+ * - 3+ players: add none
  */
 export function padWithNPCs(members: string[]): string[] {
   if (members.length >= 3) return members;
@@ -26,7 +26,7 @@ export function padWithNPCs(members: string[]): string[] {
   const needed = 3 - members.length;
   const names = [...members];
 
-  // 从名字池中随机取 N 个
+  // Pick N at random from the name pool
   const shuffled = [...NPC_NAMES].sort(() => Math.random() - 0.5);
   for (let i = 0; i < needed; i++) {
     names.push(shuffled[i % shuffled.length]);
@@ -36,8 +36,8 @@ export function padWithNPCs(members: string[]): string[] {
 }
 
 /**
- * 从 GLM 返回的玩家列表中识别并标记 NPC
- * 返回的 players 数组中，原始成员 status = "active"，NPC status = "npc"
+ * Identify and tag NPCs in the player list returned by GLM.
+ * In the returned players array, original members get status = "active", NPCs get status = "npc".
  */
 export function markNPCs(players: Player[], originalMembers: string[]): Player[] {
   return players.map((p) => ({
