@@ -25,7 +25,7 @@ Roll Call is a ZYMIX-native mini app. When a group chat has gone quiet for ~72 h
 - **Four stories, each its own colour** — Group Chat on Trial · The Ring Light Goes Dark · Locked In at Honeycomb · Two Texts, One Group Chat.
 - **Light + dark, fully English, zero wait** — no login, no loading; instant and deterministic.
 
-## 🧩 How the story works (honest note)
+## 🧩 How the story works
 
 The shipped build runs on **pre-written branching story trees** ([`data/branchingStories.ts`](./data/branchingStories.ts) + [`lib/branchingEngine.ts`](./lib/branchingEngine.ts)) — fully offline and deterministic, so play is instant and demo-safe, with **no live LLM call** in the gameplay loop.
 
