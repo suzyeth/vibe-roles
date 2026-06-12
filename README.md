@@ -1,6 +1,6 @@
 # Roll Call
 
-> 🏆 **Award winner — Z.ai track @ VibeHack London 2026**
+> 🏆 **Best Product Integration with Z.ai** — Z.ai × Orbit award, VibeHack London 2026
 
 [![Live demo](https://img.shields.io/badge/▶%20Live%20demo-vibe--roles.vercel.app-1DB954)](https://vibe-roles.vercel.app)
 [![Devpost](https://img.shields.io/badge/Devpost-Roll%20Call-003E54?logo=devpost&logoColor=white)](https://devpost.com/software/roll-call-fvq7oy)
@@ -42,7 +42,7 @@ npm run dev   # http://localhost:3000
 - `capture my persona` → fill the fields → team leader zips and uploads to `orbit24.uk`.
 
 ## Key links
-- 🏆 Award winner — Z.ai track @ VibeHack London 2026
+- 🏆 Best Product Integration with Z.ai — Z.ai × Orbit award, VibeHack London 2026
 - Live demo (Vercel): https://vibe-roles.vercel.app
 - Devpost submission: https://devpost.com/software/roll-call-fvq7oy
 - GLM key: https://zai-hackathon.zeabur.app/
