@@ -1,5 +1,10 @@
 # Roll Call
 
+> 🏆 **Award winner — Z.ai track @ VibeHack London 2026**
+
+[![Live demo](https://img.shields.io/badge/▶%20Live%20demo-vibe--roles.vercel.app-1DB954)](https://vibe-roles.vercel.app)
+[![Devpost](https://img.shields.io/badge/Devpost-Roll%20Call-003E54?logo=devpost&logoColor=white)](https://devpost.com/software/roll-call-fvq7oy)
+
 A ZYMIX-native cold-group-revival mini game. When a group chat has been quiet for ~72 hours, a light prompt appears: *"This group's been quiet for a while. Start a mini adventure?"* If one person taps Start, the AI **randomly generates** a DND-like story (without reading chat history) and assigns each member a role. Players pick actions or type their own, roll a **D20** to resolve, and every result changes the ongoing story and the relationships between characters. External friends can add one intervention via a **5-minute disappearing invite**. It ends with a shareable ending card.
 
 VibeHack London 2026 · Track 2 "Vibe with ZYMIX". Full design: [DESIGN.md](./DESIGN.md).
@@ -37,7 +42,9 @@ npm run dev   # http://localhost:3000
 - `capture my persona` → fill the fields → team leader zips and uploads to `orbit24.uk`.
 
 ## Key links
-- Devpost submission link: get it from the official Discord → https://discord.gg/WQBSEp8ZW
+- 🏆 Award winner — Z.ai track @ VibeHack London 2026
+- Live demo (Vercel): https://vibe-roles.vercel.app
+- Devpost submission: https://devpost.com/software/roll-call-fvq7oy
 - GLM key: https://zai-hackathon.zeabur.app/
 - Ortie instructions: https://orbit24.uk/ortie.md
 - Manus registration: https://manus.im/live-events/EVENT-4022
